@@ -14,8 +14,9 @@
   upgrade to make sure the core you build on still passes.
 
 ## With Claude
-- *"Use the caligrafy-reviewer agent on application/ and public/showcase-spa/src."* The reviewer checks routes order,
-  CSRF on forms, guards, status codes, raw SQL in `all()` clauses, exposed keys and Bootstrap 5 / Vue 3 usage.
+- *"Use the caligrafy-reviewer agent on application/ and public/showcase-spa/src."* The reviewer looks for framework-specific
+  bugs and security issues: SQL injection through `all()` clauses, CSRF and API header mistakes, route fallbacks,
+  unsafe uploads, outdated auth or client-app templates and schema (foreign key, pivot) problems.
 - *"Run php caligrafer.php doctor in the container and explain each warning."*
 - *"Run php caligrafer.php upgrade (dry run) and tell me which files I customized before we apply anything."*
 - The plugin's PHP lint hook runs `php -l` after Claude edits a PHP file.
