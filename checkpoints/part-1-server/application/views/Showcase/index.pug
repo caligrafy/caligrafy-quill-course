@@ -1,0 +1,26 @@
+extends ../default/master/layoutblocks
+
+block content
+    .spacer-2
+    .content-section.equally-spaced-1
+        .spacer-2
+        h2.medium-text.horizontal-center.semibold My Projects
+        .width-max-800.horizontal-center
+            p.horizontal-center A showcase of what I build with Caligrafy
+            if $authorized
+                a.btn.btn-secondary(href="{$home}projects/new") add a project
+            else
+                a.btn.btn-outline-dark(href="{$home}login") sign in to add projects
+        .spacer-4
+        .wrapper.bounded-large.content-section
+            .row
+                each $project in $projects
+                    .col-md-6.col-lg-4.mb-4
+                        a(href="{$home}projects/{$project->id}")
+                            .card.animated.zoomIn.color0.equally-spaced-1.dropshadow
+                                h2.medium-text.semibold.textcolor5.reset-margin #{$project->title}
+                                .spacer-1
+                                p.textcolor5.default-text.block-with-text #{$project->description}
+                if empty($projects)
+                    p.horizontal-center No projects yet.
+    .spacer-3

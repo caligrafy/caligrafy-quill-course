@@ -1,0 +1,24 @@
+extends ../default/master/layoutblocks
+
+block content
+    div(class='content-section bounded-xlarge color4')
+        div(class='wrapper width-max-800')
+            .spacer-4
+            .card(class="color0 equally-spaced-1 dropshadow")
+                if $project
+                    h2.medium-text.semibold #{$project->title}
+                    p.default-text #{$project->description}
+                    p.small-text.textcolor5 Created #{$project->created_at}
+                    .spacer-2
+                    if $authorized
+                        .d-flex.gap-2
+                            a.btn.btn-secondary(href="{$home}projects/{$project->id}/edit") edit
+                            form(method='POST', action="{$home}projects/{$project->id}")
+                                =csrf()
+                                =methodField('DELETE')
+                                input.btn.btn-outline-dark(type='submit', value='delete')
+                else
+                    h2.medium-text.semibold #{$error}
+                .spacer-2
+                a(href="{$home}projects") back to my projects
+    .spacer-3

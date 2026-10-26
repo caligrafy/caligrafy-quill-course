@@ -39,11 +39,10 @@ Claude's output before you accept it.
 ```bash
 git clone git@github.com:caligrafy/caligrafy-quill.git showcase
 cd showcase
-cp .env.example .env                                   # fill the DB_* values, see lesson 00
-docker compose up -d                                   # app http://localhost:8080, phpMyAdmin :8077, MySQL :3306
-docker compose exec app composer install
-docker compose exec app php caligrafer.php initialize  # creates application/, prints your API_KEY (removes .git)
+.bin/caligrafer server start   # composer install + initialize + Docker: app :8080, phpMyAdmin :8077, MySQL :3306
 ```
+`initialize` creates `application/` and `.env` and **removes the framework's `.git`** so the project becomes yours
+(`git init` it afterwards). In `.env` set `DB_ACTIVATE=true`, `DB_HOST=mysql`, `DB_DATABASE=showcase`, `APP_ROOT=`.
 [Lesson 00](https://github.com/caligrafy/caligrafy-quill-course/wiki/00-Setup) explains every step and the
 Claude Code alternative (`/caligrafy-quill:server`). Never commit `.env`; only `.env.example` belongs in git.
 
