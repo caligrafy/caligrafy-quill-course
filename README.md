@@ -75,7 +75,7 @@ Caligrafy Quill project: only the files you write or change, at their real paths
 | Folder | Git tag | Contains | Apply on |
 |---|---|---|---|
 | `checkpoints/part-1-server` | `part-1` | `application/`: routes, `Showcase\ProjectController`, `Project` model and SQL, Pug views | a fresh initialized project |
-| `checkpoints/part-2-vue` | `part-2` | `application/` changes, `public/showcase` (Vue as a library), `public/showcase-spa` (Vite SPA) | part 1 |
+| `checkpoints/part-2-vue` | `part-2` | `public/showcase` (Vue as a library) and the changed files of `public/showcase-spa` (Vite SPA, created with `php caligrafer.php create showcase-spa`) | part 1 |
 
 ```bash
 cp -R checkpoints/part-1-server/. ../showcase/
