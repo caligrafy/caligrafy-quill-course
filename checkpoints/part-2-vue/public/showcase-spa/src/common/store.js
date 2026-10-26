@@ -41,7 +41,7 @@ export const useProjectStore = defineStore('projects', {
             this.current = null;
             try {
                 const response = await api.get('projects/' + id);
-                this.current = response.data;
+                this.current = response.data.project ?? null;   // view() answers {"project": ...}
             } catch (error) {
                 if (error.response?.status !== 404) throw error;   // 404: current stays null
             }
