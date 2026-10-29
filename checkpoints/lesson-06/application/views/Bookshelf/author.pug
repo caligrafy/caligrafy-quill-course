@@ -1,0 +1,19 @@
+extends ../default/master/layoutblocks
+
+block content
+    .content-section.bounded-xlarge
+        .wrapper.width-max-800
+            .spacer-4
+            .card.color0.dropshadow.equally-spaced-1
+                h2.medium-text.semibold.reset-margin= $author->name
+                .spacer-1
+                p= $author->bio
+                h3.default-text.semibold Books
+                ul
+                    each $book in $books
+                        li
+                            a(href="{$home}books/{$book->id}")= $book->title
+            .spacer-2
+            .horizontal-center
+                a.btn.btn-secondary(href="{$home}books") All books
+            .spacer-2

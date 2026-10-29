@@ -1,0 +1,44 @@
+extends ../default/master/layoutblocks
+
+block content
+    .content-section.bounded-xlarge
+        .wrapper.width-max-600
+            .spacer-4
+            .card.color0.dropshadow.equally-spaced-1
+                h2.medium-text.semibold.reset-margin= $heading
+                .spacer-1
+                if $errors
+                    p.error Some fields need your attention.
+                form(method='POST', action="{$home}{$action}")
+                    =csrf()
+                    if $method == 'PUT'
+                        =methodField('PUT')
+                    .mb-3
+                        label.default-text.textcolor5(for='title') * title
+                        input.form-control#title(type='text', name='title', maxlength='200', value=$values['title'] ?? '')
+                        if isset($errors['title'])
+                            p.error= $errors['title']
+                    .mb-3
+                        label.default-text.textcolor5(for='author_id') * author
+                        select.form-select#author_id(name='author_id')
+                            option(value='') Choose an author
+                            each $author in $authors
+                                option(value=$author->id, selected=($author->id == ($values['author_id'] ?? '')))= $author->name
+                        if isset($errors['author_id'])
+                            p.error= $errors['author_id']
+                    .mb-3
+                        label.default-text.textcolor5(for='published_year') * year
+                        input.form-control#published_year(type='number', name='published_year', value=$values['published_year'] ?? '')
+                        if isset($errors['published_year'])
+                            p.error= $errors['published_year']
+                    .mb-3
+                        label.default-text.textcolor5(for='summary') summary
+                        textarea.form-control#summary(name='summary', rows='4')= $values['summary'] ?? ''
+                        if isset($errors['summary'])
+                            p.error= $errors['summary']
+                    .spacer-2
+                    input.btn.btn-primary(type='submit', value='Save')
+            .spacer-2
+            .horizontal-center
+                a.btn.btn-secondary(href="{$home}books") Cancel
+            .spacer-2
