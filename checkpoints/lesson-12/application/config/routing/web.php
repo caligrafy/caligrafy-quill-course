@@ -56,10 +56,8 @@ try {
     Route::put('/api/books/{id}', 'Bookshelf\\Api\\BookApiController@update');
     Route::delete('/api/books/{id}', 'Bookshelf\\Api\\BookApiController@remove');
 
-    // The Vue catalog (lesson 10): public/catalog, with signedIn passed to the app
-    Route::get('/catalog', function() {
-        return view('Client/app', array('appName' => 'catalog', 'app' => 'index', 'signedIn' => authorized()));
-    });
+    // The Vue catalog (lesson 10): public/catalog, shown by a controller that passes signedIn to the app
+    Route::get('/catalog', 'Bookshelf\\CatalogController');
 
     // Client apps (lesson 10): public/<appName> is shown at /apps/<appName>
     Route::get('/apps/{appName}', 'Caligrafy\\Controllers\\ClientController');

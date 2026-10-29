@@ -1,6 +1,7 @@
 <!-- The list of books: route '/' -->
 <template>
-  <div>
+  <div class="wrapper width-max-600">
+    <div class="spacer-2"></div>
     <h2 class="medium-text semibold horizontal-center">Bookshelf</h2>
     <p class="horizontal-center">{{ books.length }} books</p>
     <p class="error horizontal-center" v-if="message">{{ message }}</p>

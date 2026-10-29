@@ -87,7 +87,7 @@ write or change in your project, at their real paths. Each folder contains every
 | [`lesson-07`](checkpoints/lesson-07) | `lesson-07` | + `BookForm`, forms to add, edit and delete books |
 | [`lesson-08`](checkpoints/lesson-08) | `lesson-08` | + authentication |
 | [`lesson-09`](checkpoints/lesson-09) | `lesson-09` | + `Bookshelf\Api\BookApiController` |
-| [`lesson-10`](checkpoints/lesson-10) | `lesson-10` | + `public/catalog` (Vue as a library) |
+| [`lesson-10`](checkpoints/lesson-10) | `lesson-10` | + `public/catalog` (Vue as a library) and `Bookshelf\CatalogController` |
 | [`lesson-11`](checkpoints/lesson-11) | `lesson-11` | + the changed files of `public/bookshelf-spa` (Vite, Vue Router) |
 | [`lesson-12`](checkpoints/lesson-12) | `lesson-12` | + the Pinia store, the form page and `vite.config.js` |
 | [`lesson-13`](checkpoints/lesson-13) | `lesson-13` | + a PHPUnit test and a smoke test script |
@@ -100,7 +100,11 @@ Catch up to a checkpoint (it overwrites the files of that lesson in your project
 ```bash
 cp -R caligrafy-quill-course/checkpoints/lesson-07/. bookshelf/
 ```
-The checkpoints never contain `.env` files or keys: those are created in your project by lesson 01.
+The checkpoints never contain `.env` files or keys: those are created in your project by lesson 01. The SPA
+checkpoints (`lesson-11`, `lesson-12`) only hold the files you change in `public/bookshelf-spa`: create the app first
+with lesson 11, step 1.
+
+Screenshots of the pages used in the lessons are in [`docs/images`](docs/images).
 
 ## Credits
 

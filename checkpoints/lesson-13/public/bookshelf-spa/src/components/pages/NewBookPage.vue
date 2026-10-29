@@ -1,6 +1,7 @@
 <!-- The form to add a book: route '/books/new' -->
 <template>
   <div class="wrapper width-max-600">
+    <div class="spacer-2"></div>
     <div class="card color0 dropshadow equally-spaced-1">
       <h2 class="medium-text semibold reset-margin">Add a book</h2>
       <div class="spacer-1"></div>

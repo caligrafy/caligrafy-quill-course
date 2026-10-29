@@ -22,7 +22,7 @@
             </header>
 
             <div class="content-section bounded-xlarge">
-                <div class="wrapper width-max-800">
+                <div class="wrapper width-max-600">
                     <div class="spacer-4"></div>
                     <h2 class="medium-text semibold horizontal-center">Bookshelf catalog</h2>
                     <p class="horizontal-center">{{ books.length }} books, loaded from the API</p>
