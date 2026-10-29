@@ -48,6 +48,12 @@ are letters and digits only.
 the view receives `authorized` = true. So every page passes `'authorized' => authorized()`; a small private method
 `page()` in the controllers does it for every `view()`.
 
+**Every account can edit.** Anyone can open `/register`, and every signed-in user may add, edit and delete books.
+That is enough for this course (a shared shelf among friends). In a real application, restrict changes to editors:
+the users table has a `permissions` column (0 for new users); promote editors in SQL
+(`UPDATE users SET permissions = 1 WHERE username = 'reader1'`) and protect the actions with
+`guard('permissions', 1)`, which sends other users to `/notAuthorized`.
+
 **Where sign in goes.** `AuthController` sends the visitor to `/home` after signing in and after signing out. We
 point `/home` at our list of books.
 

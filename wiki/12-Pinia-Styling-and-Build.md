@@ -40,6 +40,14 @@ a few files in `dist/assets/`. Those are plain files: Caligrafy's Apache serves 
 `http://localhost:8080/public/bookshelf-spa/dist/index.html`, on the same site as the API, so no proxy is needed.
 The API key is **inside** the built JavaScript (same rule as lesson 10: it is public).
 
+**Where the API is.** The store calls `/api/books`, from the root of the site. That is right for this course: under
+Docker the site is at the root (`APP_ROOT=` empty). If you later install Caligrafy in a sub-folder (for example
+`http://localhost/bookshelf/` with MAMP), prefix every URL with `config.apiRoute` from `src/common/app.js` and set
+`VITE_API_ROUTE=/bookshelf` in the SPA's `.env`.
+
+**Visitors.** The SPA has no sign-in page of its own: a visitor who clicks **Save** or **Delete** gets the API's
+*Sign in first*. They sign in on Caligrafy's page, http://localhost:8080/login.
+
 ---
 
 ## Manual track

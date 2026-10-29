@@ -294,7 +294,13 @@ the gotcha id and a fix. For the course code the reviewer should find no SQL inj
 no `check()` misuse. It is likely to mention, as information or low severity:
 - the API key is visible in the `/catalog` page (G27): expected, and handled because changes require a signed-in
   user;
-- unknown URLs show the first route with status 200 (G4): a known behavior of the framework.
+- unknown URLs show the first route with status 200 (G4): a known behavior of the framework;
+- every registered user can change every book (G14): a choice of the course, explained in lesson 08 with the
+  `guard('permissions', 1)` fix;
+- the SPA calls `/api/...` from the root of the site: right while `APP_ROOT` is empty (lesson 12).
+
+(These are the findings of a review of the course's final code run with the reviewer's instructions while the
+course was written; your own code may get others.)
 
 **How to review the review:** for each finding, open the file at the line, and decide: is it a real bug in **your**
 code, a known limit you accept, or a mistake of the reviewer? Ask Claude "show me the request that would fail" when a
