@@ -1,30 +1,51 @@
 # Caligrafy Quill Course
 
-Build **Showcase**, a project portfolio app, with [Caligrafy Quill](https://github.com/caligrafy/caligrafy-quill):
-first on the server with Pug views (Part 1), then as a Vue front end on the same REST API (Part 2).
-This course replaces [caligrafy-course](https://github.com/caligrafy/caligrafy-course) and
-[caligrafy-vue-course](https://github.com/caligrafy/caligrafy-vue-course): same project, current APIs
-(PHP 8.3+, Bootstrap 5 with the Caligrafy black and white theme, Vue 3.5, Vite 8, Pinia).
+A step by step course for people who have **never used Caligrafy Quill**. You build **Bookshelf**, a small catalog
+of books and authors: first as a server-rendered web application with Pug views, forms, sign in and a REST API
+(part 1), then as a Vue app and a Vite single page application on the same API (part 2), and you finish with
+code review, tests, `doctor` and `upgrade` (part 3).
 
-## Two tracks in every lesson
+You need: a little HTML, CSS, JavaScript, PHP and SQL. Everything else (Docker, Caligrafy, Pug, Vue, Vite, Pinia)
+is explained when it first appears.
 
-- **Manual**: the exact commands, files and code. Do this first whenever the concept is new to you.
-- **With Claude**: the Claude Code prompts and `caligrafy-quill` plugin commands that do the same work, and a
-  **Check** list of what to verify before you accept Claude's result.
+## How to use this course
 
-A good rhythm: do the Manual track, commit, then redo the lesson With Claude on a branch and compare
-(`git diff manual..claude`). Prefer Claude for boilerplate you already understand (a new CRUD resource, a new app,
-starting the server, running SQL) and for reviews; prefer Manual when learning, debugging framework behavior, or
-when a change is small enough to type faster than to describe.
+Every lesson has the same structure:
+1. **New concepts**: what you are about to use, and why Caligrafy does it that way.
+2. **Manual track**: numbered steps. Each step says which file, gives its **complete** content (no `...`), what
+   you should see, and how to check it. Do this track first.
+3. **If it doesn't work**: the real errors of that lesson and their fix.
+4. **With Claude**: the exact prompt or plugin command for [Claude Code](https://claude.com/claude-code), what
+   Claude should create, a **Check** list to review it, and what to do when Claude's result differs.
+5. **Checkpoint**: a commit and a git tag (`lesson-05`...). The finished code of every lesson is in the
+   [`checkpoints/`](https://github.com/caligrafy/caligrafy-quill-course/tree/main/checkpoints) folder of the
+   course repository.
+6. A short **quiz or exercise**, with its solution under "Show the solution".
 
 ## Lessons
-- [[00 Setup|00-Setup]]
-- **Part 1 - Server side**: [[01 Database primer|01-Database-Primer]], [[02 Routes and controllers|02-Routes-and-Controllers]],
-  [[03 Models and relationships|03-Models-and-Relationships]], [[04 Views and forms|04-Views-and-Forms]],
-  [[05 Validation and authentication|05-Validation-and-Authentication]], [[06 REST API and status codes|06-REST-API-and-Status-Codes]]
-- **Part 2 - Vue**: [[07 Vue as a library|07-Vue-as-a-Library]], [[08 Vite SPA and router|08-Vite-SPA-and-Router]],
-  [[09 Pinia and the API|09-Pinia-and-the-API]], [[10 Review, test, doctor and upgrade|10-Review-Test-and-Upgrade]]
 
-## Checkpoints
-Finished code per part: [`checkpoints/part-1-server`](https://github.com/caligrafy/caligrafy-quill-course/blob/main/checkpoints/part-1-server) (tag `part-1`) and
-[`checkpoints/part-2-vue`](https://github.com/caligrafy/caligrafy-quill-course/blob/main/checkpoints/part-2-vue) (tag `part-2`), as overlays on a fresh initialized project.
+**Part 0 - Setup**
+- [Lesson 00 - What Caligrafy Quill is, and installing your tools](00-Introduction-and-Tools)
+- [Lesson 01 - Create your project](01-Create-Your-Project)
+
+**Part 1 - Server side with Caligrafy views**
+- [Lesson 02 - Routes](02-Routes)
+- [Lesson 03 - Controllers](03-Controllers)
+- [Lesson 04 - The database](04-The-Database)
+- [Lesson 05 - Models and relationships](05-Models-and-Relationships)
+- [Lesson 06 - Views and the layout](06-Views-and-the-Layout)
+- [Lesson 07 - Forms, CSRF and validation](07-Forms-CSRF-and-Validation)
+- [Lesson 08 - Authentication](08-Authentication)
+- [Lesson 09 - The REST API](09-The-REST-API)
+
+**Part 2 - Vue**
+- [Lesson 10 - A Vue app inside Caligrafy](10-Vue-as-a-Library)
+- [Lesson 11 - The Vite single page application and Vue Router](11-Vite-SPA-and-Vue-Router)
+- [Lesson 12 - Pinia, styling and the production build](12-Pinia-Styling-and-Build)
+
+**Part 3 - Keeping it healthy**
+- [Lesson 13 - Review, tests, doctor and upgrade](13-Review-Tests-Doctor-Upgrade)
+
+This course replaces the older [caligrafy-course](https://github.com/caligrafy/caligrafy-course) and
+[caligrafy-vue-course](https://github.com/caligrafy/caligrafy-vue-course). The full framework documentation is the
+[Caligrafy Quill wiki](https://github.com/caligrafy/caligrafy-quill/wiki).

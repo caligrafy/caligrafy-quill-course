@@ -1,0 +1,25 @@
+extends ../default/master/layoutblocks
+
+block content
+    .content-section.bounded-xlarge
+        .wrapper.width-max-600
+            .spacer-4
+            .card.color0.dropshadow.equally-spaced-1
+                h2.medium-text.semibold.reset-margin= $book->title
+                .spacer-1
+                p.default-text.textcolor5
+                    | by 
+                    a(href="{$home}authors/{$author->id}")= $author->name
+                    | , #{$book->published_year}
+                p= $book->summary
+                .spacer-1
+                a.btn.btn-primary(href="{$home}books/{$book->id}/edit") Edit
+                .spacer-1
+                form(method='POST', action="{$home}books/{$book->id}")
+                    =csrf()
+                    =methodField('DELETE')
+                    input.btn.btn-secondary(type='submit', value='Delete')
+            .spacer-2
+            .horizontal-center
+                a.btn.btn-secondary(href="{$home}books") All books
+            .spacer-2

@@ -1,20 +1,25 @@
-**[[Home]]**
+**[Home](Home)**
 
-**Start**
-- [[00 Setup|00-Setup]]
+**Part 0 - Setup**
+- [00 Introduction and tools](00-Introduction-and-Tools)
+- [01 Create your project](01-Create-Your-Project)
 
 **Part 1 - Server side**
-- [[01 Database primer|01-Database-Primer]]
-- [[02 Routes and controllers|02-Routes-and-Controllers]]
-- [[03 Models and relationships|03-Models-and-Relationships]]
-- [[04 Views and forms|04-Views-and-Forms]]
-- [[05 Validation and auth|05-Validation-and-Authentication]]
-- [[06 REST API and status codes|06-REST-API-and-Status-Codes]]
+- [02 Routes](02-Routes)
+- [03 Controllers](03-Controllers)
+- [04 The database](04-The-Database)
+- [05 Models and relationships](05-Models-and-Relationships)
+- [06 Views and the layout](06-Views-and-the-Layout)
+- [07 Forms, CSRF and validation](07-Forms-CSRF-and-Validation)
+- [08 Authentication](08-Authentication)
+- [09 The REST API](09-The-REST-API)
 
 **Part 2 - Vue**
-- [[07 Vue as a library|07-Vue-as-a-Library]]
-- [[08 Vite SPA and router|08-Vite-SPA-and-Router]]
-- [[09 Pinia and the API|09-Pinia-and-the-API]]
-- [[10 Review, test and upgrade|10-Review-Test-and-Upgrade]]
+- [10 Vue as a library](10-Vue-as-a-Library)
+- [11 Vite SPA and Vue Router](11-Vite-SPA-and-Vue-Router)
+- [12 Pinia, styling and build](12-Pinia-Styling-and-Build)
+
+**Part 3 - Keeping it healthy**
+- [13 Review, tests, doctor, upgrade](13-Review-Tests-Doctor-Upgrade)
 
 [Course repository](https://github.com/caligrafy/caligrafy-quill-course) · [Framework docs](https://github.com/caligrafy/caligrafy-quill/wiki)

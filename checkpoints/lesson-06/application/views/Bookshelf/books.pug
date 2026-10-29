@@ -1,0 +1,15 @@
+extends ../default/master/layoutblocks
+
+block content
+    .content-section.bounded-xlarge
+        .wrapper.width-max-600
+            .spacer-4
+            h2.medium-text.semibold.horizontal-center Bookshelf
+            p.horizontal-center A small catalog of the books we love
+            .spacer-2
+            each $book in $books
+                a(href="{$home}books/{$book->id}")
+                    .card.color0.dropshadow.equally-spaced-1
+                        h3.medium-text.semibold.textcolor5.reset-margin= $book->title
+                        p.default-text.textcolor5= $book->published_year
+            .spacer-2
