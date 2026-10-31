@@ -112,6 +112,26 @@ cd ../..
 ```
 Expected: `added 273 packages` (the numbers can vary) and you are back in `bookshelf`.
 
+npm may add `10 moderate severity vulnerabilities`. They all come from one library, `minimatch`, used by ESLint,
+the code checker of `npm run lint` ([GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249)): not
+from Vue, and nothing of it goes into your app (`npm audit --omit=dev` finds 0). **Do not run
+`npm audit fix --force`**: it would replace ESLint 10 with ESLint 4 from 2017. To clear the warning, in
+`public/bookshelf-spa/package.json` add these lines between the `devDependencies` block and `"engines"`:
+```json
+  "overrides": {
+    "minimatch": "^11.0.1"
+  },
+```
+then reinstall:
+```bash
+cd public/bookshelf-spa
+rm -rf node_modules package-lock.json
+npm install
+npm audit
+cd ../..
+```
+Expected: `found 0 vulnerabilities`. (Templates of Caligrafy Quill releases after 2.2.0 already have the override.)
+
 ### Step 5 - Set up Vite
 
 Every path from here is relative to `public/bookshelf-spa`.
@@ -481,7 +501,7 @@ src/components/pages/HomePage.vue. Do not change any server file. Run npm instal
 **If Claude's result differs:** if it uses `createWebHistory()`, the addresses have no `#`, but then the server
 must send `index.html` for every address of the app, which this course does not set up: ask for hash history. If it adds a
 Pinia store, it works, but it is code you do not need: ask it to call the client from the pages. If it runs
-`npm install` in the container and it fails, run it yourself (step 4).
+`npm install` in the container and it fails, run it yourself (step 4). If it runs `npm audit fix --force`, stop it: use the `minimatch` override of step 4 instead.
 
 ---
 
