@@ -2,9 +2,10 @@
 
 ![Caligrafy](https://github.com/DoryAzar/caligrafy/blob/master/public/images/resources/banner_white.png)
 
-A step by step course for people who have **never used Caligrafy Quill**. You build **Bookshelf**, a small catalog
-of books and authors, from an empty folder to a server-rendered web application, a REST API, a Vue app, a Vite
-single page application and capabilities that an AI agent can use.
+A step by step course for people who have **never used Caligrafy Quill**, the **"Build Once, Experience
+Everywhere"** framework. You build **Bookshelf**, a small catalog of books and authors, from an empty folder to the
+same features experienced everywhere: server-rendered web pages, a REST API, a Vue app, a Vite single page
+application for tablets and phones, and, in the last lesson, capabilities written once that an AI agent can use.
 
 This course replaces the two original Caligrafy courses
 ([caligrafy-course](https://github.com/caligrafy/caligrafy-course) and

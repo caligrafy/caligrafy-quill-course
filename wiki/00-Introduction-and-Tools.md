@@ -13,6 +13,11 @@ Caligrafy Quill is a **PHP framework**: a set of PHP files that already solve th
 (reading the URL, talking to a database, showing HTML pages, checking forms, signing users in), so that you only
 write the parts that are specific to your application.
 
+Its motto is **build once, experience everywhere**: a feature of your application (add a book, list the books) is
+meant to be written once and then used from every place people and programs reach it: web pages, a Vue app on a
+tablet or a phone, a REST API, and AI agents such as Claude. You will see each of these experiences in turn, and in
+lesson 14 you will write features once, as **capabilities**, and let an AI agent use them.
+
 Caligrafy Quill follows the **MVC** pattern. MVC means that the code of every page is split in three kinds of files:
 
 | Letter | Name | What it does | Where it lives in Caligrafy Quill |
@@ -54,6 +59,7 @@ You build **Bookshelf**, a small catalog of books and their authors:
 | 1 - Server side | 02 to 09 | Pages listing books and authors, forms to add, edit and delete books, sign in, a JSON API |
 | 2 - Vue | 10 to 12 | The same catalog as a Vue app inside Caligrafy, then as a Vite single page application |
 | 3 - Keeping it healthy | 13 | Code review with Claude, automated tests, `doctor` and `upgrade` |
+| 4 - Build once | 14 | Features written once as capabilities, a REST API on them, and an AI agent (Claude) that uses them |
 
 ## 3. How the course works: two tracks
 

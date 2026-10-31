@@ -45,6 +45,10 @@ JSON and status codes. Two controllers keep each one simple. Both use `BookForm`
 the same way everywhere. The API controller lives in the sub-namespace `Bookshelf\Api` and the folder
 `controllers/Bookshelf/Api/`.
 
+**Looking ahead.** In this lesson the web pages and the API are two controllers that share `BookForm`. Lesson 14
+shows the Caligrafy way to go further: write the feature once as a **capability**, and let pages, the API, the Vue
+apps and AI agents all use it (build once, experience everywhere).
+
 ---
 
 ## Manual track
