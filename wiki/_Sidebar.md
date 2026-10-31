@@ -22,4 +22,7 @@
 **Part 3 - Keeping it healthy**
 - [13 Review, tests, doctor, upgrade](13-Review-Tests-Doctor-Upgrade)
 
+**Part 4 - Build once**
+- [14 Capabilities and AI agents](14-Capabilities-and-AI-Agents)
+
 [Course repository](https://github.com/caligrafy/caligrafy-quill-course) · [Framework docs](https://github.com/caligrafy/caligrafy-quill/wiki)

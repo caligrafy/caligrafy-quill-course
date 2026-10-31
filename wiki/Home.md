@@ -46,6 +46,9 @@ Every lesson has the same structure:
 **Part 3 - Keeping it healthy**
 - [Lesson 13 - Review, tests, doctor and upgrade](13-Review-Tests-Doctor-Upgrade)
 
+**Part 4 - Build once**
+- [Lesson 14 - Capabilities and AI agents](14-Capabilities-and-AI-Agents)
+
 This course replaces the older [caligrafy-course](https://github.com/caligrafy/caligrafy-course) and
 [caligrafy-vue-course](https://github.com/caligrafy/caligrafy-vue-course). The full framework documentation is the
 [Caligrafy Quill wiki](https://github.com/caligrafy/caligrafy-quill/wiki).

@@ -60,7 +60,7 @@ From the `bookshelf` folder:
 ```bash
 docker compose exec dev-box php caligrafer.php doctor
 ```
-Expected: the same report as in lesson 01, step 8, ending with `9 OK, 0 WARN, 0 FAIL, 6 SKIP`. The line
+Expected: the same report as in lesson 01, step 8, ending with `12 OK, 0 WARN, 0 FAIL, 7 SKIP`. The line
 `OK    Templates: application/ is up to date with the framework templates` comes from the `upgrade` check of step 4. `SKIP` lines are services you did not configure: normal. (Run it with
 `docker compose exec dev-box`: inside the container, `DB_HOST=mysql` resolves.) `--only database` limits it to one
 check, `--json` prints JSON for programs.
@@ -337,7 +337,7 @@ git tag lesson-13
 ```
 Reference: [`checkpoints/lesson-13`](https://github.com/caligrafy/caligrafy-quill-course/tree/main/checkpoints/lesson-13).
 
-You finished the course. Where to go next: the [Caligrafy Quill wiki](https://github.com/caligrafy/caligrafy-quill/wiki)
+Next: [Lesson 14 - Capabilities and AI agents](14-Capabilities-and-AI-Agents) writes Bookshelf features once and lets an AI agent use them. After it, the [Caligrafy Quill wiki](https://github.com/caligrafy/caligrafy-quill/wiki)
 documents the modules this course did not cover (file uploads, payments, metadata and social cards, the AI and
 machine learning modules).
 
@@ -360,4 +360,4 @@ machine learning modules).
 </details>
 
 ---
-Previous: [Lesson 12 - Pinia, styling and the production build](12-Pinia-Styling-and-Build) · [Back to the course home](Home)
+Previous: [Lesson 12 - Pinia, styling and the production build](12-Pinia-Styling-and-Build) · Next: [Lesson 14 - Capabilities and AI agents](14-Capabilities-and-AI-Agents) · [Back to the course home](Home)

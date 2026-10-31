@@ -61,16 +61,16 @@ need PHP on your computer.
 
 ### Step 1 - Clone the framework
 
-Choose the folder where you keep your projects (here `~/code`), and clone the release **v2.0.0** of Caligrafy Quill
-into a new folder named `bookshelf`. The course was written and checked against this release: `--branch v2.0.0`
+Choose the folder where you keep your projects (here `~/code`), and clone the release **v2.1.0** of Caligrafy Quill
+into a new folder named `bookshelf`. The course was written and checked against this release: `--branch v2.1.0`
 gets exactly that version, even after newer ones come out (the [changelog](https://github.com/caligrafy/caligrafy-quill/blob/master/CHANGELOG.md) lists them).
 ```bash
 mkdir -p ~/code
 cd ~/code
-git clone --branch v2.0.0 https://github.com/caligrafy/caligrafy-quill.git bookshelf
+git clone --branch v2.1.0 https://github.com/caligrafy/caligrafy-quill.git bookshelf
 cd bookshelf
 ```
-Expected: `Cloning into 'bookshelf'...`, a line `warning: refs/tags/v2.0.0 ... is not a commit!` and a note that you
+Expected: `Cloning into 'bookshelf'...`, a line `warning: refs/tags/v2.1.0 ... is not a commit!` and a note that you
 are in `'detached HEAD' state`. Both are normal when you clone a release tag (you are on that release, not on a
 branch), and harmless here because `initialize` removes the framework's git history in step 4. `ls` lists, among others,
 `caligrafer.php  composer.json  docker  docker-compose.yaml  framework  public  qa  tests`. There is no
@@ -200,7 +200,7 @@ docker compose exec dev-box php caligrafer.php doctor
 `doctor` checks and changes nothing. Its first line names the version of Caligrafy Quill your project runs
 (`docker compose exec dev-box php caligrafer.php version` prints only that). Expected (version numbers and the last 4 characters of the keys differ):
 ```
-Caligrafy doctor (read-only): Caligrafy Quill 2.0.0
+Caligrafy doctor (read-only): Caligrafy Quill 2.1.0
 
  Project
   OK    PHP: 8.5.12
@@ -209,17 +209,24 @@ Caligrafy doctor (read-only): Caligrafy Quill 2.0.0
   OK    .env: present
   OK    APP_KEY: set …Sn8= (44 chars)
   OK    API_KEY: set …vg== (112 chars)
+  OK    Legacy API key: allowed (every generated key is the same key: full access, no revocation); set LEGACY_API_KEY=false once clients use tokens
   OK    public/uploads: writable
+  OK    public/manifest.webmanifest: 4 icon(s) found
   OK    Templates: application/ is up to date with the framework templates
 
  Database
   OK    Database: connected to mysql://mysql:3306/bookshelf (server 8.4.13)
+  SKIP  Framework tables: caligrafy_tokens, caligrafy_audit not installed (needed for tokens, the audit log and MCP)
+        -> php caligrafer.php platform install
 
  OpenAI
   SKIP  OpenAI: OPEN_AI_KEY is not set
 
  Groq
   SKIP  Groq: GROQ_API_KEY is not set
+
+ Agent provider
+  OK    AGENT_PROVIDER: not set: groq (default), see the Groq check
 
  Stripe
   SKIP  Stripe: PAY_PRIVATE_KEY_TEST is not set (APP_ENV=local)
@@ -233,9 +240,9 @@ Caligrafy doctor (read-only): Caligrafy Quill 2.0.0
  Mail
   SKIP  Mail: MAIL_HOST is not set
 
- 9 OK, 0 WARN, 0 FAIL, 6 SKIP
+ 12 OK, 0 WARN, 0 FAIL, 7 SKIP
 ```
-`SKIP` means "not configured": these are services this course does not use. `doctor` shows only the end of each key
+`SKIP` means "not configured": these are services this course does not use (the framework tables come in lesson 14). `doctor` shows only the end of each key
 (`…Sn8=`): it never prints secrets.
 
 ### Step 9 - Make the project your own git repository
