@@ -373,16 +373,16 @@ Each line shows when, the channel (`rest`, `mcp`), who (`token` and its number),
 ### Update a 2.0.0 project
 
 If `php caligrafer.php version` printed `2.0.0`, your project was cloned before the capabilities existed. Copy the
-framework of 2.1.2 over it (your `application/` and `public/` apps stay yours), then let `upgrade` update the
+framework of 2.1.3 over it (your `application/` and `public/` apps stay yours), then let `upgrade` update the
 templates you never changed:
 ```bash
-git clone --branch v2.1.2 --depth 1 https://github.com/caligrafy/caligrafy-quill.git ../quill-2.1.2
-cp -R ../quill-2.1.2/framework ../quill-2.1.2/caligrafer.php ../quill-2.1.2/claude-plugin .
-cp ../quill-2.1.2/public/css/tokens.css ../quill-2.1.2/public/css/tokens.json public/css/
+git clone --branch v2.1.3 --depth 1 https://github.com/caligrafy/caligrafy-quill.git ../quill-2.1.3
+cp -R ../quill-2.1.3/framework ../quill-2.1.3/caligrafer.php ../quill-2.1.3/claude-plugin .
+cp ../quill-2.1.3/public/css/tokens.css ../quill-2.1.3/public/css/tokens.json public/css/
 docker compose exec dev-box php caligrafer.php version
 docker compose exec dev-box php caligrafer.php upgrade --apply
 ```
-Expected: `Caligrafy Quill 2.1.2`. Commit, then start at step 1.
+Expected: `Caligrafy Quill 2.1.3`. Commit, then start at step 1.
 
 ---
 
@@ -402,6 +402,8 @@ token for an agent and show me the curl checks.
 - [ ] The routes are above `Route::run()`.
 - [ ] The token was shown to you once and is not written in any file of the project.
 - [ ] The invalid `curl` of step 5 answers `422` with the same field names as the web form.
+- [ ] If Claude also built a page, it uses the page components (`main.cq-page > .cq-card`, labeled `.cq-form`,
+      `.cq-list`) and looks like the sign-in page at desktop and phone width.
 
 **If Claude's result differs:** a capability without a scope works with any token: ask for the scope. A
 `description` like "Creates a book" works, but an agent chooses tools better with what it returns and what it needs

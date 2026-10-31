@@ -66,6 +66,13 @@ starts with `extends ../default/master/layoutblocks` (the path is relative to th
 Bootstrap 5 classes work too (`mb-3`, `row`, `col-md-6`, `form-control`), but keep the Caligrafy colors: no
 `btn-success` or `bg-primary`.
 
+**Page components (for your next pages).** Since Caligrafy Quill 2.1.3, `public/css/tokens.css` also has ready-made
+parts for a whole page: `main.cq-page > .cq-card` (a centered card below the header), `.cq-card-head` (title and
+note), `.cq-form` (labeled fields and a full-width black button), `.cq-tabs`, `.cq-list` rows with actions, and an
+empty state. The Bookshelf pages of this course keep the classes above; for the pages you add after the course, use
+the components ([Views: page components](https://github.com/caligrafy/caligrafy-quill/wiki/7.-Views#pagecomponents)).
+The Claude Code plugin builds every new page with them.
+
 ---
 
 ## Manual track

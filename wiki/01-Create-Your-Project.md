@@ -61,16 +61,16 @@ need PHP on your computer.
 
 ### Step 1 - Clone the framework
 
-Choose the folder where you keep your projects (here `~/code`), and clone the release **v2.1.2** of Caligrafy Quill
-into a new folder named `bookshelf`. The course was written and checked against this release: `--branch v2.1.2`
+Choose the folder where you keep your projects (here `~/code`), and clone the release **v2.1.3** of Caligrafy Quill
+into a new folder named `bookshelf`. The course was written and checked against this release: `--branch v2.1.3`
 gets exactly that version, even after newer ones come out (the [changelog](https://github.com/caligrafy/caligrafy-quill/blob/master/CHANGELOG.md) lists them).
 ```bash
 mkdir -p ~/code
 cd ~/code
-git clone --branch v2.1.2 https://github.com/caligrafy/caligrafy-quill.git bookshelf
+git clone --branch v2.1.3 https://github.com/caligrafy/caligrafy-quill.git bookshelf
 cd bookshelf
 ```
-Expected: `Cloning into 'bookshelf'...`, a line `warning: refs/tags/v2.1.2 ... is not a commit!` and a note that you
+Expected: `Cloning into 'bookshelf'...`, a line `warning: refs/tags/v2.1.3 ... is not a commit!` and a note that you
 are in `'detached HEAD' state`. Both are normal when you clone a release tag (you are on that release, not on a
 branch), and harmless here because `initialize` removes the framework's git history in step 4. `ls` lists, among others,
 `caligrafer.php  composer.json  docker  docker-compose.yaml  framework  public  qa  tests`. There is no
@@ -201,7 +201,7 @@ docker compose exec dev-box php caligrafer.php doctor
 `doctor` checks and changes nothing. Its first line names the version of Caligrafy Quill your project runs
 (`docker compose exec dev-box php caligrafer.php version` prints only that). Expected (version numbers and the last 4 characters of the keys differ):
 ```
-Caligrafy doctor (read-only): Caligrafy Quill 2.1.2
+Caligrafy doctor (read-only): Caligrafy Quill 2.1.3
 
  Project
   OK    PHP: 8.5.12
