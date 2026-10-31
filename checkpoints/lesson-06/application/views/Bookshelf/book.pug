@@ -1,18 +1,39 @@
 extends ../default/master/layoutblocks
 
+//- One book, rendered on the server by Bookshelf\BookController from get_book; the form calls update_book
+
 block content
-    .content-section.bounded-xlarge
-        .wrapper.width-max-600
-            .spacer-4
-            .card.color0.dropshadow.equally-spaced-1
-                h2.medium-text.semibold.reset-margin= $book->title
-                .spacer-1
-                p.default-text.textcolor5
-                    | by 
-                    a(href="{$home}authors/{$author->id}")= $author->name
-                    | , #{$book->published_year}
-                p= $book->summary
-            .spacer-2
-            .horizontal-center
-                a.btn.btn-secondary(href="{$home}books") All books
-            .spacer-2
+    main.cq-page
+        .cq-card
+            .cq-card-head
+                h2.cq-title= $book['title']
+                p.cq-note
+                    | by #{$author['name']}, #{$book['published_year']}
+            .cq-section
+                p= $book['summary'] ?: 'No summary yet.'
+
+            form.cq-form(method='POST', action="{$home}books/{$book['id']}", novalidate)
+                =csrf()
+                =methodField('PUT')
+                .cq-fields.cq-fields--2
+                    div
+                        label(for='title') * Title
+                        input#title.form-control(type='text', name='title', value=$form['title'], maxlength='200')
+                    div
+                        label(for='author_id') * Author
+                        select#author_id.form-select(name='author_id')
+                            each $a in $authors
+                                option(value=$a['id'], selected=$a['id'] == $form['author_id'])= $a['name']
+                    div
+                        label(for='published_year') * Year
+                        input#published_year.form-control(type='number', name='published_year', value=$form['published_year'])
+                    div
+                        label(for='summary') Summary
+                        input#summary.form-control(type='text', name='summary', value=$form['summary'], maxlength='2000')
+                button.btn.btn-primary.cq-submit(type='submit') Save changes
+
+            if $errors
+                p.cq-error(role='alert')= implode(' ', $errors)
+
+            .cq-foot
+                a(href="{$home}books") All books

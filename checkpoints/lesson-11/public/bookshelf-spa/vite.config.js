@@ -18,9 +18,9 @@ export default defineConfig({
     },
   },
   server: {
-    // npm run dev: requests to /api/... are forwarded to Caligrafy, so the browser sees one single site
+    // npm run dev: the calls of the JS client (/capabilities) go to Caligrafy, so the browser sees one single site
     proxy: {
-      '/api': 'http://localhost:8080'
+      '/capabilities': 'http://localhost:8080'
     }
   }
 })

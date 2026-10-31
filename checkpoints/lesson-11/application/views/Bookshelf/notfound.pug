@@ -1,14 +1,10 @@
 extends ../default/master/layoutblocks
 
 block content
-    .content-section.bounded-xlarge
-        .wrapper.width-max-600
-            .spacer-4
-            .card.color0.dropshadow.equally-spaced-1
-                h2.medium-text.semibold.reset-margin Not found
-                .spacer-1
-                p= $message
-            .spacer-2
-            .horizontal-center
-                a.btn.btn-secondary(href="{$home}books") All books
-            .spacer-2
+    main.cq-page
+        .cq-card
+            .cq-card-head
+                h2.cq-title Not found
+                p.cq-note= $message
+            .cq-foot
+                a(href="{$home}books") All books

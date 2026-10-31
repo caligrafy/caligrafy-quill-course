@@ -3,26 +3,54 @@
 namespace Bookshelf;
 
 use Caligrafy\Controller;
+use Caligrafy\ServiceError;
 
-class BookController extends Controller {
-
-    // GET /books (and GET /)
-    public function index()
+// The page of one book: rendered on the server from the get_book and update_book capabilities
+class BookController extends Controller
+{
+    // GET /books/{id}
+    public function show()
     {
-        $this->associate('Book', 'books');
-        $books = $this->all(array('order' => 'ORDER BY title'));
-        return view('Bookshelf/books', array('books' => $books));
+        try {
+            $found = $this->call('get_book');   // the input is {id}, from the route
+            return $this->page($found, $found['book']);
+        } catch (ServiceError $e) {
+            return $this->notFound($e);
+        }
     }
 
-    // GET /books/{id}
-    public function read()
+    // PUT /books/{id}: the edit form of the page is sent here
+    public function update()
     {
-        $this->associate('Book', 'books');
-        $book = $this->find();
-        if (!$book) {
-            http_response_code(404);
-            return view('Bookshelf/notfound', array('message' => 'There is no book with this number.'));
+        try {
+            $book = $this->call('update_book');   // the inputs are {id} and the fields of the form
+            redirect('/books/' . $book['id']);
+            exit;
+        } catch (ServiceError $e) {
+            if ($e->kind !== 'invalid') {
+                return $this->notFound($e);
+            }
+            // show the page again: the form keeps what was typed, with a message per field
+            http_response_code(422);
+            $found = $this->call('get_book');
+            return $this->page($found, array_merge($found['book'], $this->request->parameters), $e->fields);
         }
-        return view('Bookshelf/book', array('book' => $book, 'author' => $book->author()));
+    }
+
+    private function page(array $found, array $form, array $errors = array())
+    {
+        return view('Bookshelf/book', array(
+            'book' => $found['book'],
+            'author' => $found['author'],
+            'form' => $form,
+            'authors' => $this->call('list_authors', array()),
+            'errors' => $errors
+        ));
+    }
+
+    private function notFound(ServiceError $e)
+    {
+        http_response_code($e->status());
+        return view('Bookshelf/notfound', array('message' => $e->getMessage()));
     }
 }

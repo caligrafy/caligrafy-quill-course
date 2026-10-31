@@ -1,51 +1,49 @@
-<!-- One book: route '/books/:id'; the router gives the id as a prop -->
+<!-- One book (get_book), and a Delete button (delete_book) -->
 <template>
-  <div class="wrapper width-max-600">
-    <div class="spacer-2"></div>
-    <p class="error horizontal-center" v-if="message">{{ message }}</p>
-    <div class="card color0 dropshadow equally-spaced-1" v-if="book">
-      <h2 class="medium-text semibold reset-margin">{{ book.title }}</h2>
-      <div class="spacer-1"></div>
-      <p class="default-text textcolor5">by {{ author.name }}, {{ book.published_year }}</p>
-      <p>{{ book.summary }}</p>
+  <main class="cq-page">
+    <div class="cq-card" v-if="found">
+      <div class="cq-card-head">
+        <h2 class="cq-title">{{ found.book.title }}</h2>
+        <p class="cq-note">by {{ found.author.name }}, {{ found.book.published_year }}</p>
+      </div>
+      <div class="cq-section">
+        <p>{{ found.book.summary || 'No summary yet.' }}</p>
+        <button class="btn btn-secondary" type="button" @click="remove">Delete</button>
+      </div>
+      <div class="cq-foot"><router-link :to="{ name: 'home' }">All books</router-link></div>
     </div>
-    <div class="spacer-2"></div>
-    <p class="horizontal-center">
-      <router-link class="btn btn-secondary" :to="{ name: 'home' }">All books</router-link>
-    </p>
-  </div>
+
+    <div class="cq-card" v-else>
+      <div class="cq-card-head">
+        <h2 class="cq-title">{{ error ? 'Not found' : 'Loading...' }}</h2>
+        <p class="cq-note">{{ error }}</p>
+      </div>
+      <div class="cq-foot"><router-link :to="{ name: 'home' }">All books</router-link></div>
+    </div>
+  </main>
 </template>
 
 <script>
-import { callApi, apiConfig } from '../../common/app.js'
+import { getBook, deleteBook } from '../../capabilities.js'
 
 export default {
   name: 'BookPage',
   props: ['id'],
-  data() {
-    return { book: null, author: null, message: '' }
+  data () {
+    return { found: null, error: '' }
   },
-  mounted() {
-    this.load()
-  },
-  watch: {
-    // the router reuses this page when only the id changes (#/books/3 -> #/books/4): load the new book
-    id() {
-      this.load()
+  async mounted () {
+    try {
+      this.found = await getBook({ id: this.id })
+    } catch (e) {
+      this.error = e.message   // for example "There is no book #42"
     }
   },
   methods: {
-    load() {
-      this.book = null
-      this.message = ''
-      callApi.get('/api/books/' + this.id, apiConfig)
-        .then((response) => {
-          this.book = response.data.book
-          this.author = response.data.author
-        })
-        .catch((error) => {
-          this.message = error.response && error.response.status === 404 ? 'There is no book with this number.' : 'The book could not be loaded.'
-        })
+    async remove () {
+      if (!confirm('Delete "' + this.found.book.title + '"?')) return
+      await deleteBook({ id: this.id })
+      this.$router.push({ name: 'home' })
     }
   }
 }

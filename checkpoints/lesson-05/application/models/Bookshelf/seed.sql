@@ -1,6 +1,6 @@
 /* Sample data. INSERT IGNORE skips rows whose id already exists, so running it twice changes nothing.
  * Run it after create_db.sql with:
- * docker compose exec -T mysql mysql -uroot -proot bookshelf < application/models/Bookshelf/seed.sql
+ * docker compose exec dev-box php caligrafer.php sql application/models/Bookshelf/seed.sql
  */
 
 INSERT IGNORE INTO authors (id, name, bio) VALUES

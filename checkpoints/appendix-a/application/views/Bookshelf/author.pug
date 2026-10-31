@@ -1,0 +1,19 @@
+extends ../default/master/layoutblocks
+
+//- An author and their books, rendered by Bookshelf\AuthorController (the classic way)
+
+block content
+    main.cq-page
+        .cq-card
+            .cq-card-head
+                h2.cq-title= $author->name
+                p.cq-note= $author->bio
+            ul.cq-list
+                each $book in $books
+                    li.cq-item
+                        .cq-item-body
+                            p.cq-item-title
+                                a(href="{$home}books/{$book->id}")= $book->title
+                            p.cq-item-meta= $book->published_year
+            .cq-foot
+                a(href="{$home}books") All books

@@ -1,16 +1,11 @@
 # Caligrafy Quill Course
 
-![Caligrafy](https://github.com/DoryAzar/caligrafy/blob/master/public/images/resources/banner_white.png)
+![Caligrafy: Build Once, Experience Everywhere](https://github.com/caligrafy/caligrafy-quill/blob/master/public/images/resources/build-once-banner.png)
 
 A step by step course for people who have **never used Caligrafy Quill**, the **"Build Once, Experience
-Everywhere"** framework. You build **Bookshelf**, a small catalog of books and authors, from an empty folder to the
-same features experienced everywhere: server-rendered web pages, a REST API, a Vue app, a Vite single page
-application for tablets and phones, and, in the last lesson, capabilities written once that an AI agent can use.
-
-This course replaces the two original Caligrafy courses
-([caligrafy-course](https://github.com/caligrafy/caligrafy-course) and
-[caligrafy-vue-course](https://github.com/caligrafy/caligrafy-vue-course)), which were written for older versions
-of the framework.
+Everywhere"** framework. You build **Bookshelf**, a small catalog of books and authors, from an empty folder to a
+complete application where every feature is written **once**, as a capability, and used everywhere: web pages, a
+REST API, AI agents such as Claude and Cursor, a Vue app, and an installable app for phones and tablets.
 
 **[Start the course on the Wiki](https://github.com/caligrafy/caligrafy-quill-course/wiki)** (the same pages are in
 the [`wiki/`](wiki) folder of this repository).
@@ -18,8 +13,8 @@ the [`wiki/`](wiki) folder of this repository).
 ## Who this course is for
 
 You know a little HTML, CSS and JavaScript, a little PHP (variables, arrays, functions, classes) and a little SQL
-(`SELECT`, `INSERT`). You have never used Caligrafy, Docker, Pug, Vue or Vite: every one of them is explained the
-first time it appears.
+(`SELECT`, `INSERT`). You have never used Caligrafy, Docker, Pug, Vue, Vite or MCP: every one of them is explained
+the first time it appears.
 
 ## What you need
 
@@ -29,23 +24,26 @@ first time it appears.
 | [Git](https://git-scm.com/) | 2.x | everything |
 | [Docker Desktop](https://www.docker.com/products/docker-desktop/) | Docker Compose 2.24+ | everything: PHP 8.5 + Apache, MySQL 8.4 and phpMyAdmin run in containers |
 | A code editor | for example [VS Code](https://code.visualstudio.com/) | everything |
-| [Node.js](https://nodejs.org/) | 20.19+ or 22.12+ | lessons 11 and 12 (Vite) |
-| [Claude Code](https://claude.com/claude-code) | current | the "With Claude" track only |
-| PHP 8.3+ and Composer | optional | nothing: the course runs PHP in Docker |
+| [Node.js](https://nodejs.org/) | 20.19+ or 22.12+ | lesson 10 (the Vite app) |
+| [Claude Code](https://claude.com/claude-code) | current | the "With Claude" track, and the AI agent of lessons 02, 08 and 13 |
 
-[Lesson 00](https://github.com/caligrafy/caligrafy-quill-course/wiki/00-Introduction-and-Tools) installs and checks each tool.
+[Lesson 00](https://github.com/caligrafy/caligrafy-quill-course/wiki/00-Introduction-and-Tools) installs and checks
+each tool. The first command of the course gives you a running application:
+```bash
+git clone --branch v2.2.0 https://github.com/caligrafy/caligrafy-quill.git bookshelf
+cd bookshelf
+.bin/caligrafer quickstart --example
+```
 
-## How to use the two tracks
-
-Every lesson has two tracks:
+## Two tracks in every lesson
 
 | Track | What you do |
 |---|---|
-| **Manual** | You type every command and paste every file. Every step says which file, gives its complete content (no `...`), what you should see, and how to check it worked. |
-| **With Claude** | You give [Claude Code](https://claude.com/claude-code) the exact prompt of the lesson. The `caligrafy-quill` plugin, which ships inside every Caligrafy Quill project, gives Claude the framework documentation, commands (`/caligrafy-quill:server`, `/caligrafy-quill:db`, `/caligrafy-quill:new-resource`, `/caligrafy-quill:new-app`) and a reviewer agent (`caligrafy-reviewer`). The lesson tells you what Claude should create, the **Check** list to review it, and what to do when Claude's result differs. |
+| **Manual** | You type every command and write every file. Every step says which file, gives its complete content (no `...`), what you should see, and how to check it worked. |
+| **With Claude** | You give [Claude Code](https://claude.com/claude-code) the exact prompt of the lesson. The `caligrafy-quill` plugin, which ships inside every Caligrafy Quill project, gives Claude the framework documentation, commands (`/caligrafy-quill:new-capability`, `/caligrafy-quill:server`, `/caligrafy-quill:db`, `/caligrafy-quill:new-app`) and a reviewer agent (`caligrafy-reviewer`). The lesson tells you what Claude should do and gives a **Check** list to review it. |
 
-Do the **Manual** track first: it is how you learn what the framework does. Use the **With Claude** track on a second
-pass, or for a lesson you already understand, and always go through its Check list.
+Do the **Manual** track first: it is how you learn what the framework does. Use the **With Claude** track on a
+second pass, or for a lesson you already understand, and always go through its Check list.
 
 Every lesson also has an **If it doesn't work** box with the real errors of that step, a **checkpoint** (commit +
 git tag) and a short **quiz or exercise** with its solution.
@@ -54,47 +52,35 @@ git tag) and a short **quiz or exercise** with its solution.
 
 | # | Lesson | You learn |
 |---|---|---|
-| | **Part 0 - Setup** | |
-| 00 | [What Caligrafy Quill is, and installing your tools](https://github.com/caligrafy/caligrafy-quill-course/wiki/00-Introduction-and-Tools) | MVC, the two tracks, Git, Docker, Node, Claude Code |
-| 01 | [Create your project](https://github.com/caligrafy/caligrafy-quill-course/wiki/01-Create-Your-Project) | clone, `composer install`, `initialize`, `.env`, Docker, the folder tour, `doctor`, your own git repository |
-| | **Part 1 - Server side with Caligrafy views** | |
-| 02 | [Routes](https://github.com/caligrafy/caligrafy-quill-course/wiki/02-Routes) | `web.php`, `Route::get`, route parameters, route order, the first-route fallback |
-| 03 | [Controllers](https://github.com/caligrafy/caligrafy-quill-course/wiki/03-Controllers) | namespaced controllers, actions, `$this->request`, `api()`, HTTP status codes |
-| 04 | [The database](https://github.com/caligrafy/caligrafy-quill-course/wiki/04-The-Database) | MySQL in Docker, `create_db.sql`, seed data, phpMyAdmin, `doctor --only database` |
-| 05 | [Models and relationships](https://github.com/caligrafy/caligrafy-quill-course/wiki/05-Models-and-Relationships) | `Model`, `associate()`, `all()`, `find()`, `hasOne()`, `hasMany()` |
-| 06 | [Views and the layout](https://github.com/caligrafy/caligrafy-quill-course/wiki/06-Views-and-the-Layout) | Pug, `view()`, the default layout, the Caligrafy black and white classes |
-| 07 | [Forms, CSRF and validation](https://github.com/caligrafy/caligrafy-quill-course/wiki/07-Forms-CSRF-and-Validation) | `csrf()`, `methodField()`, filters and rules, error messages, create/update/delete |
-| 08 | [Authentication](https://github.com/caligrafy/caligrafy-quill-course/wiki/08-Authentication) | the Auth module, users table, register, sign in, protecting pages |
-| 09 | [The REST API](https://github.com/caligrafy/caligrafy-quill-course/wiki/09-The-REST-API) | the API key, JSON requests, `curl`, 200/201/401/404/422 |
-| | **Part 2 - Vue** | |
-| 10 | [A Vue app inside Caligrafy](https://github.com/caligrafy/caligrafy-quill-course/wiki/10-Vue-as-a-Library) | Vue as a library, `php caligrafer.php app`, `env`, axios on the API |
-| 11 | [The Vite single page application and Vue Router](https://github.com/caligrafy/caligrafy-quill-course/wiki/11-Vite-SPA-and-Vue-Router) | `php caligrafer.php create`, Vite, single file components, Vue Router, the dev proxy |
-| 12 | [Pinia, styling and the production build](https://github.com/caligrafy/caligrafy-quill-course/wiki/12-Pinia-Styling-and-Build) | a Pinia store, forms with API errors, the Caligrafy classes, `npm run build` |
-| | **Part 3 - Keeping it healthy** | |
-| 13 | [Review, tests, doctor and upgrade](https://github.com/caligrafy/caligrafy-quill-course/wiki/13-Review-Tests-Doctor-Upgrade) | the `caligrafy-reviewer` agent, PHPUnit and smoke tests, `doctor`, `upgrade` |
-| | **Part 4 - Build once** | |
-| 14 | [Capabilities and AI agents](https://github.com/caligrafy/caligrafy-quill-course/wiki/14-Capabilities-and-AI-Agents) | services and `#[Capability]`, REST with `Route::capability`, personal access tokens, MCP for Claude Code, the audit log |
+| | **Part 0 - Start** | |
+| 00 | [What you will build, and your tools](https://github.com/caligrafy/caligrafy-quill-course/wiki/00-Introduction-and-Tools) | capabilities and experiences, the two tracks, Git, Docker, Node.js, Claude Code |
+| 01 | [Your project in one command](https://github.com/caligrafy/caligrafy-quill-course/wiki/01-Your-Project-in-One-Command) | `quickstart`, the folders, `doctor`, your own git repository |
+| 02 | [Build once, seen three ways](https://github.com/caligrafy/caligrafy-quill-course/wiki/02-Build-Once-Seen-Three-Ways) | one capability used from a page, `curl` and Claude; the audit log |
+| | **Part 1 - Build once** | |
+| 03 | [Your data](https://github.com/caligrafy/caligrafy-quill-course/wiki/03-Your-Data) | tables, `php caligrafer.php sql`, models and relationships |
+| 04 | [Your first capabilities](https://github.com/caligrafy/caligrafy-quill-course/wiki/04-Your-First-Capabilities) | `#[Capability]`, `$rules`, `handle()`, read-only and public capabilities |
+| 05 | [Rules: adding, changing and deleting books](https://github.com/caligrafy/caligrafy-quill-course/wiki/05-Rules-and-Changes) | validation, `ServiceError`, destructive capabilities |
+| | **Part 2 - Experience everywhere** | |
+| 06 | [Web pages](https://github.com/caligrafy/caligrafy-quill-course/wiki/06-Web-Pages) | Pug, the page components, the JS client, a controller that calls a capability |
+| 07 | [The REST API](https://github.com/caligrafy/caligrafy-quill-course/wiki/07-The-REST-API) | `Route::capability`, JSON, HTTP status codes |
+| 08 | [AI agents](https://github.com/caligrafy/caligrafy-quill-course/wiki/08-AI-Agents) | MCP, tools and hints, tokens, Claude Code and Cursor, descriptions that agents understand |
+| 09 | [A Vue app](https://github.com/caligrafy/caligrafy-quill-course/wiki/09-A-Vue-App) | Vue as a library on the JS client, search as you type |
+| 10 | [Phones and tablets](https://github.com/caligrafy/caligrafy-quill-course/wiki/10-Phones-and-Tablets) | install to the home screen, a Vite single page application, Vue Router, the build |
+| | **Part 3 - People and trust** | |
+| 11 | [People and permissions](https://github.com/caligrafy/caligrafy-quill-course/wiki/11-People-and-Permissions) | sign in, scopes, levels, tokens for agents, the audit log |
+| | **Part 4 - Ship it** | |
+| 12 | [Ship it: tests, review, doctor](https://github.com/caligrafy/caligrafy-quill-course/wiki/12-Ship-It) | PHPUnit, a smoke test, `doctor`, the reviewer, `upgrade`, going live |
+| 13 | [Capstone: one more feature, everywhere](https://github.com/caligrafy/caligrafy-quill-course/wiki/13-Capstone-Loans) | Loans, built once and used by every experience, with `/caligrafy-quill:new-capability` |
+| | **Appendix - Under the hood (optional)** | |
+| A | [Routes and controllers by hand](https://github.com/caligrafy/caligrafy-quill-course/wiki/A-Routes-and-Controllers) | `Route::get`, route variables, controllers, models, `api()` |
+| B | [Classic forms and controller APIs](https://github.com/caligrafy/caligrafy-quill-course/wiki/B-Classic-Forms) | `csrf()`, validation in a controller, and turning it into a capability |
 
 ## Checkpoint code
 
-The [`checkpoints/`](checkpoints) folder holds the finished code of every lesson, as an **overlay**: only the files you
-write or change in your project, at their real paths. Each folder contains everything up to that lesson.
-
-| Folder | Git tag in your project | Contents |
-|---|---|---|
-| [`lesson-02`](checkpoints/lesson-02) | `lesson-02` | `web.php` with your first routes |
-| [`lesson-03`](checkpoints/lesson-03) | `lesson-03` | + `Bookshelf\BookController` (data in an array) |
-| [`lesson-04`](checkpoints/lesson-04) | `lesson-04` | + `create_db.sql` and `seed.sql` (authors, books) |
-| [`lesson-05`](checkpoints/lesson-05) | `lesson-05` | + `Book` and `Author` models, controllers reading MySQL |
-| [`lesson-06`](checkpoints/lesson-06) | `lesson-06` | + Pug views |
-| [`lesson-07`](checkpoints/lesson-07) | `lesson-07` | + `BookForm`, forms to add, edit and delete books |
-| [`lesson-08`](checkpoints/lesson-08) | `lesson-08` | + authentication |
-| [`lesson-09`](checkpoints/lesson-09) | `lesson-09` | + `Bookshelf\Api\BookApiController` |
-| [`lesson-10`](checkpoints/lesson-10) | `lesson-10` | + `public/catalog` (Vue as a library) and `Bookshelf\CatalogController` |
-| [`lesson-11`](checkpoints/lesson-11) | `lesson-11` | + the changed files of `public/bookshelf-spa` (Vite, Vue Router) |
-| [`lesson-12`](checkpoints/lesson-12) | `lesson-12` | + the Pinia store, the form page and `vite.config.js` |
-| [`lesson-13`](checkpoints/lesson-13) | `lesson-13` | + a PHPUnit test and a smoke test script |
-| [`lesson-14`](checkpoints/lesson-14) | `lesson-14` | + three capabilities in `application/services/Bookshelf` and their routes |
+The [`checkpoints/`](checkpoints) folder holds the finished code of every lesson, as an **overlay**: only the files
+you write or change in your project, at their real paths. Each folder contains everything up to that lesson
+(`lesson-02` to `lesson-13`, `appendix-a`, `appendix-b`). Lesson 01 writes no code, and lesson 02 removes the Tasks
+example: its files are not in any checkpoint.
 
 Compare your project with a checkpoint (run from the folder that contains both `bookshelf` and this repository):
 ```bash
@@ -104,11 +90,12 @@ Catch up to a checkpoint (it overwrites the files of that lesson in your project
 ```bash
 cp -R caligrafy-quill-course/checkpoints/lesson-07/. bookshelf/
 ```
-The checkpoints never contain `.env` files or keys: those are created in your project by lesson 01. The SPA
-checkpoints (`lesson-11`, `lesson-12`) only hold the files you change in `public/bookshelf-spa`: create the app first
-with lesson 11, step 1.
+The checkpoints never contain `.env` files, keys or tokens: those are created in your project by lesson 01 and the
+`token` command. The SQL scripts are in the checkpoints, the data is not: run them with
+`php caligrafer.php sql` as the lessons show. The Vite app of lesson 10 only holds the files you change in
+`public/bookshelf-spa`: create the app first with lesson 10.
 
-Screenshots of the pages used in the lessons are in [`docs/images`](docs/images).
+`tools/check-pages.py` checks that every file shown in a lesson page is identical to its checkpoint.
 
 ## Credits
 

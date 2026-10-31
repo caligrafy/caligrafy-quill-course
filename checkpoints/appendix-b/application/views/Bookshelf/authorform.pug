@@ -1,0 +1,27 @@
+extends ../default/master/layoutblocks
+
+//- Add an author: a classic form posted to Bookshelf\AuthorController@create
+
+block content
+    main.cq-page
+        .cq-card
+            .cq-card-head
+                h2.cq-title Add an author
+                p.cq-note A classic form: the page is sent to the server, which answers with a new page.
+
+            form.cq-form(method='POST', action="{$home}authors", novalidate)
+                =csrf()
+                .cq-fields
+                    div
+                        label(for='name') * Name
+                        input#name.form-control(type='text', name='name', value=$values['name'], maxlength='150')
+                    div
+                        label(for='bio') Bio
+                        textarea#bio.form-control(name='bio', rows='3', maxlength='2000')= $values['bio']
+                button.btn.btn-primary.cq-submit(type='submit') Add author
+
+            if $errors
+                p.cq-error(role='alert')= implode(' ', $errors)
+
+            .cq-foot
+                a(href="{$home}books") All books

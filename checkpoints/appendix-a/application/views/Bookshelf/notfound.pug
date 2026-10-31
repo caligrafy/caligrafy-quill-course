@@ -1,0 +1,10 @@
+extends ../default/master/layoutblocks
+
+block content
+    main.cq-page
+        .cq-card
+            .cq-card-head
+                h2.cq-title Not found
+                p.cq-note= $message
+            .cq-foot
+                a(href="{$home}books") All books

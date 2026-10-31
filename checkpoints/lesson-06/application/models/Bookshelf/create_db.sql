@@ -1,6 +1,6 @@
 /* Bookshelf tables. Safe to run more than once: it never drops anything.
  * Run it with:
- * docker compose exec -T mysql mysql -uroot -proot bookshelf < application/models/Bookshelf/create_db.sql
+ * docker compose exec dev-box php caligrafer.php sql application/models/Bookshelf/create_db.sql
  */
 
 CREATE TABLE IF NOT EXISTS authors (

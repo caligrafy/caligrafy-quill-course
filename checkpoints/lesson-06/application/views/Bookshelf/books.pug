@@ -1,15 +1,35 @@
 extends ../default/master/layoutblocks
 
+//- The catalog: every action calls a capability through the JS client (public/js/books.js)
+
 block content
-    .content-section.bounded-xlarge
-        .wrapper.width-max-600
-            .spacer-4
-            h2.medium-text.semibold.horizontal-center Bookshelf
-            p.horizontal-center A small catalog of the books we love
-            .spacer-2
-            each $book in $books
-                a(href="{$home}books/{$book->id}")
-                    .card.color0.dropshadow.equally-spaced-1
-                        h3.medium-text.semibold.textcolor5.reset-margin= $book->title
-                        p.default-text.textcolor5= $book->published_year
-            .spacer-2
+    main.cq-page
+        .cq-card
+            .cq-card-head
+                h2.cq-title Bookshelf
+                p.cq-note The books we love. The same catalog that the REST API and AI agents use.
+
+            form#new-book.cq-form(novalidate)
+                .cq-fields.cq-fields--2
+                    div
+                        label(for='book-title') * Title
+                        input#book-title.form-control(type='text', name='title', maxlength='200', autocomplete='off')
+                    div
+                        label(for='book-author') * Author
+                        select#book-author.form-select(name='author_id')
+                    div
+                        label(for='book-year') * Year
+                        input#book-year.form-control(type='number', name='published_year', placeholder='1969')
+                    div
+                        label(for='book-summary') Summary
+                        input#book-summary.form-control(type='text', name='summary', placeholder='Optional', maxlength='2000', autocomplete='off')
+                button.btn.btn-primary.cq-submit(type='submit') Add book
+
+            p#error.cq-error(role='alert')
+
+            .cq-tabs#authors(role='tablist')
+            ul#books.cq-list
+            p#empty.cq-empty(hidden) No books here yet: add the first one above.
+
+block additional_scripts
+    script(type='module', src="{$home}public/js/books.js")

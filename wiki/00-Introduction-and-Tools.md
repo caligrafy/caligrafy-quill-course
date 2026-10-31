@@ -1,218 +1,313 @@
-# Lesson 00 - What Caligrafy Quill is, and installing your tools
+# Lesson 00 - What you will build, and your tools
 
-**In this lesson** you learn what Caligrafy Quill is, what you will build during the course, and you install every
-tool the course uses. You do not write code yet.
+**In this lesson** you learn the one idea of the course (build once, experience everywhere), see what Bookshelf
+will be at the end, learn how the lessons work, and install every tool the course uses. You do not write code yet.
+
+**Before you start:** a computer with macOS, Windows 10/11 or Linux, and an internet connection.
 
 **Time:** 30 to 60 minutes, most of it downloads.
 
 ---
 
-## 1. What Caligrafy Quill is
+## New concepts
 
-Caligrafy Quill is a **PHP framework**: a set of PHP files that already solve the problems every web application has
-(reading the URL, talking to a database, showing HTML pages, checking forms, signing users in), so that you only
-write the parts that are specific to your application.
+### Caligrafy Quill
 
-Its motto is **build once, experience everywhere**: a feature of your application (add a book, list the books) is
-meant to be written once and then used from every place people and programs reach it: web pages, a Vue app on a
-tablet or a phone, a REST API, and AI agents such as Claude. You will see each of these experiences in turn, and in
-lesson 14 you will write features once, as **capabilities**, and let an AI agent use them.
+Caligrafy Quill is a **PHP framework**: a set of PHP files that already solve what every web application needs
+(reading the address, talking to a database, showing pages, checking forms, signing people in), so that you only
+write what is specific to your application. The course uses the release **Caligrafy Quill 2.2.0**.
 
-Caligrafy Quill follows the **MVC** pattern. MVC means that the code of every page is split in three kinds of files:
+### Build once, experience everywhere
 
-| Letter | Name | What it does | Where it lives in Caligrafy Quill |
-|---|---|---|---|
-| M | **Model** | Represents one table of the database: one PHP object = one row | `application/models/` |
-| V | **View** | The HTML the visitor sees. Caligrafy writes views in **Pug**, a short way to write HTML | `application/views/` |
-| C | **Controller** | Receives the request, asks the models for data, and chooses the view | `application/controllers/` |
+People and programs reach an application in many ways: a web page in a browser, an app on a phone or a tablet,
+another program that calls a **REST API**, or an **AI agent** such as Claude that uses your application for you.
+Each of these ways is an **experience**.
 
-A fourth piece decides which controller answers which URL: the **routes**, all in one file,
-`application/config/routing/web.php`.
+In most projects every experience has its own code, and the rules drift apart: the web form refuses an empty title,
+the API accepts it. Caligrafy works the other way round:
 
-When a visitor opens `http://localhost:8080/books/3`, this happens:
-
-```
-browser ──GET /books/3──▶ web.php (routes) ──▶ BookController::read()
-                                                   │  asks the Book model for book 3 (MySQL)
-                                                   ▼
-browser ◀──── HTML page ──── view "Bookshelf/book.pug" filled with the book
-```
-
-Caligrafy Quill also has:
-- a **REST API** built in: the same controllers can answer with JSON to programs (a Vue app, a mobile app, `curl`)
-  instead of HTML to browsers, protected by an API key;
-- **Vue.js** support: small Vue apps served by Caligrafy, and full single page applications built with Vite;
-- a command line tool, **Caligrafer** (`php caligrafer.php ...`), that creates projects and apps, checks your setup
-  (`doctor`) and upgrades your project (`upgrade`);
-- a **Claude Code plugin** that teaches Claude the framework, so Claude can write and review Caligrafy code with you.
-
-The versions used in this course: PHP 8.3 or newer (the Docker image uses PHP 8.5), MySQL 8.4, Bootstrap 5.3.8 with
-the Caligrafy black and white theme, Vue 3.5, Vite 8 with Vue Router and Pinia.
-
-## 2. What you will build: Bookshelf
-
-You build **Bookshelf**, a small catalog of books and their authors:
-
-| Part | Lessons | What Bookshelf can do at the end |
+| Word | What it means | Example in Bookshelf |
 |---|---|---|
-| 0 - Setup | 00, 01 | A Caligrafy project runs on your computer |
-| 1 - Server side | 02 to 09 | Pages listing books and authors, forms to add, edit and delete books, sign in, a JSON API |
-| 2 - Vue | 10 to 12 | The same catalog as a Vue app inside Caligrafy, then as a Vite single page application |
-| 3 - Keeping it healthy | 13 | Code review with Claude, automated tests, `doctor` and `upgrade` |
-| 4 - Build once | 14 | Features written once as capabilities, a REST API on them, and an AI agent (Claude) that uses them |
+| **Capability** | One thing your application can do, written once as a small PHP class: its name, its inputs and their rules, who may use it, and what it does | `create_book`: adds a book |
+| **Experience** | One way to reach the application; it calls the capabilities, it never repeats their rules | the catalog page, `POST /api/books`, the tool `create_book` of an AI agent |
+| **Build once** | You write the capability once; every experience uses it | an empty title gets the same message on the page, over REST and for the agent |
 
-## 3. How the course works: two tracks
+```
+                       ┌── web pages (people in a browser)
+                       ├── a Vue app (people on a desktop)
+  capability ──────────┼── a phone and tablet app
+  create_book          ├── REST API (other programs)
+  (rules + work)       └── AI agents (Claude, Cursor)
+```
 
-Every lesson has two tracks. Do the **Manual** track first: it teaches you how things work. The **With Claude**
-track shows how to get the same result with Claude Code and, most importantly, how to check what Claude wrote.
+You will feel this in [lesson 02](02-Build-Once-Seen-Three-Ways): one feature, three experiences, the same error
+message everywhere.
+
+## What you will build: Bookshelf
+
+**Bookshelf** is a small catalog of books and their authors. At the end of the course it has:
+
+- a **catalog page** (list, filter by author, add and delete books) and a **page per book** (edit it);
+- a **REST API** (`/api/books`, `/api/authors`) for other programs;
+- **AI agent tools**: Claude can search the catalog and add books for you;
+- a **Vue finder app** (search as you type, details on the side);
+- a **phone and tablet app** that you can install on the home screen;
+- **sign-in with permissions**: visitors read, signed-in people add, administrators delete, each agent has its own
+  limited key;
+- **loans**: who borrowed which book, until when.
+
+| Part | Lessons | What you do |
+|---|---|---|
+| Part 0 - Start | 00 to 02 | Install the tools, create the project in one command, see build once on a ready example |
+| Part 1 - Build once | 03 to 05 | The tables, then the Bookshelf capabilities and their rules |
+| Part 2 - Experience everywhere | 06 to 10 | Web pages, the REST API, AI agents, a Vue app, phones and tablets |
+| Part 3 - People and trust | 11 | Sign-in, permission levels, tokens with limited scopes |
+| Part 4 - Ship it | 12, 13 | Tests, review, `doctor`; a last feature (loans) built everywhere on your own |
+| Appendix (optional) | A, B | Under the hood: routes, controllers and classic forms by hand (any time after lesson 06; the exercise of B after lesson 13) |
+
+## How the course works
+
+### Two tracks
+
+Every lesson has two tracks that reach the same result.
 
 | Track | You... | Needs |
 |---|---|---|
-| **Manual** | type every command and paste every file yourself | the tools of section 4 |
-| **With Claude** | give Claude Code the prompt of the lesson, then review and test the result | the tools of section 4 and 5, a Claude account |
+| **Manual** | type every command and write every file yourself | the tools of this page |
+| **With Claude** | give Claude Code the prompt of the lesson, then check and test what it did | the tools of this page, Claude Code and a Claude account |
 
-Every lesson ends with:
-- **If it doesn't work**: the errors beginners really get at that step, and their fix;
-- a **Checkpoint**: you commit your work and add a git tag (`lesson-03`...). The finished code of every checkpoint is in
-  the [`checkpoints/`](https://github.com/caligrafy/caligrafy-quill-course/tree/main/checkpoints) folder of the course repository, so you can compare or catch up;
-- a short **quiz or exercise**, with the solution hidden under "Show the solution".
+Do the **Manual** track first if you want to learn how things work. The **With Claude** track shows how to get the
+same result with Claude Code and, above all, how to **check** what Claude wrote: every With Claude section has a
+**Check** list.
 
-**Conventions used on every page**
+### What every lesson has
 
-- A block that starts with `bash` is a command for your terminal. Type it (or paste it) and press Enter. Run it from the
-  folder the lesson names, almost always your project folder `bookshelf`.
-- A block that names a file (for example **File `application/config/routing/web.php`**) is the **complete** content
-  of that file: select everything in the file, delete it, and paste the block. The course never uses `...` to hide code.
-- `http://localhost:8080` is your application. If you changed the port in lesson 01, use yours.
+- **New concepts**: each new word, explained the first time it appears.
+- **Steps**: what to type, what you should see ("Expected:"), and how to check it.
+- **If it doesn't work**: a table of the errors beginners really get at that step, their cause and their fix.
+- **Checkpoint**: you commit your work and add a git **tag** (`lesson-03`...), a name for that moment of your project.
+- **Quiz or Exercise**, with the solution hidden under "Show the solution".
 
-## 4. Install the tools
+### Checkpoints: compare and catch up
 
-Do the steps in order. After each one, run the check command: it must print a version number.
+The finished code of every lesson is in the
+[`checkpoints/`](https://github.com/caligrafy/caligrafy-quill-course/tree/main/checkpoints) folder of the course
+repository. Each checkpoint is an **overlay**: it holds only the files written or changed since lesson 01, at their
+state at the end of that lesson. Get the course repository once, next to your project:
 
-### 4.1 A terminal
+```bash
+git clone https://github.com/caligrafy/caligrafy-quill-course.git
+```
 
-- **macOS**: the app *Terminal* (in Applications > Utilities).
-- **Windows**: install WSL 2 with Ubuntu (open *PowerShell as administrator*, type `wsl --install`, restart, then open
-  the app *Ubuntu*). Run **every** command of this course in the Ubuntu terminal, and keep your project inside the
+- **Compare** your project with a checkpoint (run in your `bookshelf` folder):
+  ```bash
+  diff -ru ../caligrafy-quill-course/checkpoints/lesson-03/application application
+  ```
+  Lines that start with `-` or `+` show the differences. Lines that start with `Only in ...` are normal: they name
+  files that only one side has (framework files, for example).
+- **Catch up** (copy the files of a checkpoint over your project):
+  ```bash
+  cp -R ../caligrafy-quill-course/checkpoints/lesson-03/. .
+  ```
+  A checkpoint holds code, not data, and it cannot delete files. If you catch up past lesson 02, also do the
+  removal of the Tasks example of lesson 02. Past lesson 10, run `create bookshelf-spa` and `npm install` (lesson 10
+  step 4) before you copy. Then regenerate the clients (the `client` commands of the lesson) and run the SQL
+  scripts of the lessons you skipped.
+
+### Conventions used on every page
+
+- A `bash` block is a command for your terminal: type it (or paste it) and press Enter, in the folder the lesson
+  names, almost always your project folder `bookshelf`.
+- A block named **File `path`** is the **complete** content of that file. The course never hides code with `...`.
+- `http://localhost:8080` is your application. If you change the port in lesson 01, use yours.
+
+---
+
+## Manual track
+
+Do the steps in order. After each one, run the check command.
+
+### Step 1 - Open a terminal
+
+The **terminal** is the window where you type commands.
+
+- **macOS**: the app *Terminal* (Applications > Utilities).
+- **Windows**: install WSL 2 with Ubuntu: open *PowerShell as administrator*, type `wsl --install`, restart, then open
+  the app *Ubuntu*. Run **every** command of the course in the Ubuntu terminal, and keep your project inside the
   Ubuntu home folder (`~/`), not under `C:\`: Docker is much faster there.
 - **Linux**: your usual terminal.
 
-### 4.2 Git
+`curl`, a small program that sends web requests from the terminal, is already there on macOS, Linux and WSL:
+```bash
+curl --version
+```
+Expected: a first line that starts with `curl 7.` or `curl 8.`.
 
-Git keeps the history of your project; the checkpoints of the course are git tags.
+### Step 2 - Git
 
-- macOS: type `git --version` in Terminal. If Git is missing, macOS offers to install the command line tools: accept.
+**Git** keeps the history of your project: every checkpoint is a git commit with a tag.
+
+- macOS: type `git --version`. If Git is missing, macOS offers to install the command line tools: accept.
 - Windows (Ubuntu terminal) and Linux: `sudo apt update && sudo apt install -y git`.
 
 ```bash
 git --version
 ```
-Expected: `git version 2.x.y` (any 2.x version works).
+Expected: `git version 2.x.y`, with Git **2.28 or newer** (lesson 01 uses `git init -b main`).
 
-Then tell Git your name and email (they are written in every commit):
+Tell Git your name and email (they are written in every commit):
 ```bash
 git config --global user.name "Your Name"
 git config --global user.email "you@example.com"
 ```
 
-### 4.3 Docker Desktop
+### Step 3 - Docker Desktop
 
-Docker runs, on your computer, the three servers Caligrafy needs, each in its own **container** (a small isolated
-Linux machine): the PHP + Apache web server, MySQL, and phpMyAdmin (a web page to look at your database). You do not
-need to install PHP or MySQL yourself.
+**Docker** runs small isolated Linux machines, called **containers**, on your computer. Your project uses three:
+
+| Container | What it is | Address |
+|---|---|---|
+| `dev-box` | PHP 8.5 + Apache: runs your application | http://localhost:8080 |
+| `mysql` | MySQL 8.4: the database (user `root`, password `root`) | port 3306 |
+| `phpmyadmin` | a web page to look at the database | http://localhost:8077 |
+
+So you do not install PHP or MySQL yourself. **Docker Compose** starts the three together, from a file of the project.
 
 1. Download Docker Desktop from https://www.docker.com/products/docker-desktop/ and install it.
    (Windows: in Docker Desktop > Settings > Resources > WSL integration, turn on *Ubuntu*.)
-2. Start Docker Desktop and wait until it says *Engine running*.
-3. Check both commands:
+2. Start Docker Desktop and wait until it says that the engine is running.
+3. Check:
 
 ```bash
 docker --version
 docker compose version
 ```
-Expected: `Docker version 2x.y.z` and `Docker Compose version v2.x.y`. The course needs Compose **2.24 or newer**
-(lesson 01 uses a feature added in 2.24).
+Expected: `Docker version 2x.y.z` and `Docker Compose version v2.x.y`. The course needs Compose **2.24 or newer**.
 
-> Docker Desktop must be running whenever you work on the course. If a `docker` command answers
-> `Cannot connect to the Docker daemon`, start Docker Desktop and try again.
+> Docker Desktop must be running whenever you work on the course.
 
-### 4.4 A code editor
+### Step 4 - A code editor
 
 Install [Visual Studio Code](https://code.visualstudio.com/) (any editor works). Useful extensions: *PHP Intelephense*
-(PHP), *Pug (Jade) snippets* or *language-pug* (Pug views), *Vue - Official* (part 2).
+(PHP), *language-pug* (Pug views, lesson 06), *Vue - Official* (lessons 09 and 10).
 
-Pug files are **indentation-based**: set your editor to insert **spaces** (4 spaces per level is what the course
-uses). In VS Code: bottom right, click *Spaces/Tab Size* > *Indent Using Spaces* > 4.
+Pug files are **indentation-based**: set your editor to insert **spaces**, 4 per level. In VS Code: bottom right,
+click *Spaces/Tab Size* > *Indent Using Spaces* > 4.
 
-### 4.5 Node.js 20.19 or newer (needed from lesson 11)
+### Step 5 - Node.js 20.19+ or 22.12+ (only for lesson 10)
 
-The Vite single page application of part 2 needs Node.js **20.19+** or **22.12+**. Install the LTS version from
-https://nodejs.org/ (or with `nvm install --lts`).
+**Node.js** runs JavaScript outside the browser; **npm**, installed with it, downloads JavaScript libraries. Only the
+phone and tablet app of [lesson 10](10-Phones-and-Tablets) needs them. Install the LTS version from
+https://nodejs.org/ (or with `nvm install --lts`). On Windows, install Node.js inside Ubuntu (WSL), where the course
+commands run (for example with nvm: `nvm install --lts`), not with the Windows installer. You can do this step later.
 
 ```bash
 node --version
 npm --version
 ```
-Expected: `v20.19.0` or higher (`v22.12.0` or higher on the 22 line), and an npm version.
+Expected: `v20.19.0` or higher on the 20 line, or `v22.12.0` or higher; and an npm version.
 
-### 4.6 Optional: PHP 8.3+ and Composer on your computer
+### Step 6 - Claude Code (With Claude track)
 
-You do **not** need them: the course runs PHP inside Docker. Install them only if you already use PHP locally
-(macOS: `brew install php composer`). Lesson 01 shows the one place where they change a command.
+**Claude Code** is Claude working in your terminal: it reads your project, runs commands and writes files, asking you
+first.
 
-## 5. For the "With Claude" track: Claude Code and the plugin
-
-1. Install Claude Code by following the instructions on https://claude.com/claude-code, then sign in
-   (you need a Claude subscription or an Anthropic API account).
-2. Check it:
+1. Install it by following the instructions on https://claude.com/claude-code, then sign in (you need a Claude
+   subscription or an Anthropic API account). On Windows, install it inside Ubuntu (WSL), where the course commands
+   run, not with the Windows installer.
+2. Check:
    ```bash
    claude --version
    ```
-3. Nothing else to install: the **caligrafy-quill plugin** ships inside every Caligrafy Quill project (folder
-   `claude-plugin/`). The project's `.claude/settings.json` enables it the first time you open the project in Claude
-   Code and answer *Yes* to "Do you trust the files in this folder?". Lesson 01 shows how to check that it is active.
+   Expected: a version number followed by `(Claude Code)`, for example `2.1.316 (Claude Code)`. Any current version works.
 
-The plugin gives Claude:
+Nothing else to install: the **caligrafy-quill plugin** ships inside every Caligrafy Quill project (folder
+`claude-plugin/`). A **plugin** adds knowledge and commands to Claude Code. The project's `.claude/settings.json`
+enables it the first time you start `claude` in the project and answer *Yes* to the question about trusting the
+folder.
 
-| What | Name | Used in lesson |
+| What the plugin gives Claude | Name | Used in lesson |
 |---|---|---|
-| Skill (loads automatically) | `caligrafy`: the whole framework documentation, a checked API reference and a list of known pitfalls | all |
+| Skill (loads by itself) | `caligrafy`: the framework documentation, a checked API reference and known pitfalls | all |
 | Command | `/caligrafy-quill:server start\|stop\|status` | 01 |
-| Command | `/caligrafy-quill:db <file.sql\|tables\|query "...">` | 04, 08 |
-| Command | `/caligrafy-quill:new-resource <Entity> [field:type ...]` | 05, 09 |
-| Command | `/caligrafy-quill:new-app <app\|create\|...> <name>` | 10, 11 |
-| Agent | `caligrafy-reviewer`: reviews your Caligrafy code | 13 (and any time) |
-| Hook | checks the syntax of every PHP file Claude writes (`php -l`, only when PHP is installed on your computer) | all |
+| Command | `/caligrafy-quill:db <file.sql\|tables\|query "SQL">` | 03 |
+| Command | `/caligrafy-quill:new-capability <name> [scope] [read-only\|destructive]` | 04, 05, 08, 13 |
+| Command | `/caligrafy-quill:new-app <app\|create\|bot\|facedetect\|ml> <name>` | 09, 10 |
+| Command | `/caligrafy-quill:new-resource` (classic MVC) | appendix |
+| Agent | `caligrafy-reviewer`: reviews your Caligrafy code | 12 |
 
 **How to work with Claude in this course**
-- Claude can be wrong. Every "With Claude" section has a **Check** list: go through it before you accept the result.
-- Claude asks before running commands and editing files. Read what it proposes. Say no to anything you do not
+- Claude can be wrong. Go through the **Check** list before you accept a result.
+- Claude asks before it runs commands and edits files. Read what it proposes. Say no to anything you do not
   understand, and ask it to explain.
-- Never paste secrets (the `APP_KEY`, the `API_KEY`, passwords) into the chat.
+- Never paste secrets (the contents of `.env`, tokens, passwords) into the chat.
 
-## Checkpoint
+> **If it doesn't work**
+>
+> | What you see | Cause | Fix |
+> |---|---|---|
+> | `command not found: git` (or `docker`, `node`, `claude`) | The tool is not installed, or the terminal was open before the install | Install it, then close and reopen the terminal |
+> | `Cannot connect to the Docker daemon` | Docker Desktop is not running | Start it and wait until the engine runs |
+> | `docker compose version` prints a version below 2.24, or `docker: 'compose' is not a docker command` | An old Docker | Update Docker Desktop |
+> | Windows: `docker` works in PowerShell but not in Ubuntu | WSL integration is off | Docker Desktop > Settings > Resources > WSL integration: turn on *Ubuntu* |
+> | `node --version` prints `v18...` or `v20.10...` | Node.js too old for lesson 10 | Install the current LTS from https://nodejs.org/ |
 
-There is no code yet. Check that you have all of these:
+---
 
-- [ ] `git --version` prints a version
+## With Claude
+
+Once Claude Code is installed, it can check the other tools for you. In any folder:
+```bash
+claude
+```
+then ask:
+```
+Check the tools of the Caligrafy Quill course on this computer without installing or changing anything:
+git --version, docker --version, docker compose version (it must be 2.24 or newer), whether the Docker engine
+is running (docker info), curl --version, node --version (20.19+ or 22.12+, only needed for lesson 10).
+Give me a table: tool, version found, OK or what to do.
+```
+
+**What Claude should do:** run each command (asking you first), and answer with a table of versions and what is
+missing or too old.
+
+**Check** before you accept:
+- [ ] Claude ran only the version and `docker info` commands: it installed nothing and changed no setting.
+- [ ] The table says Compose 2.24 or newer, and the Docker engine running.
+- [ ] Any line that is not OK comes with an install step from this page.
+
+**If Claude's result differs:** if it offers to install something with a command you do not know, say no and use
+the step of this page instead. If `docker info` fails, start Docker Desktop and ask again.
+
+---
+
+## Your tools checklist
+
+There is no code and no tag in this lesson. Check that you have all of these:
+
+- [ ] `git --version` prints a 2.x version, and `git config --global user.name` prints your name
 - [ ] Docker Desktop runs, `docker compose version` prints 2.24 or newer
-- [ ] an editor that indents with spaces
-- [ ] (lesson 11) `node --version` prints 20.19+ or 22.12+
-- [ ] (Claude track) `claude --version` prints a version
+- [ ] an editor that indents with 4 spaces
+- [ ] `curl --version` prints a version
+- [ ] (lesson 10) `node --version` prints 20.19+ or 22.12+
+- [ ] (With Claude track) `claude --version` prints a version
 
 ## Quiz
 
-1. In which folder do you write the controllers of your application?
-2. Which file decides which controller answers which URL?
-3. Why does the course not ask you to install PHP and MySQL?
+1. What is the difference between a capability and an experience?
+2. Why does the course not ask you to install PHP and MySQL?
+3. You are stuck at the end of lesson 05. How do you get the finished code of that lesson?
 
 <details><summary>Show the solution</summary>
 
-1. `application/controllers/`.
-2. `application/config/routing/web.php`.
-3. They run inside Docker containers (PHP 8.5 + Apache, MySQL 8.4), started by Docker Compose from the
-   `docker-compose.yaml` file of the project.
+1. A capability is one thing the application can do (`create_book`), written once with its rules. An experience is
+   one way to reach the application (a web page, the REST API, an AI agent, a phone app): it calls the capability
+   and never repeats its rules.
+2. They run inside Docker containers (`dev-box` with PHP 8.5 + Apache, `mysql` with MySQL 8.4) that Docker Compose
+   starts from the project.
+3. Copy the overlay over your project: `cp -R ../caligrafy-quill-course/checkpoints/lesson-05/. .` (and run that
+   lesson's SQL commands if your tables are missing). To only compare, use `diff -ru`.
 </details>
 
 ---
-Next: [Lesson 01 - Create your project](01-Create-Your-Project)
+Next: [Lesson 01 - Your project in one command](01-Your-Project-in-One-Command)

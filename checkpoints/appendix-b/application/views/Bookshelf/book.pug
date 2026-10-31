@@ -1,0 +1,43 @@
+extends ../default/master/layoutblocks
+
+//- One book, rendered on the server by Bookshelf\BookController from get_book; the form (signed in only) calls update_book
+
+block content
+    main.cq-page
+        .cq-card
+            .cq-card-head
+                h2.cq-title= $book['title']
+                p.cq-note
+                    | by #{$author['name']}, #{$book['published_year']}
+            .cq-section
+                p= $book['summary'] ?: 'No summary yet.'
+
+            if $authorized
+                form.cq-form(method='POST', action="{$home}books/{$book['id']}", novalidate)
+                    =csrf()
+                    =methodField('PUT')
+                    .cq-fields.cq-fields--2
+                        div
+                            label(for='title') * Title
+                            input#title.form-control(type='text', name='title', value=$form['title'], maxlength='200')
+                        div
+                            label(for='author_id') * Author
+                            select#author_id.form-select(name='author_id')
+                                each $a in $authors
+                                    option(value=$a['id'], selected=$a['id'] == $form['author_id'])= $a['name']
+                        div
+                            label(for='published_year') * Year
+                            input#published_year.form-control(type='number', name='published_year', value=$form['published_year'])
+                        div
+                            label(for='summary') Summary
+                            input#summary.form-control(type='text', name='summary', value=$form['summary'], maxlength='2000')
+                    button.btn.btn-primary.cq-submit(type='submit') Save changes
+            else
+                .cq-section
+                    a.btn.btn-secondary(href="{$home}login") Sign in to edit this book
+
+            if $errors
+                p.cq-error(role='alert')= implode(' ', $errors)
+
+            .cq-foot
+                a(href="{$home}books") All books

@@ -1,7 +1,12 @@
 <?php
 /**
- * web.php - every URL of the Bookshelf application is declared in this file
- */
+ * web.php
+ * Web Routes are defined in this file
+ * @author Dory A.Azar
+ * @copyright 2019
+ * @version 1.0
+ *
+*/
 
 use Caligrafy\Auth;
 use Caligrafy\Route;
@@ -9,64 +14,87 @@ use Caligrafy\Errors;
 use \Exception as Exception;
 
 try {
-
-    // API ACCESS: lets programs that send the API key call the controller routes (lesson 09)
+    
+    // API ACCESS - add comments if you don't want to allow API access on routes
     Auth::activateAPI();
-
-    // AUTHENTICATION: users are rows of the users table, read with the User model (lesson 08)
+    
+    
+    // AUTHENTICATION - Remove comment if you have an authentication implemented
     Auth::authentication('User', 'users');
-
-    // ROUTES. The first route must stay '/': a URL that matches no route shows the first route.
-    Route::get('/', 'Bookshelf\\BookController');
+    
+    // ROUTE DEFINITION: get, post, put and delete
+    Route::get('/', 'Bookshelf\\BookController@catalog');
     Route::get('/helloworld', function() { echo "Hello World"; });
-
-    // Lesson 02: our first routes
-    Route::get('/about', function() {
-        echo 'Bookshelf: a small catalog of the books we love.';
-    });
-    Route::get('/hello/{name}', function() {
-        $name = request()->fetch('name');
-        echo 'Hello ' . sanitize($name) . '!';
-    });
-
-    // Books and authors
-    Route::get('/books', 'Bookshelf\\BookController');            // no @action: index()
-    Route::get('/books/new', 'Bookshelf\\BookController@createForm');   // before /books/{id}
-    Route::get('/books/{id}', 'Bookshelf\\BookController@read');
-    Route::get('/books/{id}/edit', 'Bookshelf\\BookController@editForm');
-    Route::post('/books', 'Bookshelf\\BookController@create');
-    Route::put('/books/{id}', 'Bookshelf\\BookController@update');
-    Route::delete('/books/{id}', 'Bookshelf\\BookController@remove');
-    Route::get('/authors/{id}', 'Bookshelf\\AuthorController@read');
-
-    // Sign in, sign out, register (controllers shipped with the framework)
-    Route::get('/home', 'Bookshelf\\BookController');          // where the login and logout pages go
+	
+    // SIGN IN, SIGN OUT, REGISTER: the controllers of the framework; after signing in, /home is the catalog
+    Route::get('/home', 'Bookshelf\\BookController@catalog');
     Route::get('/login', 'Caligrafy\\Controllers\\AuthController');
-    Route::post('/login', 'Caligrafy\\Controllers\\AuthController@login');
     Route::get('/logout', 'Caligrafy\\Controllers\\AuthController@logout');
-    Route::get('/register', 'Caligrafy\\Controllers\\AuthController@registerForm');
-    Route::post('/register', 'Caligrafy\\Controllers\\AuthController@register');
     Route::get('/notAuthorized', 'Caligrafy\\Controllers\\AuthController@notAuthorized');
+    Route::get('/register', 'Caligrafy\\Controllers\\AuthController@registerForm');
+    Route::post('/login', 'Caligrafy\\Controllers\\AuthController@login');
+    Route::post('/register', 'Caligrafy\\Controllers\\AuthController@register');
 
-    // REST API (lesson 09): JSON only, called with the API key
-    Route::get('/api/books', 'Bookshelf\\Api\\BookApiController');
-    Route::get('/api/authors', 'Bookshelf\\Api\\BookApiController@authors');
-    Route::get('/api/books/{id}', 'Bookshelf\\Api\\BookApiController@read');
-    Route::post('/api/books', 'Bookshelf\\Api\\BookApiController@create');
-    Route::put('/api/books/{id}', 'Bookshelf\\Api\\BookApiController@update');
-    Route::delete('/api/books/{id}', 'Bookshelf\\Api\\BookApiController@remove');
+    // User Administration Routes - Uncomment only if AUTHENTICATION activated above
+	// Route::get('/admin', 'Caligrafy\\Controllers\\AdminController');
+	// Route::get('/users', 'Caligrafy\\Controllers\\AdminController');
+	// Route::get('/users/{id}/edit', 'Caligrafy\\Controllers\\AdminController@editUserForm');
+	// Route::put('/users/{id}/edit', 'Caligrafy\\Controllers\\AdminController@updateUser');
+	// Route::delete('/users/{id}/edit', 'Caligrafy\\Controllers\\AdminController@deleteUser');
 
-    // The Vue catalog (lesson 10): public/catalog, shown by a controller that passes signedIn to the app
-    Route::get('/catalog', 'Bookshelf\\CatalogController');
+    // GPT AI controller
+    // Route::get('/ai', 'Caligrafy\\Controllers\\AIController');
+    // Route::post('/ai', 'Caligrafy\\Controllers\\AIController@query');
 
-    // Client apps (lesson 10): public/<appName> is shown at /apps/<appName>
-    Route::get('/apps/{appName}', 'Caligrafy\\Controllers\\ClientController');
+    // ROUTING TO JAVASCRIPT APPS
+    // Make sure you create a JS app or a Vue app in Caligrafer first
+    Route::get('/apps/{appName}', 'Caligrafy\\Controllers\\ClientController'); // you can specify any path as long as it ends with appName
 
-    // MUST STAY LAST: finds the route that matches the request and runs it
-    Route::run();
+    
+    // BOT PAGE ROUTES
+    Route::get('/bot/{appName}', 'Caligrafy\\Controllers\\ClientController');  // A botSkillId needs to be provided in the URL. For Example: ?botSkillId=62196ce3-0b22-4aea-b2f2-d39730c03797
+    
+    // BOT DATA ROUTES
+    // routes need to start with reserved path __bots__ 
+    Route::post('/__bots__/{appName}/communicate', 'Caligrafy\\Controllers\\WatsonController@communicate');
+    Route::post('/__bots__/{appName}/{appId}', 'Caligrafy\\Controllers\\WatsonController@connect');
+    Route::delete('/__bots__/{appName}', 'Caligrafy\\Controllers\\WatsonController@end');   
+
+    /* ML Routes
+     *
+     * If you don't specify an up, it will go to the face, body detector.
+     * Specify an app as a URI Parameter ?app=<name of app>
+     * 
+     * There are 3 possible apps: featureextractor, neuralnetwork and posedetector
+    */
+    Route::get('/ml/{appName}', 'Caligrafy\\Controllers\\ClientController'); 
+    
+
+    // BUILD ONCE: every capability, for the JS client and AI agents
+    Route::capabilities('/capabilities');   // the capabilities for the JS client of the Vue apps
+    Route::mcp('/mcp');                     // the capabilities as tools for AI agents (personal access tokens)
+
+    // BOOKSHELF PAGES: the catalog (public/js/books.js) and the page of one book (Bookshelf\BookController)
+    Route::get('/books', 'Bookshelf\\BookController@catalog');
+    Route::get('/books/{id}', 'Bookshelf\\BookController@show');
+    Route::put('/books/{id}', 'Bookshelf\\BookController@update');
+
+    // BOOKSHELF API: the same capabilities, for other applications (JSON)
+    Route::capability('GET', '/api/books', 'list_books');
+    Route::capability('GET', '/api/books/{id}', 'get_book');
+    Route::capability('POST', '/api/books', 'create_book');
+    Route::capability('PUT', '/api/books/{id}', 'update_book');
+    Route::capability('DELETE', '/api/books/{id}', 'delete_book');
+    Route::capability('GET', '/api/authors', 'list_authors');
+
+    // MUST NOT BE REMOVED - Routes need to be run after being defined 
+    Route::run(); 
 }
 catch (Exception $e) {
-
-    // Errors get their HTTP status code (404, 401, 403, 500...) with the error text, or a JSON error for API calls
+    
+    // Error handling: HTTP status code (404, 401, 403, 500...) with the error text, or a JSON error for API calls
     Errors::handle($e);
 }
+
+
+
