@@ -51,8 +51,9 @@ this.api = await import(env.home + 'public/js/capabilities.js')
 ```
 `this.api` then holds every function of the module: `this.api.listBooks()`, `this.api.searchBooks({ query })`.
 
-**No key in the page.** The template that Caligrafer copies calls the server with axios and an API key written in
-the page: anyone can read it in the page source. The JS client needs no key: the browser sends the **session cookie**
+**No key in the page.** The template that Caligrafer copies already uses the JS client: it lists the capabilities
+the visitor may call. (Older versions of the template called the server with axios and an API key written in the
+page, which anyone can read in the page source.) The JS client needs no key: the browser sends the **session cookie**
 of `localhost:8080` with every call, and before a call the client fetches the **CSRF token** once (a random value the
 server gives to its own pages, so another site cannot send requests in your name). Lesson 11 builds sign-in on top
 of this session.

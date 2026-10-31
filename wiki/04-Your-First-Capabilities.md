@@ -248,6 +248,43 @@ Expected (name, who may call it, what kind, description):
 ```
 You wrote no route. The command found the three capabilities in `application/services/`.
 
+Try one right away with `call`: it runs a capability and prints its answer in JSON, the way every experience gets it.
+```bash
+docker compose exec dev-box php caligrafer.php call list_books author_id=2
+```
+Expected:
+```
+{
+    "data": [
+        {
+            "id": 3,
+            "title": "Kindred",
+            "published_year": 1979,
+            "author_id": 2,
+            "author": "Octavia E. Butler"
+        },
+        {
+            "id": 4,
+            "title": "Parable of the Sower",
+            "published_year": 1993,
+            "author_id": 2,
+            "author": "Octavia E. Butler"
+        }
+    ]
+}
+```
+And a book that does not exist, `call get_book id=99`:
+```
+{
+    "error": {
+        "code": "not_found",
+        "message": "There is no book #99"
+    }
+}
+```
+Inputs are written `key=value`, or as one JSON object in single quotes: `call get_book '{"id": 3}'`. `call` runs with
+full access, like any command you type on your own server: lesson 11 shows `--guest`, which calls as a visitor.
+
 ### Step 4 - Call them with curl
 
 Quickstart added a generic endpoint to `web.php` in lesson 01: `Route::capabilities('/capabilities')`. It lets you

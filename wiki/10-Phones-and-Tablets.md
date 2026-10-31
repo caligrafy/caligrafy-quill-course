@@ -91,46 +91,28 @@ From the `bookshelf` folder:
 ```bash
 docker compose exec dev-box php caligrafer.php create bookshelf-spa
 ```
-It copies the Vite template to `public/bookshelf-spa`, then tries `npm install` inside the container, which has no
-Node.js:
+It copies the Vite template to `public/bookshelf-spa`. The container has no Node.js, so it cannot install the
+packages, and says so:
 ```
  Project created in the public folder.
  Type cd public/bookshelf-spa to access it anytime
 
- Installing packages...
 
-sh: 1: npm: not found
-
-VueJS project successfully created and all packages have been installed.
+ VueJS project created, but its packages are NOT installed: npm is not available here (the Docker dev-box has no Node.js).
+ Install them with Node.js 20.19+ or 22.12+ on your computer: cd public/bookshelf-spa && npm install
 ```
-The last line is wrong: `npm: not found` means nothing was installed. Install the packages with the Node.js of your
-computer:
+Install them with the Node.js of your computer:
 ```bash
 cd public/bookshelf-spa
 npm install
 cd ../..
 ```
-Expected: `added 273 packages` (the numbers can vary) and you are back in `bookshelf`.
+Expected: `added 274 packages` and `found 0 vulnerabilities` (the numbers can vary), and you are back in `bookshelf`.
 
-npm may add `10 moderate severity vulnerabilities`. They all come from one library, `minimatch`, used by ESLint,
-the code checker of `npm run lint` ([GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249)): not
-from Vue, and nothing of it goes into your app (`npm audit --omit=dev` finds 0). **Do not run
-`npm audit fix --force`**: it would replace ESLint 10 with ESLint 4 from 2017. To clear the warning, in
-`public/bookshelf-spa/package.json` add these lines between the `devDependencies` block and `"engines"`:
-```json
-  "overrides": {
-    "minimatch": "^11.0.1"
-  },
-```
-then reinstall:
-```bash
-cd public/bookshelf-spa
-rm -rf node_modules package-lock.json
-npm install
-npm audit
-cd ../..
-```
-Expected: `found 0 vulnerabilities`. (Templates of Caligrafy Quill releases after 2.2.0 already have the override.)
+If npm reports `10 moderate severity vulnerabilities`, your Vite app was created with Caligrafy Quill 2.2.0 or older:
+they come from ESLint's `minimatch`, not from Vue, and the fix (an `overrides` block in `package.json`) is in
+[Setting up the Vue application](https://github.com/caligrafy/caligrafy-quill/wiki/9.8.1---Setting-up-the-Vue-application).
+**Never run `npm audit fix --force`**: it replaces ESLint 10 with ESLint 4.
 
 ### Step 5 - Set up Vite
 
@@ -501,7 +483,7 @@ src/components/pages/HomePage.vue. Do not change any server file. Run npm instal
 **If Claude's result differs:** if it uses `createWebHistory()`, the addresses have no `#`, but then the server
 must send `index.html` for every address of the app, which this course does not set up: ask for hash history. If it adds a
 Pinia store, it works, but it is code you do not need: ask it to call the client from the pages. If it runs
-`npm install` in the container and it fails, run it yourself (step 4). If it runs `npm audit fix --force`, stop it: use the `minimatch` override of step 4 instead.
+`npm install` in the container and it fails, run it yourself (step 4). If it runs `npm audit fix --force`, stop it (see the note of step 4).
 
 ---
 

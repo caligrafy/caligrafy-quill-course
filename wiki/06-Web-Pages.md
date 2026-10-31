@@ -45,7 +45,7 @@ CSS to write ([page components](https://github.com/caligrafy/caligrafy-quill/wik
 | `p.cq-error(role='alert')` | where the messages of a refusal go |
 | `.cq-tabs`, `ul.cq-list > li.cq-item`, `p.cq-empty`, `.cq-section`, `.cq-foot` | tabs, list rows, the empty state, a block of text, the footer |
 
-Keep one `.cq-card` per page: in 2.2.0, several cards in one page sit side by side on wide screens.
+Several `.cq-card` in one page stack, one under the other. The pages of this course use one card each.
 
 **Two ways a page uses a capability.**
 

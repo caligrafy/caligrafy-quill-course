@@ -223,9 +223,8 @@ Expected: the last 5 calls, with lines like:
 ...                  rest  guest  -   create_task   ok
 ```
 The columns: time, experience (`rest`, `mcp`...), who (`guest` = nobody signed in, `token 1` = your token #1),
-capability, result, message. Every change and every refusal is recorded, whatever the experience. (The audit time
-is the PHP server's time zone, `SERVER_TIMEZONE` in `.env`; `created_at` of the rows is MySQL time, UTC in Docker:
-they can differ by a few hours.)
+capability, result, message. Every change and every refusal is recorded, whatever the experience. (Times are in the
+time zone of `SERVER_TIMEZONE` in `.env`, New York by default, for the audit and for the `created_at` of the rows.)
 
 ### Step 7 - Remove the example
 

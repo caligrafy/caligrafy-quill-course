@@ -303,6 +303,13 @@ curl -s -X POST -H "Accept: application/json" -H "Content-Type: application/json
 Expected: `{"error":{"code":"unauthenticated","message":"Sign in or send a personal access token"}} [401]`.
 `curl -s -H "Accept: application/json" -w " [%{http_code}]\n" http://localhost:8080/api/books` still answers `[200]`.
 
+And from the command line, `call --guest` calls as a visitor:
+```bash
+docker compose exec dev-box php caligrafer.php call create_book title=Ghost published_year=2001 author_id=1 --guest
+```
+Expected: the same refusal, `"code": "unauthenticated"`, `"message": "Sign in or send a personal access token"`.
+Without `--guest`, `call` has full access, like any command you run on your own server.
+
 ### Step 7 - Tokens with just the rights they need
 
 Revoke the `*` token of lesson 02 (it can do everything). Find the id of "my agent" with
