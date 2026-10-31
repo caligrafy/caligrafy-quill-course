@@ -61,16 +61,16 @@ need PHP on your computer.
 
 ### Step 1 - Clone the framework
 
-Choose the folder where you keep your projects (here `~/code`), and clone the release **v2.1.0** of Caligrafy Quill
-into a new folder named `bookshelf`. The course was written and checked against this release: `--branch v2.1.0`
+Choose the folder where you keep your projects (here `~/code`), and clone the release **v2.1.1** of Caligrafy Quill
+into a new folder named `bookshelf`. The course was written and checked against this release: `--branch v2.1.1`
 gets exactly that version, even after newer ones come out (the [changelog](https://github.com/caligrafy/caligrafy-quill/blob/master/CHANGELOG.md) lists them).
 ```bash
 mkdir -p ~/code
 cd ~/code
-git clone --branch v2.1.0 https://github.com/caligrafy/caligrafy-quill.git bookshelf
+git clone --branch v2.1.1 https://github.com/caligrafy/caligrafy-quill.git bookshelf
 cd bookshelf
 ```
-Expected: `Cloning into 'bookshelf'...`, a line `warning: refs/tags/v2.1.0 ... is not a commit!` and a note that you
+Expected: `Cloning into 'bookshelf'...`, a line `warning: refs/tags/v2.1.1 ... is not a commit!` and a note that you
 are in `'detached HEAD' state`. Both are normal when you clone a release tag (you are on that release, not on a
 branch), and harmless here because `initialize` removes the framework's git history in step 4. `ls` lists, among others,
 `caligrafer.php  composer.json  docker  docker-compose.yaml  framework  public  qa  tests`. There is no
@@ -182,7 +182,7 @@ development password).
 | `application/controllers/` | your controllers (lesson 03); `core/` holds the framework's example controllers (sign in...) | yes (not `core/`) |
 | `application/models/` | your models and SQL scripts (lessons 04-05); `Auth/` is the users module (lesson 08) | yes |
 | `application/views/` | your Pug views (lesson 06); `default/` holds the layout | yes |
-| `application/services/` | your capabilities, features written once for every experience (lesson 14); created by the first `php caligrafer.php service` if it is not there yet | yes |
+| `application/services/` | your capabilities, features written once for every experience (lesson 14); empty until then | yes |
 | `application/config/config.php` | extra settings (empty) | rarely |
 | `public/` | files served as they are: `css/`, `js/`, `images/`, `uploads/`, and your client apps (lessons 10-12) | your apps |
 | `framework/` | the framework itself | no |
@@ -201,7 +201,7 @@ docker compose exec dev-box php caligrafer.php doctor
 `doctor` checks and changes nothing. Its first line names the version of Caligrafy Quill your project runs
 (`docker compose exec dev-box php caligrafer.php version` prints only that). Expected (version numbers and the last 4 characters of the keys differ):
 ```
-Caligrafy doctor (read-only): Caligrafy Quill 2.1.0
+Caligrafy doctor (read-only): Caligrafy Quill 2.1.1
 
  Project
   OK    PHP: 8.5.12

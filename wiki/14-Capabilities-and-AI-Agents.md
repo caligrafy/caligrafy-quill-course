@@ -373,16 +373,16 @@ Each line shows when, the channel (`rest`, `mcp`), who (`token` and its number),
 ### Update a 2.0.0 project
 
 If `php caligrafer.php version` printed `2.0.0`, your project was cloned before the capabilities existed. Copy the
-framework of 2.1.0 over it (your `application/` and `public/` apps stay yours), then let `upgrade` update the
+framework of 2.1.1 over it (your `application/` and `public/` apps stay yours), then let `upgrade` update the
 templates you never changed:
 ```bash
-git clone --branch v2.1.0 --depth 1 https://github.com/caligrafy/caligrafy-quill.git ../quill-2.1
-cp -R ../quill-2.1/framework ../quill-2.1/caligrafer.php ../quill-2.1/claude-plugin .
-cp ../quill-2.1/public/css/tokens.css ../quill-2.1/public/css/tokens.json public/css/
+git clone --branch v2.1.1 --depth 1 https://github.com/caligrafy/caligrafy-quill.git ../quill-2.1.1
+cp -R ../quill-2.1.1/framework ../quill-2.1.1/caligrafer.php ../quill-2.1.1/claude-plugin .
+cp ../quill-2.1.1/public/css/tokens.css ../quill-2.1.1/public/css/tokens.json public/css/
 docker compose exec dev-box php caligrafer.php version
 docker compose exec dev-box php caligrafer.php upgrade --apply
 ```
-Expected: `Caligrafy Quill 2.1.0`. Commit, then start at step 1.
+Expected: `Caligrafy Quill 2.1.1`. Commit, then start at step 1.
 
 ---
 

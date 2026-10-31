@@ -250,10 +250,10 @@ docker compose exec dev-box php caligrafer.php upgrade
 Expected:
 ```
  Caligrafy upgrade (dry run: nothing is changed, run 'php caligrafer.php upgrade --apply' to update)
- Templates: framework/settings/application (33 files) compared with application/ - manifest .caligrafy-manifest.json found
+ Templates: framework/settings/application (36 files) compared with application/ - manifest .caligrafy-manifest.json found
 
   routes      application/config/routing/web.php: your routes: never replaced
-  identical  32 file(s)
+  identical  35 file(s)
 
  Client apps (report only, never modified; compare them with framework/plugins/<type> by hand):
   public/catalog (app): 2 file(s) differ from framework/plugins/app: index.php, scripts/main.js
