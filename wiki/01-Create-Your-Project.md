@@ -182,6 +182,7 @@ development password).
 | `application/controllers/` | your controllers (lesson 03); `core/` holds the framework's example controllers (sign in...) | yes (not `core/`) |
 | `application/models/` | your models and SQL scripts (lessons 04-05); `Auth/` is the users module (lesson 08) | yes |
 | `application/views/` | your Pug views (lesson 06); `default/` holds the layout | yes |
+| `application/services/` | your capabilities, features written once for every experience (lesson 14); created by the first `php caligrafer.php service` if it is not there yet | yes |
 | `application/config/config.php` | extra settings (empty) | rarely |
 | `public/` | files served as they are: `css/`, `js/`, `images/`, `uploads/`, and your client apps (lessons 10-12) | your apps |
 | `framework/` | the framework itself | no |
