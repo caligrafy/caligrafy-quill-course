@@ -2,9 +2,10 @@
 
 ![Caligrafy](https://github.com/DoryAzar/caligrafy/blob/master/public/images/resources/banner_white.png)
 
-A step by step course for people who have **never used Caligrafy Quill**. You build **Bookshelf**, a small catalog
-of books and authors, from an empty folder to a server-rendered web application, a REST API, a Vue app and a Vite
-single page application.
+A step by step course for people who have **never used Caligrafy Quill**, the **"Build Once, Experience
+Everywhere"** framework. You build **Bookshelf**, a small catalog of books and authors, from an empty folder to the
+same features experienced everywhere: server-rendered web pages, a REST API, a Vue app, a Vite single page
+application for tablets and phones, and, in the last lesson, capabilities written once that an AI agent can use.
 
 This course replaces the two original Caligrafy courses
 ([caligrafy-course](https://github.com/caligrafy/caligrafy-course) and
@@ -71,6 +72,8 @@ git tag) and a short **quiz or exercise** with its solution.
 | 12 | [Pinia, styling and the production build](https://github.com/caligrafy/caligrafy-quill-course/wiki/12-Pinia-Styling-and-Build) | a Pinia store, forms with API errors, the Caligrafy classes, `npm run build` |
 | | **Part 3 - Keeping it healthy** | |
 | 13 | [Review, tests, doctor and upgrade](https://github.com/caligrafy/caligrafy-quill-course/wiki/13-Review-Tests-Doctor-Upgrade) | the `caligrafy-reviewer` agent, PHPUnit and smoke tests, `doctor`, `upgrade` |
+| | **Part 4 - Build once** | |
+| 14 | [Capabilities and AI agents](https://github.com/caligrafy/caligrafy-quill-course/wiki/14-Capabilities-and-AI-Agents) | services and `#[Capability]`, REST with `Route::capability`, personal access tokens, MCP for Claude Code, the audit log |
 
 ## Checkpoint code
 
@@ -91,6 +94,7 @@ write or change in your project, at their real paths. Each folder contains every
 | [`lesson-11`](checkpoints/lesson-11) | `lesson-11` | + the changed files of `public/bookshelf-spa` (Vite, Vue Router) |
 | [`lesson-12`](checkpoints/lesson-12) | `lesson-12` | + the Pinia store, the form page and `vite.config.js` |
 | [`lesson-13`](checkpoints/lesson-13) | `lesson-13` | + a PHPUnit test and a smoke test script |
+| [`lesson-14`](checkpoints/lesson-14) | `lesson-14` | + three capabilities in `application/services/Bookshelf` and their routes |
 
 Compare your project with a checkpoint (run from the folder that contains both `bookshelf` and this repository):
 ```bash

@@ -181,12 +181,14 @@ docker compose exec dev-box php caligrafer.php doctor --only database
 ```
 Expected (the server version may differ):
 ```
-Caligrafy doctor (read-only): Caligrafy Quill 2.0.0
+Caligrafy doctor (read-only): Caligrafy Quill 2.1.0
 
  Database
   OK    Database: connected to mysql://mysql:3306/bookshelf (server 8.4.13)
+  SKIP  Framework tables: caligrafy_tokens, caligrafy_audit not installed (needed for tokens, the audit log and MCP)
+        -> php caligrafer.php platform install
 
- 1 OK, 0 WARN, 0 FAIL, 0 SKIP
+ 1 OK, 0 WARN, 0 FAIL, 1 SKIP
 ```
 (`doctor` checks; it never changes anything.)
 

@@ -2,8 +2,9 @@
 
 A step by step course for people who have **never used Caligrafy Quill**. You build **Bookshelf**, a small catalog
 of books and authors: first as a server-rendered web application with Pug views, forms, sign in and a REST API
-(part 1), then as a Vue app and a Vite single page application on the same API (part 2), and you finish with
-code review, tests, `doctor` and `upgrade` (part 3).
+(part 1), then as a Vue app and a Vite single page application on the same API (part 2), you keep it healthy with
+code review, tests, `doctor` and `upgrade` (part 3), and you finish with what Caligrafy is made for, **build once,
+experience everywhere**: features written once as capabilities, used from the API and by an AI agent (part 4).
 
 You need: a little HTML, CSS, JavaScript, PHP and SQL. Everything else (Docker, Caligrafy, Pug, Vue, Vite, Pinia)
 is explained when it first appears.
@@ -45,6 +46,9 @@ Every lesson has the same structure:
 
 **Part 3 - Keeping it healthy**
 - [Lesson 13 - Review, tests, doctor and upgrade](13-Review-Tests-Doctor-Upgrade)
+
+**Part 4 - Build once**
+- [Lesson 14 - Capabilities and AI agents](14-Capabilities-and-AI-Agents)
 
 This course replaces the older [caligrafy-course](https://github.com/caligrafy/caligrafy-course) and
 [caligrafy-vue-course](https://github.com/caligrafy/caligrafy-vue-course). The full framework documentation is the
