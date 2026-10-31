@@ -6,6 +6,9 @@ of books and authors: first as a server-rendered web application with Pug views,
 code review, tests, `doctor` and `upgrade` (part 3), and you finish with what Caligrafy is made for, **build once,
 experience everywhere**: features written once as capabilities, used from the API and by an AI agent (part 4).
 
+Just want to see Caligrafy run first? The framework's [Quickstart](https://github.com/caligrafy/caligrafy-quill/wiki/Quickstart)
+gets a working application in 5 minutes; then come back here to learn how it all works.
+
 You need: a little HTML, CSS, JavaScript, PHP and SQL. Everything else (Docker, Caligrafy, Pug, Vue, Vite, Pinia)
 is explained when it first appears.
 

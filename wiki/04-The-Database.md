@@ -181,7 +181,7 @@ docker compose exec dev-box php caligrafer.php doctor --only database
 ```
 Expected (the server version may differ):
 ```
-Caligrafy doctor (read-only): Caligrafy Quill 2.1.3
+Caligrafy doctor (read-only): Caligrafy Quill 2.2.0
 
  Database
   OK    Database: connected to mysql://mysql:3306/bookshelf (server 8.4.13)
