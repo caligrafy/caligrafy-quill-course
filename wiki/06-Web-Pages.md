@@ -67,7 +67,9 @@ a capability.**
 `$user` and the route variables (`{id}` becomes `$id`). With `data`, the page also gets what capabilities return:
 `Route::page('/books/{id}', 'Bookshelf/book', ['data' => ['found' => 'get_book']])` calls `get_book` with the `{id}`
 of the address, as the person who opens the page (the same checks as every other channel), and gives the view
-`$found`. When the capability refuses, the page does not render: a missing book answers **404**.
+`$found`. Only capabilities that change nothing (`readOnly`) can feed a page: opening a page never changes data. When
+the capability refuses, the page does not render: a missing book answers **404**, with the view you name in
+`notFound` (it gets `$message`, the capability's message), or the framework's error text without it.
 
 **Pages never read the models.** The data of a page comes from capabilities, so the rules stay in one place: the
 page, REST and AI agents all follow them.
@@ -255,12 +257,13 @@ Then add these lines above `// MUST NOT BE REMOVED` and `Route::run();`:
 ```php
     // BOOKSHELF PAGES: the catalog (public/js/books.js) and the page of one book (data: get_book and list_authors)
     Route::page('/books', 'Bookshelf/books');
-    Route::page('/books/{id}', 'Bookshelf/book', ['data' => ['found' => 'get_book', 'authors' => ['list_authors', []]]]);
+    Route::page('/books/{id}', 'Bookshelf/book', ['data' => ['found' => 'get_book', 'authors' => ['list_authors', []]], 'notFound' => 'Bookshelf/notfound']);
     Route::put('/books/{id}', 'Bookshelf\\BookController@update');   // the edit form: a page with logic of its own
 ```
 `Route::page('/books', 'Bookshelf/books')` shows `application/views/Bookshelf/books.pug`. The page of a book (step 5)
 gets two pieces of data: `found` from `get_book` (with the `{id}` of the address) and `authors` from `list_authors`
-(with no inputs: `['list_authors', []]`). The `PUT` route uses the controller of step 6. The full file is in the
+(with no inputs: `['list_authors', []]`). When `get_book` refuses, `notFound` shows the view `Bookshelf/notfound` (step 6)
+with its message and status 404. The `PUT` route uses the controller of step 6. The full file is in the
 checkpoint.
 
 ### Step 4 - Try the catalog
@@ -402,10 +405,12 @@ class BookController extends Controller
   (`$e->fields`). Other errors (`kind` not `invalid`, such as 404) show the Not found page with the message.
 - No rule is written here: the controller only calls capabilities and chooses what to show.
 
-**File `application/views/Bookshelf/notfound.pug`** (the message of the ServiceError):
+**File `application/views/Bookshelf/notfound.pug`** (the message of the ServiceError, for the page of a missing book and after a save):
 
 ```pug
 extends ../default/master/layoutblocks
+
+//- The message of a refused capability ($message): Route::page's notFound for a missing book, or BookController after a save
 
 block content
     main.cq-page
@@ -426,8 +431,8 @@ You should see the title, `by Ursula K. Le Guin, 1974`, `No summary yet.`, and t
    shows the real title, and a red line says `The Title field is required` (the message of update_book).
 2. Type the title back, add the summary `An anarchist physicist crosses to the twin world.` and save. You are back
    on `/books/7` with the summary.
-3. Open http://localhost:8080/books/99: `[ERROR 1005] Page Not Found`. `get_book` refused (`There is no book #99`),
-   so `Route::page` answered 404 instead of rendering a broken page.
+3. Open http://localhost:8080/books/99: a **Not found** card with `There is no book #99`. `get_book` refused, so
+   `Route::page` showed its `notFound` view with status 404 instead of rendering a broken page.
 
 Check the statuses from the terminal:
 ```bash
@@ -447,7 +452,8 @@ pages show one column, and the page does not scroll sideways.
 > | `/books/7` shows the catalog instead of the book | The route `/books/{id}` is missing: an address that matches no route shows the first route, `/` | Check the lines of step 3 |
 > | Save shows the catalog instead of the book | `=methodField('PUT')` is missing, so the form is a POST that matches no route | Add it under `=csrf()` |
 > | An error about the class `Bookshelf\BookController` on Save | The file is not in `application/controllers/Bookshelf/`, or the `namespace` line is missing | Check the folder and the first lines |
-> | `/books/7` answers `[ERROR 1005] Page Not Found` for a book that exists | The data name or the capability name in the `Route::page` line is wrong | Compare with step 3: `'found' => 'get_book'` |
+> | `/books/7` shows an error that names `no capability named` | The capability name in the `Route::page` line is wrong | Compare with step 3: `'found' => 'get_book'` |
+> | `/books/99` shows `[ERROR 1005] Page Not Found` instead of the card | `'notFound' => 'Bookshelf/notfound'` is missing from the `Route::page` line | Compare with step 3 |
 > | An error that names `book.pug` and `$found` | The view uses `$found` but the route has no `data` | Use the `Route::page` line of step 3 for `/books/{id}` |
 > | After a save, the address ends with `/books/` and no id | The redirect used an id that is not in the posted fields (the route's `{id}` is not one of them) | Use the id returned by update_book: `redirect('/books/' . $book['id'])` |
 
@@ -473,11 +479,13 @@ with Route::page; a controller only for the edit form.
    field messages in #error; after adding, reset the form and focus Title. Build rows with textContent.
 4. web.php: the route / is Route::page('/', 'Bookshelf/books'); add a "// BOOKSHELF PAGES" block above Route::run():
    Route::page('/books', 'Bookshelf/books'), Route::page('/books/{id}', 'Bookshelf/book', ['data' => ['found' =>
-   'get_book', 'authors' => ['list_authors', []]]]) and Route::put('/books/{id}', 'Bookshelf\\BookController@update').
+   'get_book', 'authors' => ['list_authors', []]], 'notFound' => 'Bookshelf/notfound']) and
+   Route::put('/books/{id}', 'Bookshelf\\BookController@update').
 5. application/views/Bookshelf/book.pug: $found is what get_book returns (book, author); set $book, $author, $form
    (default $book) and $errors (default empty) at the top. One card: title, "by <author>, <year>", the summary or
    "No summary yet.", an edit form with =csrf() and =methodField('PUT') posting to {$home}books/<id>, button
-   "Save changes", errors in p.cq-error, a footer link "All books"; and notfound.pug (card "Not found" with $message).
+   "Save changes", errors in p.cq-error, a footer link "All books"; and notfound.pug (card "Not found" with $message,
+   for the notFound of the page and the controller).
 6. application/controllers/Bookshelf/BookController.php (namespace Bookshelf), update() only: $this->call('update_book'),
    then redirect('/books/' . $book['id']) and exit; on an invalid ServiceError, status 422 and the view Bookshelf/book
    with found (get_book), authors (list_authors), form (the typed values) and errors ($e->fields); other ServiceErrors
@@ -531,7 +539,7 @@ Reference: [`checkpoints/lesson-06`](https://github.com/caligrafy/caligrafy-quil
    catalog form, on the book page, for `curl` (lesson 05) and for AI agents.
 4. To show the header with the book as it is saved (the refused title was not saved), while the form keeps what the
    visitor typed.
-5. Showing the book is only "call get_book, render the view": `Route::page` does that in one line. Saving has logic
+5. Showing the book is only "call get_book, render the view, or the not-found view": `Route::page` does that in one line. Saving has logic
    of its own (redirect on success, the page again with the messages on a refusal): that is what a controller is for.
    Both only call capabilities.
 </details>

@@ -354,7 +354,8 @@ administrator, the framework's user capabilities manage the others: `list_users`
 block of `web.php`, sign in as reader1 and open `/users`: a name opens its page, where you change the permissions.
 Or let an agent do it with a token of reader1 that has the `users:read` and `users:write` scopes
 (`token create "admin agent" --scopes users:read,users:write --user <id of reader1>`): "make reader2 an administrator"
-calls `update_user` with `permissions: 1`. The same rules, the same audit log.
+calls `update_user` with `permissions: 1`. The `--user` matters: only an administrator manages users, so a token
+without an owner (or the old shared API key) is refused, and no one can give a level above their own. The same rules, the same audit log.
 
 ### Step 9 - Read the audit log and the other experiences
 

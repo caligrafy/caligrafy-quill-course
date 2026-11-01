@@ -76,7 +76,7 @@ try {
 
     // BOOKSHELF PAGES: the catalog (public/js/books.js) and the page of one book (data: get_book and list_authors)
     Route::page('/books', 'Bookshelf/books');
-    Route::page('/books/{id}', 'Bookshelf/book', ['data' => ['found' => 'get_book', 'authors' => ['list_authors', []]]]);
+    Route::page('/books/{id}', 'Bookshelf/book', ['data' => ['found' => 'get_book', 'authors' => ['list_authors', []]], 'notFound' => 'Bookshelf/notfound']);
     Route::put('/books/{id}', 'Bookshelf\\BookController@update');   // the edit form: a page with logic of its own
 
     // MUST NOT BE REMOVED - Routes need to be run after being defined 
