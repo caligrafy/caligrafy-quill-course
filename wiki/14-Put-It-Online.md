@@ -445,6 +445,18 @@ dashboard and `cloud status` call.
 belongs in `.caligrafy/cloud.json` (git-ignored) or in Claude's MCP settings. If it suggests running `seed.sql` online,
 there is no console: the data goes through a `create_db.sql` script, as in step 2.
 
+### Your next idea, in one conversation
+
+You have now done every step by hand: data, capabilities, every experience, people and trust, tests, online. The
+plugin can do them all at once for your next idea. In a new folder (`git clone https://github.com/caligrafy/caligrafy-quill.git myidea`,
+then `cd myidea` and `claude`):
+```
+/caligrafy-quill:idea <your idea, in a sentence or two>
+```
+Claude proposes a plan and waits for your OK, builds it, checks it, and deploys it like this lesson did. Because you
+followed the course, you can read every file it writes and change it. See the
+[Quickstart with Claude](https://github.com/caligrafy/caligrafy-quill/wiki/Quickstart-with-Claude).
+
 ---
 
 ## Checkpoint

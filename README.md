@@ -8,6 +8,10 @@ complete application **online**, where every feature is written **once**, as a c
 pages, a REST API, AI agents such as Claude and Cursor, a Vue app, and an installable app for phones and tablets.
 From the first command to a public address, zero to one, in one project.
 
+**In a hurry?** The [Quickstart with Claude](https://github.com/caligrafy/caligrafy-quill/wiki/Quickstart-with-Claude)
+takes an idea of yours to an application online in one conversation (`/caligrafy-quill:idea`). This course is the
+same journey, one step at a time, so that you understand and can change everything Claude does.
+
 **[Start the course on the Wiki](https://github.com/caligrafy/caligrafy-quill-course/wiki)** (the same pages are in
 the [`wiki/`](wiki) folder of this repository).
 

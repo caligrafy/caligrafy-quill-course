@@ -6,6 +6,10 @@ application uses it: web pages, a REST API for other programs, AI agents such as
 phones and tablets. The same rules, the same permissions and the same audit log everywhere. And it ends on the
 internet: the last lesson puts Bookshelf online, so you go from an idea to an application anyone can open.
 
+> **In a hurry?** The [Quickstart with Claude](https://github.com/caligrafy/caligrafy-quill/wiki/Quickstart-with-Claude)
+> takes an idea of yours to an application online in one conversation (`/caligrafy-quill:idea`). This course is the
+> same journey, one step at a time, so that you understand and can change everything Claude does.
+
 You need a little HTML, CSS, JavaScript, PHP and SQL. Everything else (Docker, Caligrafy, Pug, Vue, Vite, MCP) is
 explained when it first appears. You do not install PHP or MySQL: they run in Docker.
 
