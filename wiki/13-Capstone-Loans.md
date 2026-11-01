@@ -573,11 +573,9 @@ git tag lesson-13
 ```
 Reference: [`checkpoints/lesson-13`](https://github.com/caligrafy/caligrafy-quill-course/tree/main/checkpoints/lesson-13).
 
-You have finished the course: Bookshelf has ten capabilities, five experiences (pages, REST, AI agents, the Vue
-finder, the phone and tablet app), people with permissions, tokens with scopes, tests and an audit log. The
-[Caligrafy Quill wiki](https://github.com/caligrafy/caligrafy-quill/wiki) documents the modules the course did not
-cover (file uploads, payments, social cards, the AI and machine learning modules). The appendix shows what is under
-the hood: routes, controllers and forms written by hand.
+Bookshelf is complete: ten capabilities, five experiences (pages, REST, AI agents, the Vue finder, the phone and
+tablet app), people with permissions, tokens with scopes, tests and an audit log. One step is left: put it online
+([lesson 14](14-Put-It-Online)).
 
 ## Exercise
 
@@ -645,4 +643,4 @@ covers `loans:read`.
 </details>
 
 ---
-Previous: [Lesson 12 - Ship it: tests, review, doctor](12-Ship-It) · Next: [Appendix A - Routes and controllers by hand](A-Routes-and-Controllers) · [Back to the course home](Home)
+Previous: [Lesson 12 - Ship it: tests, review, doctor](12-Ship-It) · Next: [Lesson 14 - Put it online](14-Put-It-Online)

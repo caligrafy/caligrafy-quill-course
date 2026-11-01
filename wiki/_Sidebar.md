@@ -23,6 +23,7 @@
 **Part 4 - Ship it**
 - [12 Tests, review, doctor](12-Ship-It)
 - [13 Capstone: Loans](13-Capstone-Loans)
+- [14 Put it online](14-Put-It-Online)
 
 **Appendix (optional)**
 - [A Routes and controllers](A-Routes-and-Controllers)

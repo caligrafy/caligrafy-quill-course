@@ -26,6 +26,7 @@ the first time it appears.
 | A code editor | for example [VS Code](https://code.visualstudio.com/) | everything |
 | [Node.js](https://nodejs.org/) | 20.19+ or 22.12+ | lesson 10 (the Vite app) |
 | [Claude Code](https://claude.com/claude-code) | current | the "With Claude" track, and the AI agent of lessons 02, 08 and 13 |
+| A [GitHub](https://github.com/) account | free | lesson 14 (putting Bookshelf online) |
 
 [Lesson 00](https://github.com/caligrafy/caligrafy-quill-course/wiki/00-Introduction-and-Tools) installs and checks
 each tool. The first command of the course gives you a running application:
@@ -40,7 +41,7 @@ cd bookshelf
 | Track | What you do |
 |---|---|
 | **Manual** | You type every command and write every file. Every step says which file, gives its complete content (no `...`), what you should see, and how to check it worked. |
-| **With Claude** | You give [Claude Code](https://claude.com/claude-code) the exact prompt of the lesson. The `caligrafy-quill` plugin, which ships inside every Caligrafy Quill project, gives Claude the framework documentation, commands (`/caligrafy-quill:new-capability`, `/caligrafy-quill:server`, `/caligrafy-quill:db`, `/caligrafy-quill:new-app`) and a reviewer agent (`caligrafy-reviewer`). The lesson tells you what Claude should do and gives a **Check** list to review it. |
+| **With Claude** | You give [Claude Code](https://claude.com/claude-code) the exact prompt of the lesson. The `caligrafy-quill` plugin, which ships inside every Caligrafy Quill project, gives Claude the framework documentation, commands (`/caligrafy-quill:new-capability`, `/caligrafy-quill:server`, `/caligrafy-quill:db`, `/caligrafy-quill:new-app`, `/caligrafy-quill:deploy`) and a reviewer agent (`caligrafy-reviewer`). The lesson tells you what Claude should do and gives a **Check** list to review it. |
 
 Do the **Manual** track first: it is how you learn what the framework does. Use the **With Claude** track on a
 second pass, or for a lesson you already understand, and always go through its Check list.
@@ -71,6 +72,7 @@ git tag) and a short **quiz or exercise** with its solution.
 | | **Part 4 - Ship it** | |
 | 12 | [Ship it: tests, review, doctor](https://github.com/caligrafy/caligrafy-quill-course/wiki/12-Ship-It) | PHPUnit, a smoke test, `doctor`, the reviewer, `upgrade`, going live |
 | 13 | [Capstone: one more feature, everywhere](https://github.com/caligrafy/caligrafy-quill-course/wiki/13-Capstone-Loans) | Loans, built once and used by every experience, with `/caligrafy-quill:new-capability` |
+| 14 | [Put it online](https://github.com/caligrafy/caligrafy-quill-course/wiki/14-Put-It-Online) | Caligrafy Quill 2.4.0, the production image and the deploy step, GitHub, Caligrafy Cloud from the dashboard, `php caligrafer.php cloud` and `/caligrafy-quill:deploy` |
 | | **Appendix - Under the hood (optional)** | |
 | A | [Routes and controllers by hand](https://github.com/caligrafy/caligrafy-quill-course/wiki/A-Routes-and-Controllers) | `Route::get`, route variables, controllers, models, `api()` |
 | B | [Classic forms and controller APIs](https://github.com/caligrafy/caligrafy-quill-course/wiki/B-Classic-Forms) | `csrf()`, validation in a controller, and turning it into a capability |
@@ -79,7 +81,7 @@ git tag) and a short **quiz or exercise** with its solution.
 
 The [`checkpoints/`](checkpoints) folder holds the finished code of every lesson, as an **overlay**: only the files
 you write or change in your project, at their real paths. Each folder contains everything up to that lesson
-(`lesson-02` to `lesson-13`, `appendix-a`, `appendix-b`). Lesson 01 writes no code, and lesson 02 removes the Tasks
+(`lesson-02` to `lesson-14`, `appendix-a`, `appendix-b`). Lesson 01 writes no code, and lesson 02 removes the Tasks
 example: its files are not in any checkpoint.
 
 Compare your project with a checkpoint (run from the folder that contains both `bookshelf` and this repository):

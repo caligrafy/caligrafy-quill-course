@@ -299,4 +299,4 @@ Reference: [`checkpoints/appendix-a`](https://github.com/caligrafy/caligrafy-qui
 </details>
 
 ---
-Previous: [Lesson 13 - Capstone: one more feature, everywhere](13-Capstone-Loans) · Next: [Appendix B - Classic forms and controller APIs](B-Classic-Forms)
+Previous: [Lesson 14 - Put it online](14-Put-It-Online) · Next: [Appendix B - Classic forms and controller APIs](B-Classic-Forms)

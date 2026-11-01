@@ -1,0 +1,33 @@
+extends ../default/master/layoutblocks
+
+//- Loans: lend a book, see who has what, record returns (public/js/loans.js, the loan capabilities)
+
+block content
+    main.cq-page
+        .cq-card
+            .cq-card-head
+                h2.cq-title Loans
+                p.cq-note Who borrowed which book. AI agents with a loans token see the same list.
+
+            .cq-section#sign-in(hidden)
+                a.btn.btn-secondary(href="{$home}login") Sign in to manage loans
+
+            form#lend.cq-form(novalidate, hidden)
+                .cq-fields.cq-fields--3
+                    div
+                        label(for='loan-book') * Book
+                        select#loan-book.form-select(name='book_id')
+                    div
+                        label(for='loan-borrower') * Borrower
+                        input#loan-borrower.form-control(type='text', name='borrower', maxlength='100', autocomplete='off')
+                    div
+                        label(for='loan-days') Days
+                        input#loan-days.form-control(type='number', name='days', placeholder='14')
+                button.btn.btn-primary.cq-submit(type='submit') Lend
+
+            p#error.cq-error(role='alert')
+            ul#loans.cq-list
+            p#empty.cq-empty(hidden) Every book is on the shelf.
+
+block additional_scripts
+    script(type='module', src="{$home}public/js/loans.js")

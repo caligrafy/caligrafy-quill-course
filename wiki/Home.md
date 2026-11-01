@@ -19,6 +19,7 @@ explained when it first appears. You do not install PHP or MySQL: they run in Do
 | A phone and tablet app | installable, list and form side by side on tablets | 10 |
 | People and permissions | sign in, administrators, scoped tokens for agents | 11 |
 | Loans | one more feature, built once, in every experience at once | 13 |
+| Online | Bookshelf on the internet at `https://bookshelf-<you>.caligrafy.com`, deployed from GitHub | 14 |
 
 All of it on **ten capabilities** of a few dozen lines of PHP each.
 
@@ -62,12 +63,14 @@ Every lesson has the same structure:
 **Part 4 - Ship it**
 - [Lesson 12 - Ship it: tests, review, doctor](12-Ship-It)
 - [Lesson 13 - Capstone: one more feature, everywhere](13-Capstone-Loans)
+- [Lesson 14 - Put it online](14-Put-It-Online)
 
 **Appendix - Under the hood (optional, any time after lesson 06; the exercise of B after lesson 13)**
 - [Appendix A - Routes and controllers by hand](A-Routes-and-Controllers)
 - [Appendix B - Classic forms and controller APIs](B-Classic-Forms)
 
-The course was written and checked against **Caligrafy Quill 2.3.0**. The full framework documentation is the
+The course was written and checked against **Caligrafy Quill 2.3.0**; lesson 14 updates the project to **2.4.0**,
+which adds the production image and the deploy step. The full framework documentation is the
 [Caligrafy Quill wiki](https://github.com/caligrafy/caligrafy-quill/wiki). This course replaces the older
 [caligrafy-course](https://github.com/caligrafy/caligrafy-course) and
 [caligrafy-vue-course](https://github.com/caligrafy/caligrafy-vue-course).
