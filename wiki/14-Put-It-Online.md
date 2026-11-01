@@ -81,27 +81,27 @@ free on Caligrafy Cloud.
 
 ### Step 1 - Check that the project is on Caligrafy Quill 2.4.0 or later
 
-The production image and the deploy step come with Caligrafy Quill 2.4.0; the release of lesson 01, 2.7.0, has them. Check it:
+The production image and the deploy step come with Caligrafy Quill 2.4.0; the release of lesson 01, 2.8.0, has them. Check it:
 ```bash
 docker compose exec dev-box php caligrafer.php version
 ```
-Expected: `Caligrafy Quill 2.7.0`. Then `ls Dockerfile` shows the file, and you can go to step 2.
+Expected: `Caligrafy Quill 2.8.0`. Then `ls Dockerfile` shows the file, and you can go to step 2.
 
-**Only if it says an older version** (you started the course before 2.7.0 was released): 2.4.0 has the image and the
+**Only if it says an older version** (you started the course before 2.8.0 was released): 2.4.0 has the image and the
 deploy step, and 2.7.0 adds the browser sign-in of step 7 and the `ship` skill. Update the project to the course's
-release, 2.7.0, the way lesson 12 described: get the release in a folder next to `bookshelf`, copy the framework's
+release, 2.8.0, the way lesson 12 described: get the release in a folder next to `bookshelf`, copy the framework's
 files over, then let `upgrade` handle `application/`.
 
 From the folder that **contains** `bookshelf`:
 ```bash
-git clone --depth 1 --branch v2.7.0 https://github.com/caligrafy/caligrafy-quill.git quill-2.7.0
+git clone --depth 1 --branch v2.8.0 https://github.com/caligrafy/caligrafy-quill.git quill-2.8.0
 ```
 Then from the `bookshelf` folder:
 ```bash
 rm -rf framework claude-plugin
-cp -R ../quill-2.7.0/framework ../quill-2.7.0/claude-plugin .
-cp ../quill-2.7.0/caligrafer.php ../quill-2.7.0/Dockerfile ../quill-2.7.0/Dockerfile.dockerignore ../quill-2.7.0/.gitignore .
-cp ../quill-2.7.0/public/css/tokens.css public/css/
+cp -R ../quill-2.8.0/framework ../quill-2.8.0/claude-plugin .
+cp ../quill-2.8.0/caligrafer.php ../quill-2.8.0/Dockerfile ../quill-2.8.0/Dockerfile.dockerignore ../quill-2.8.0/.gitignore .
+cp ../quill-2.8.0/public/css/tokens.css public/css/
 docker compose exec dev-box php caligrafer.php upgrade
 ```
 - `framework/`, `claude-plugin/`, `caligrafer.php` and `public/css/tokens.css` belong to the framework: you never
@@ -117,15 +117,15 @@ Check the version and the new command:
 docker compose exec dev-box php caligrafer.php doctor
 docker compose exec dev-box php caligrafer.php help
 ```
-Expected: the first line of `doctor` is `Caligrafy doctor (read-only): Caligrafy Quill 2.7.0`, and `help` lists
-`deploy` and `cloud`. Run the unit tests and the smoke test of lesson 12: they still pass. Delete the `quill-2.7.0`
+Expected: the first line of `doctor` is `Caligrafy doctor (read-only): Caligrafy Quill 2.8.0`, and `help` lists
+`deploy` and `cloud`. Run the unit tests and the smoke test of lesson 12: they still pass. Delete the `quill-2.8.0`
 folder when you are done.
 
 > **If it doesn't work**
 >
 > | What you see | Cause | Fix |
 > |---|---|---|
-> | `cp: ../quill-2.7.0/framework: No such file or directory` | The release was cloned somewhere else | Clone it in the folder that contains `bookshelf` |
+> | `cp: ../quill-2.8.0/framework: No such file or directory` | The release was cloned somewhere else | Clone it in the folder that contains `bookshelf` |
 > | `doctor` still says the old version | `framework/` was not replaced | Run the `rm` and `cp` lines again, from the `bookshelf` folder |
 > | `Command "cloud" not found` or the old help | `caligrafer.php` was not copied | Copy it again |
 
@@ -428,8 +428,8 @@ would happen.
 
 ## With Claude
 
-Start Claude Code in the `bookshelf` folder (`claude`). The update of step 1 brought the plugin's skills (plugin 1.19.0
-with Caligrafy Quill 2.7.0).
+Start Claude Code in the `bookshelf` folder (`claude`). The update of step 1 brought the plugin's skills (plugin 1.20.0
+with Caligrafy Quill 2.8.0).
 
 ### Ship with the plugin
 

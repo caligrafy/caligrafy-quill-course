@@ -15,7 +15,7 @@ will be at the end (online, used everywhere), learn how the lessons work, and in
 
 Caligrafy Quill is a **PHP framework**: a set of PHP files that already solve what every web application needs
 (reading the address, talking to a database, showing pages, checking forms, signing people in), so that you only
-write what is specific to your application. The course uses the release **Caligrafy Quill 2.7.0**.
+write what is specific to your application. The course uses the release **Caligrafy Quill 2.8.0**.
 
 ### Build once, experience everywhere
 
@@ -237,6 +237,7 @@ folder.
 | Command | `/caligrafy-quill:new-resource` (a whole resource: table, model, capabilities, REST routes, pages) | not used: the course builds each part by hand first |
 | Command | `/caligrafy-quill:deploy [app-name]`: checks the project and puts it online | 14 |
 | Command | `/caligrafy-quill:ship [app-name] [--public]`: commits, creates the GitHub repository and pushes, signs in to Caligrafy Cloud, adds the deploy key, deploys and checks; you only approve in the browser | 14 |
+| Command | `/caligrafy-quill:design [style\|off]`: restyles every page to match a design style (`php caligrafer.php design list`), or brings the Caligrafy look back | after the course |
 | Command | `/caligrafy-quill:idea <your idea>`: from an idea to an application online; it asks you once (the plan), then ships with `ship` | after the course |
 | Agent | `caligrafy-reviewer`: reviews your Caligrafy code | 12 |
 
