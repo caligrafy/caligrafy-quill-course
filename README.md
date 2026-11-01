@@ -36,7 +36,7 @@ the first time it appears.
 [Lesson 00](https://github.com/caligrafy/caligrafy-quill-course/wiki/00-Introduction-and-Tools) installs and checks
 each tool. The first command of the course gives you a running application:
 ```bash
-git clone --branch v2.6.0 https://github.com/caligrafy/caligrafy-quill.git bookshelf
+git clone --branch v2.7.0 https://github.com/caligrafy/caligrafy-quill.git bookshelf
 cd bookshelf
 .bin/caligrafer quickstart --example
 ```
@@ -46,7 +46,7 @@ cd bookshelf
 | Track | What you do |
 |---|---|
 | **Manual** | You type every command and write every file. Every step says which file, gives its complete content (no `...`), what you should see, and how to check it worked. |
-| **With Claude** | You give [Claude Code](https://claude.com/claude-code) the exact prompt of the lesson. The `caligrafy-quill` plugin, which ships inside every Caligrafy Quill project, gives Claude the framework documentation, commands (`/caligrafy-quill:new-capability`, `/caligrafy-quill:server`, `/caligrafy-quill:db`, `/caligrafy-quill:new-app`, `/caligrafy-quill:deploy`) and a reviewer agent (`caligrafy-reviewer`). The lesson tells you what Claude should do and gives a **Check** list to review it. |
+| **With Claude** | You give [Claude Code](https://claude.com/claude-code) the exact prompt of the lesson. The `caligrafy-quill` plugin, which ships inside every Caligrafy Quill project, gives Claude the framework documentation, commands (`/caligrafy-quill:new-capability`, `/caligrafy-quill:server`, `/caligrafy-quill:db`, `/caligrafy-quill:new-app`, `/caligrafy-quill:deploy`, `/caligrafy-quill:ship`) and a reviewer agent (`caligrafy-reviewer`). The lesson tells you what Claude should do and gives a **Check** list to review it. |
 
 Do the **Manual** track first: it is how you learn what the framework does. Use the **With Claude** track on a
 second pass, or for a lesson you already understand, and always go through its Check list.
@@ -77,7 +77,7 @@ git tag) and a short **quiz or exercise** with its solution.
 | | **Part 4 - Ship it** | |
 | 12 | [Ship it: tests, review, doctor](https://github.com/caligrafy/caligrafy-quill-course/wiki/12-Ship-It) | PHPUnit, a smoke test, `doctor`, the reviewer, `upgrade`, going live |
 | 13 | [Capstone: one more feature, everywhere](https://github.com/caligrafy/caligrafy-quill-course/wiki/13-Capstone-Loans) | Loans, built once and used by every experience, with `/caligrafy-quill:new-capability` |
-| 14 | [Put it online](https://github.com/caligrafy/caligrafy-quill-course/wiki/14-Put-It-Online) | the production image and the deploy step, GitHub, Caligrafy Cloud from the dashboard, `php caligrafer.php cloud` and `/caligrafy-quill:deploy` |
+| 14 | [Put it online](https://github.com/caligrafy/caligrafy-quill-course/wiki/14-Put-It-Online) | the production image and the deploy step, GitHub, Caligrafy Cloud from the dashboard, `php caligrafer.php cloud` with a sign-in approved in the browser, `/caligrafy-quill:deploy` and `/caligrafy-quill:ship` |
 | | **Appendix - Under the hood (optional)** | |
 | A | [Routes and controllers by hand](https://github.com/caligrafy/caligrafy-quill-course/wiki/A-Routes-and-Controllers) | `Route::get`, route variables, controllers, models, `api()` |
 | B | [Classic forms and controller APIs](https://github.com/caligrafy/caligrafy-quill-course/wiki/B-Classic-Forms) | `csrf()`, validation in a controller, and turning it into a capability |

@@ -46,7 +46,10 @@ configured in `.env`. Each line is `OK`, `WARN`, `FAIL` or `SKIP` (not configure
 **The legacy API key.** Before tokens existed, programs used the `API_KEY` of `.env`. Every key made from one
 `APP_KEY` is the same key: full access, and no way to revoke one alone. Since lesson 11 every program and agent has
 its own **personal access token** and the browser apps use the session, so the old key is no longer needed:
-`LEGACY_API_KEY=false` in `.env` turns it off.
+`LEGACY_API_KEY=false` in `.env` turns it off. A page that still sends it (`'Authorization': 'Bearer ' + apiKey`) is
+refused with `[ERROR 1004] Access Denied: the legacy API key is turned off ...`; since Caligrafy Quill 2.7.0 a page
+calls its own routes with the session instead: `{ headers: apiHeaders() }` (from `public/js/services/app.js`), and
+`doctor` warns about a page that still sends the key (`WARN  Pages and the API key`).
 
 **`upgrade`.** `quickstart` copied the framework's template files into `application/`. When a later release of
 Caligrafy Quill comes out, `php caligrafer.php upgrade` compares your copies with the new templates and updates the
@@ -369,7 +372,7 @@ lesson already did the first ones; on Caligrafy Cloud, HTTPS, `APP_ENV=productio
 `LEGACY_API_KEY=false` are set for you.
 
 - [ ] Nothing that writes is `public: true` (lesson 11): `docker compose exec dev-box php caligrafer.php capabilities` shows `public` only on the read capabilities.
-- [ ] `LEGACY_API_KEY=false` in the `.env` of the server (step 4).
+- [ ] `LEGACY_API_KEY=false` in the `.env` of the server (step 4), and no `WARN  Pages and the API key` in `doctor`: pages call their routes with `apiHeaders()` or the JS client, never with the key.
 - [ ] Tokens: `token list`, then `token revoke <id>` for every token you no longer use. Each program or agent has its own token with the smallest scopes, and `--expires <days>` when it is temporary.
 - [ ] HTTPS on the server (it is also what lets phones install the app, lesson 10).
 - [ ] `APP_ENV=production` and `APP_DEBUG=false` in the `.env` of the server (see [Security and upgrading](https://github.com/caligrafy/caligrafy-quill/wiki/9.5-Security-and-Upgrading) and [Getting started](https://github.com/caligrafy/caligrafy-quill/wiki/1.-Getting-Started)).

@@ -5,6 +5,9 @@ step (Caligrafy Quill 2.4.0 and later), put the code on GitHub, and deploy it wi
 `https://bookshelf-<you>.caligrafy.com`: the catalog, the REST API, sign-in and the phone app, on the internet. You
 use the dashboard first, then the same service from the command line.
 
+> **With Claude:** `/caligrafy-quill:ship bookshelf-sam` does all of this; you only approve in the browser. The Manual
+> track shows each step it takes.
+
 **Before you start:** lesson 13 is done (tag `lesson-13`), the containers run (`docker compose ps`). You need a
 [GitHub](https://github.com/) account (free) and an email address you can read.
 
@@ -50,7 +53,7 @@ production image from your GitHub repository, gives it a MySQL database and a `.
 | | |
 |---|---|
 | Account | sign up with an email, confirm it, sign in |
-| Free | the first 30 minutes of your first app, once per account |
+| Free | the first 30 minutes online of **each new app**, from its first deploy |
 | Credits | 1 credit = 1 USD, bought in packs of 5, 10, 25 or 50 |
 | Keep an app online | a week: 2 credits, a month: 5, a year: 50 (the time is added to what is left) |
 | When the time is over | the app is **paused**: its address shows a "paused" page. Its database and files are kept 7 days, then deleted |
@@ -58,13 +61,15 @@ production image from your GitHub repository, gives it a MySQL database and a `.
 | Settings | the database and the keys are set for you. Your own settings (for example `OPEN_AI_KEY`) are stored encrypted and applied at the next deploy |
 
 **A deploy key** is an SSH key that GitHub accepts for **one** repository, read-only. Caligrafy Cloud creates one for
-each app with a private repository and shows you the public half: you add it to the repository on GitHub, and Caligrafy
-Cloud can read that repository and nothing else of your account.
+each app with a private repository and gives you the public half (on the app page, and in the file
+`.caligrafy/<name>-deploy-key.pub` when you create the app from the command line): you add it to the repository on
+GitHub, and Caligrafy Cloud can read that repository and nothing else of your account.
 
 **Build once, again.** Caligrafy Cloud is itself a Caligrafy application: the dashboard, the `php caligrafer.php cloud`
 commands and AI agents all call the same capabilities (`create_app`, `deploy_app`, `get_app`...) with the same rules.
-A **personal access token** created on the dashboard lets the command line and agents act for you, as tokens did for
-Bookshelf in lesson 11.
+A **personal access token** lets the command line and agents act for you, as tokens did for Bookshelf in lesson 11.
+You do not create or copy it: `cloud login` shows a code, you approve it in the browser, and the command saves the
+token. The dashboard lists your tokens and revokes them.
 
 ---
 
@@ -76,30 +81,32 @@ free on Caligrafy Cloud.
 
 ### Step 1 - Check that the project is on Caligrafy Quill 2.4.0 or later
 
-The production image and the deploy step come with Caligrafy Quill 2.4.0; the release of lesson 01, 2.6.0, has them. Check it:
+The production image and the deploy step come with Caligrafy Quill 2.4.0; the release of lesson 01, 2.7.0, has them. Check it:
 ```bash
 docker compose exec dev-box php caligrafer.php version
 ```
-Expected: `Caligrafy Quill 2.6.0` (2.4.0 or later is enough here). Then `ls Dockerfile` shows the file, and you can go to step 2.
+Expected: `Caligrafy Quill 2.7.0`. Then `ls Dockerfile` shows the file, and you can go to step 2.
 
-**Only if it says 2.3.0** (you started the course before 2.4.0 was released): update the project to the course's
-release, 2.6.0, the way lesson 12 described: get the release in a folder next to `bookshelf`, copy the framework's
+**Only if it says an older version** (you started the course before 2.7.0 was released): 2.4.0 has the image and the
+deploy step, and 2.7.0 adds the browser sign-in of step 7 and the `ship` skill. Update the project to the course's
+release, 2.7.0, the way lesson 12 described: get the release in a folder next to `bookshelf`, copy the framework's
 files over, then let `upgrade` handle `application/`.
 
 From the folder that **contains** `bookshelf`:
 ```bash
-git clone --depth 1 --branch v2.6.0 https://github.com/caligrafy/caligrafy-quill.git quill-2.6.0
+git clone --depth 1 --branch v2.7.0 https://github.com/caligrafy/caligrafy-quill.git quill-2.7.0
 ```
 Then from the `bookshelf` folder:
 ```bash
 rm -rf framework claude-plugin
-cp -R ../quill-2.6.0/framework ../quill-2.6.0/claude-plugin .
-cp ../quill-2.6.0/caligrafer.php ../quill-2.6.0/Dockerfile ../quill-2.6.0/Dockerfile.dockerignore ../quill-2.6.0/.gitignore .
-cp ../quill-2.6.0/public/css/tokens.css public/css/
+cp -R ../quill-2.7.0/framework ../quill-2.7.0/claude-plugin .
+cp ../quill-2.7.0/caligrafer.php ../quill-2.7.0/Dockerfile ../quill-2.7.0/Dockerfile.dockerignore ../quill-2.7.0/.gitignore .
+cp ../quill-2.7.0/public/css/tokens.css public/css/
 docker compose exec dev-box php caligrafer.php upgrade
 ```
 - `framework/`, `claude-plugin/`, `caligrafer.php` and `public/css/tokens.css` belong to the framework: you never
-  changed them, so the new ones replace them. `claude-plugin/` brings the new `/caligrafy-quill:deploy` skill.
+  changed them, so the new ones replace them. `claude-plugin/` brings the `/caligrafy-quill:deploy` and
+  `/caligrafy-quill:ship` skills.
 - `Dockerfile` and `Dockerfile.dockerignore` are new. The new `.gitignore` adds one line, `/.caligrafy/` (step 7).
 - `upgrade` without `--apply` shows the plan for `application/`. If it lists files as `outdated`, run
   `docker compose exec dev-box php caligrafer.php upgrade --apply` (lesson 12, step 5). `web.php` is yours: never
@@ -110,16 +117,16 @@ Check the version and the new command:
 docker compose exec dev-box php caligrafer.php doctor
 docker compose exec dev-box php caligrafer.php help
 ```
-Expected: the first line of `doctor` is `Caligrafy doctor (read-only): Caligrafy Quill 2.6.0`, and `help` lists
-`deploy` and `cloud`. Run the unit tests and the smoke test of lesson 12: they still pass. Delete the `quill-2.6.0`
+Expected: the first line of `doctor` is `Caligrafy doctor (read-only): Caligrafy Quill 2.7.0`, and `help` lists
+`deploy` and `cloud`. Run the unit tests and the smoke test of lesson 12: they still pass. Delete the `quill-2.7.0`
 folder when you are done.
 
 > **If it doesn't work**
 >
 > | What you see | Cause | Fix |
 > |---|---|---|
-> | `cp: ../quill-2.6.0/framework: No such file or directory` | The release was cloned somewhere else | Clone it in the folder that contains `bookshelf` |
-> | `doctor` still says 2.3.0 | `framework/` was not replaced | Run the `rm` and `cp` lines again, from the `bookshelf` folder |
+> | `cp: ../quill-2.7.0/framework: No such file or directory` | The release was cloned somewhere else | Clone it in the folder that contains `bookshelf` |
+> | `doctor` still says the old version | `framework/` was not replaced | Run the `rm` and `cp` lines again, from the `bookshelf` folder |
 > | `Command "cloud" not found` or the old help | `caligrafer.php` was not copied | Copy it again |
 
 ### Step 2 - Data for the online database
@@ -207,7 +214,8 @@ exercise of this lesson.
    after a few minutes: the sign-up page and the dashboard have **Send the link again**.
 3. Sign in at https://deploy.caligrafy.com/login with your email and password.
 
-The dashboard shows your email, `0 credits` and `your first 30 minutes are free`.
+The dashboard shows your email and `0 credits`. You need no credits yet: every new app is free for its first 30
+minutes online.
 
 ### Step 5 - Create the app and deploy it
 
@@ -223,9 +231,16 @@ Add it on GitHub: the repository `bookshelf` > **Settings** > **Deploy keys** > 
 `Caligrafy Cloud`, paste the line in **Key**, leave **Allow write access** off, **Add key**. GitHub may ask for your
 password once.
 
+From the command line (step 7), `cloud create` saves the same key in `.caligrafy/<name>-deploy-key.pub`, and
+`php caligrafer.php cloud key <name>` prints it again. With the [GitHub CLI](https://cli.github.com/), one command adds
+it, read-only:
+```bash
+gh repo deploy-key add .caligrafy/bookshelf-sam-deploy-key.pub -R sam/bookshelf --title "Caligrafy Cloud"
+```
+
 Back on the app page, click **Deploy**. The status becomes `deploying`, and a line shows the build moving: getting the
 code, installing PHP, `composer install`, starting. A first build takes about 3 to 5 minutes. Then the status is
-`running` with the time left of the free trial, and the deploy step has created your tables and the sample catalog.
+`running` with the time left of its free 30 minutes, and the deploy step has created your tables and the sample catalog.
 
 > **If it doesn't work**
 >
@@ -263,19 +278,27 @@ The settings online are the ones of lesson 12's checklist, set by Caligrafy Clou
 > | The catalog is empty | The `Online` script did not run | **Show the logs**: the lines after `Caligrafy deploy` list each script. Check that `application/models/Online/create_db.sql` was pushed |
 > | `FAIL  Database: not reachable after 60 s` in the logs | The database was still starting | **Deploy** again |
 > | A `FAIL` line in the smoke test | One experience answers differently online | The same application as on your computer: compare with lesson 12, step 3, and read `cloud logs` (step 7) |
+> | `[ERROR 1004] Access Denied: the legacy API key is turned off (LEGACY_API_KEY=false...)` from a page of yours | The page sends `'Authorization': 'Bearer ' + apiKey`: that key is public, so it is off online | Send `headers: apiHeaders()` (the session and its CSRF token, from `public/js/services/app.js`), or use the JS client of `public/js/capabilities.js`. Programs and agents use a personal access token |
 
 ### Step 7 - The command line
 
-Everything the dashboard does, `php caligrafer.php cloud` does from your project, with a token.
+Everything the dashboard does, `php caligrafer.php cloud` does from your project, with a token. You sign in once, in
+the browser: there is no token to create or copy.
 
-1. On the dashboard, in **Command line and AI agents**, type `my laptop` and click **Create a token**. Copy the token
-   (it starts with `cq_`): it is shown only once.
-2. In your terminal (type the command, do not use a "Run" button: it needs your keyboard):
+1. In your terminal:
 ```bash
 docker compose exec dev-box php caligrafer.php cloud login
 ```
-Paste the token and press Enter. Nothing shows while you paste: that is on purpose. Expected:
-`Signed in as <your email> (0 credits). The token is in .caligrafy/cloud.json (git-ignored).`
+2. It prints a code such as `BCDF-GH23` and the address `https://deploy.caligrafy.com/cli?code=BCDF-GH23`, then waits.
+   From the Docker server it cannot open your browser: open the address yourself. (Run outside Docker,
+   `php caligrafer.php cloud login` opens it for you.)
+3. Sign in with your Caligrafy Cloud account, check that the page shows the same code, and click **Approve**.
+
+Back in the terminal, the command saves the token in `.caligrafy/cloud.json` (git-ignored) and prints
+`Signed in as <your email> ...`.
+
+The dashboard lists your tokens in **Command line and AI agents**: revoke one there when a computer is no longer
+yours. (`cloud login --token cq_...` and `cloud login --paste` still take a token you already have.)
 
 `.caligrafy/` is in the new `.gitignore` (step 1): the token never reaches GitHub. Check it:
 ```bash
@@ -295,7 +318,8 @@ All the commands (`docker compose exec dev-box php caligrafer.php cloud help` li
 
 | Command | What it does |
 |---|---|
-| `cloud create <name> --repo https://github.com/<you>/<repo>` (`--branch <b>`) | creates an app (the dashboard's **Create the app**) |
+| `cloud create <name> --repo https://github.com/<you>/<repo>` (`--branch <b>`) | creates an app (the dashboard's **Create the app**); for a private repository, saves its deploy key in `.caligrafy/<name>-deploy-key.pub` |
+| `cloud key <name>` | prints the deploy key again |
 | `cloud deploy <name>` (`--no-wait`) | builds and starts it, and follows the build until it is online |
 | `cloud apps` · `status <name>` · `logs <name>` · `account` | read |
 | `cloud secret set <name> KEY=value` · `secret list <name>` · `secret delete <name> KEY` | your own settings, applied at the next deploy |
@@ -305,6 +329,9 @@ All the commands (`docker compose exec dev-box php caligrafer.php cloud help` li
 | `cloud logout` | removes `.caligrafy/cloud.json` |
 
 In the container, `create` needs `--repo`: the container has no git to read the address of `origin`.
+
+`cloud` exits with 1 when Caligrafy Cloud refuses something. In a script that checks the result, run it whole: a
+`| tail` after it hides that exit code.
 
 ### Step 8 - Make reader1 an administrator online
 
@@ -349,21 +376,23 @@ usernames to the script
 > | What you see | Cause | Fix |
 > |---|---|---|
 > | `Sign in first: php caligrafer.php cloud login` | No token saved | Step 7 |
-> | `Sign in, or use a token of your account` | The token was mistyped, or deleted | Create a new one on the dashboard and `cloud login` again |
+> | `Sign in, or use a token of your account` | The token was revoked on the dashboard, or deleted | `cloud login` again and approve the code in the browser |
+> | `cloud login` ends without `Signed in` | The code was denied, or not approved in time | Run `cloud login` again and approve the new code |
 > | The deploy shows the old code | The commit was not pushed | `git push`, then `cloud deploy` again |
 > | Still no **Delete** | You did not sign in again, or `reader1` was registered after the deploy | Sign out and in. If the account is newer than the deploy, change the script (add a comment line) and deploy again |
 > | `Caligrafy Cloud could not be reached` | No internet in the container, or a company proxy | Run the same command outside Docker: `php caligrafer.php cloud ...` needs only PHP |
 
 ### Step 9 - Time, settings and the end of the trial
 
-The free trial lasts 30 minutes from the first deploy. When it ends, the app is paused: its address shows the
-"paused" page, you get an email, and its database and files are kept 7 days, then deleted.
+Every new app is free for its first 30 minutes online, counted from its first deploy. When they are over, the app is
+paused: its address shows the "paused" page, you get an email, and its database and files are kept 7 days, then deleted.
 
 To keep it online (this costs money: 2 USD for a week):
 ```bash
 docker compose exec dev-box php caligrafer.php cloud credits 5
 ```
-It prints a Stripe payment page: pay there, and the credits appear on the dashboard a few seconds later. Then:
+It prints a Stripe payment page: pay there, and the credits appear on the dashboard a few seconds later. A deploy
+refused for lack of time says how many credits you have. Then:
 ```bash
 docker compose exec dev-box php caligrafer.php cloud extend bookshelf-sam week
 ```
@@ -399,7 +428,26 @@ would happen.
 
 ## With Claude
 
-Start Claude Code in the `bookshelf` folder (`claude`). The update of step 1 brought the plugin's new skill.
+Start Claude Code in the `bookshelf` folder (`claude`). The update of step 1 brought the plugin's skills (plugin 1.19.0
+with Caligrafy Quill 2.7.0).
+
+### Ship with the plugin
+
+```
+/caligrafy-quill:ship bookshelf-sam
+```
+
+**What Claude should do:** commit, create the GitHub repository (private; `--public` for a public one) and push: with
+your SSH key first, then HTTPS with the GitHub CLI, then a browser approval of the GitHub CLI that it opens for you.
+Then sign in to Caligrafy Cloud with the browser approval of step 7, create the app, add its deploy key, deploy and
+check the address. You approve the sign-ins in the browser; it asks you before it spends credits.
+
+**Check:**
+- [ ] You never copied a token or a key: you only approved codes in the browser.
+- [ ] It asked you before `extend` or `credits`.
+- [ ] The repository on GitHub has a deploy key `Caligrafy Cloud`, read-only.
+- [ ] `cloud status <name>` (the name it reports; `bookshelf-<you>` if `bookshelf` is taken) says `running`, and the
+  catalog opens at the address.
 
 ### Deploy with the plugin
 
@@ -410,11 +458,11 @@ Start Claude Code in the `bookshelf` folder (`claude`). The update of step 1 bro
 **What Claude should do:** check that the project is ready before it deploys: Caligrafy Quill 2.4.0 or later with a `Dockerfile`
 at the root, everything committed and pushed to GitHub, a `create_db.sql` for every table, no `.env` or token in git,
 and data the online database needs (step 2). Then drive `php caligrafer.php cloud ...`: `account`, `create` (with
-`--repo`), the deploy key to add for a private repository, `deploy`, `status`. When it needs a token, it asks **you**
-to run `cloud login` and paste it yourself: a token never goes in the chat.
+`--repo`), the deploy key to add for a private repository, `deploy`, `status`. To sign in, it runs `cloud login`, and
+**you** approve the code in the browser: a token never goes in the chat.
 
 **Check:**
-- [ ] Claude did not print or commit `.env`, and never asked you to paste a token in the chat.
+- [ ] Claude did not print or commit `.env`, and never asked you for a token in the chat.
 - [ ] It did not create an app or spend credits without asking you (`create`, `extend`, `credits`).
 - [ ] It told you to add the deploy key on GitHub with write access off.
 - [ ] `cloud status bookshelf-sam` says `running`, and the catalog opens at the address.
@@ -435,7 +483,7 @@ push and deploy with php caligrafer.php cloud deploy bookshelf-sam. Then show me
 
 ### Agents and Caligrafy Cloud
 
-The dashboard's token also works for AI agents: Caligrafy Cloud is an MCP server at https://deploy.caligrafy.com/mcp,
+A personal access token also works for AI agents: Caligrafy Cloud is an MCP server at https://deploy.caligrafy.com/mcp,
 with tools such as `list_apps`, `get_app`, `deploy_app` and `app_logs`. Add it to Claude Code like Bookshelf in lesson 11
 (a separate token is better: create one named "Claude Code" on the dashboard):
 ```bash
@@ -456,7 +504,8 @@ then `cd myidea` and `claude`):
 ```
 /caligrafy-quill:idea <your idea, in a sentence or two>
 ```
-Claude proposes a plan and waits for your OK, builds it, checks it, and deploys it like this lesson did. Because you
+Claude proposes a plan and asks you once, for that plan. Then it builds it, checks it, and ships it with
+`/caligrafy-quill:ship`, like this lesson did: you only approve the sign-ins in the browser. Because you
 followed the course, you can read every file it writes and change it. See the
 [Quickstart with Claude](https://github.com/caligrafy/caligrafy-quill/wiki/Quickstart-with-Claude).
 
@@ -471,8 +520,8 @@ git tag lesson-14
 git push origin main --tags
 ```
 Bookshelf is online at `https://bookshelf-sam.caligrafy.com` (with your name): the catalog and the book pages, the
-REST API (`/api/books`), sign-in with `reader1` as an administrator, and `/mcp` for agents. The free trial pauses it
-after 30 minutes unless you extend it.
+REST API (`/api/books`), sign-in with `reader1` as an administrator, and `/mcp` for agents. It is paused after its free
+30 minutes unless you extend it.
 Reference: [`checkpoints/lesson-14`](https://github.com/caligrafy/caligrafy-quill-course/tree/main/checkpoints/lesson-14).
 
 You have finished the course: Bookshelf has ten capabilities, five experiences, people with permissions, tokens with

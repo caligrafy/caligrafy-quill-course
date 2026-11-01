@@ -63,7 +63,9 @@ the classic JSON output, without the `{"data": ...}` envelope of capabilities.
 **Controller routes and API calls.** A request that asks for JSON (`Accept: application/json`) is an **API call**.
 For a controller route, Caligrafy then requires a token with the scope `*` (or the legacy key, turned off in
 lesson 12): scopes such as `books:read` mean nothing to a controller. A browser (no such header) gets the page or
-the JSON without a token.
+the JSON without a token. Since Caligrafy Quill 2.7.0, a page of your own site may also make that JSON call with the
+visitor's session: it sends the session's CSRF token in an `X-CSRF-Token` header (`{ headers: apiHeaders() }`, from
+`public/js/services/app.js`). Never the legacy key in a page: it is public, and it is off online.
 
 ---
 
@@ -184,13 +186,15 @@ JSON, so this is not an API call and no token is needed. Now as a program:
 ```bash
 curl -s -H "Accept: application/json" -w " [%{http_code}]\n" http://localhost:8080/v1/authors
 ```
-Expected: `{"error":{"code":1004,"message":"Access Denied"}} [401]`. Try the "Claude Code" token of lesson 11
+Expected: `{"error":{"code":1004,"message":"Access Denied: send the page's CSRF token in an X-CSRF-Token header (pages, with the session cookie) or Authorization: Bearer <personal access token> (programs and agents)"}} [401]`:
+since 2.7.0 the message says why. Try the "Claude Code" token of lesson 11
 (`books:read,books:write`): put it in a variable, `BOOKS_TOKEN=$WRITER` in the same terminal as lesson 11 (otherwise
 paste the "Claude Code" token of lesson 11, `BOOKS_TOKEN=cq_...`), then
 ```bash
 curl -s -H "Accept: application/json" -H "Authorization: Bearer $BOOKS_TOKEN" -w " [%{http_code}]\n" http://localhost:8080/v1/authors
 ```
-Expected: `401` again: controller routes accept only tokens with the scope `*`. Create one:
+Expected: `401` again, and the message says the token `does not grant everything (*) as controller routes need`:
+controller routes accept only tokens with the scope `*`. Create one:
 ```bash
 docker compose exec dev-box php caligrafer.php token create "old style client" --scopes "*"
 ```
