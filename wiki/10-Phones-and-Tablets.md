@@ -64,13 +64,13 @@ the root of your application; the icons are Caligrafy's). The full file is in th
 
 In `application/config/routing/web.php`, replace the route of `/`:
 ```php
-    Route::get('/', function() { return view('Bookshelf/books', array('install' => true)); });
+    Route::page('/', 'Bookshelf/books', ['with' => ['install' => true]]);
 ```
 and the route of `/books` in the `// BOOKSHELF PAGES` block:
 ```php
-    Route::get('/books', function () { return view('Bookshelf/books', array('install' => true)); });   // install: offer to add it to the home screen
+    Route::page('/books', 'Bookshelf/books', ['with' => ['install' => true]]);   // install: offer to add it to the home screen
 ```
-`install` tells the layout to add its install module: an **Install** button on Chrome, Edge and Android (when the
+`with` gives the view fixed values: `install` tells the layout to add its install module: an **Install** button on Chrome, Edge and Android (when the
 browser says the app can be installed), or a short hint on iPhone and iPad (Share, then Add to Home Screen). The full
 file is in the checkpoint.
 

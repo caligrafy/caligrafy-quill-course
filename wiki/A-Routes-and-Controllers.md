@@ -22,9 +22,11 @@ Route::get('/about', function () { echo '...'; });
 //     │      └─ the path
 //     └─ the HTTP method: get, post, put or delete
 ```
-You already wrote three kinds of routes: `Route::get('/books/{id}', 'Bookshelf\\BookController@show')` (a controller,
-lesson 06), `Route::capability(...)` (REST, lesson 07) and `Route::mcp('/mcp')` (agents). This appendix writes the
-first kind by hand, without capabilities.
+You already wrote several kinds of routes: `Route::page('/books/{id}', 'Bookshelf/book', ['data' => ...])` (a page
+with data from capabilities, lesson 06), `Route::put('/books/{id}', 'Bookshelf\\BookController@update')` (a controller,
+lesson 06), `Route::capability(...)` (REST, lesson 07) and `Route::mcp('/mcp')` (agents). This appendix writes
+closures and controllers by hand, the classic way, without capabilities: useful to read older projects. In Bookshelf
+you keep `Route::page` for pages and the capabilities for the data.
 
 **Closure.** `function () { ... }` without a name: a function written right where it is used. Fine for a tiny page.
 
@@ -42,8 +44,8 @@ The code reads it with `request()->fetch('name')`; inside a controller, `$this->
 
 **Controller and action.** A controller is a class that extends `Caligrafy\Controller`; each public method that
 answers a route is an **action**. The route names both: `'Bookshelf\\AuthorController@show'` (namespace, class,
-`@`, action). `BookController` (lesson 06) is one: its actions call capabilities. `AuthorController` reads the models
-itself, the classic way. Never name an action like a method of `Controller` (`find`, `save`, `delete`, `all`,
+`@`, action). `BookController` (lesson 06) is one: its only action saves a form by calling a capability.
+`AuthorController` reads the models itself, the classic way. Never name an action like a method of `Controller` (`find`, `save`, `delete`, `all`,
 `search`, `check`, `validate`, `filter`, `view`, `api`, `associate`, `table`).
 
 **Namespace.** Caligrafy loads every PHP file of `application/`, so two classes with the same name would crash every

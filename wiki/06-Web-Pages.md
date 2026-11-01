@@ -2,7 +2,8 @@
 
 **In this lesson** Bookshelf gets its first experience for people: a catalog page (list, filter by author, add,
 delete) and a page per book (read and edit). Both use the capabilities of lessons 04 and 05, in the two ways a page
-can: the catalog from the browser with the **JS client**, the book page from the server with a **controller**.
+can: the catalog from the browser with the **JS client**, the book page from the server with **`Route::page`**, and
+its edit form with a small **controller**.
 
 **Before you start:** lesson 05 is done (tag `lesson-05`): `capabilities` lists 6 capabilities, and
 `docker compose ps` shows the 3 containers running.
@@ -49,9 +50,9 @@ Several `.cq-card` in one page stack, one under the other. The pages of this cou
 
 **Two ways a page uses a capability.**
 
-| | In the browser: the JS client | On the server: a controller call |
+| | In the browser: the JS client | On the server: `Route::page` with data |
 |---|---|---|
-| How | JavaScript calls `listBooks()`, `createBook(...)` | PHP calls `$this->call('get_book')`, then renders a view |
+| How | JavaScript calls `listBooks()`, `createBook(...)` | the route calls `get_book`, then renders the view with what it returned |
 | Good for | interactive pages: add, filter, delete without reloading | pages that must work without JavaScript, and that search engines read |
 | In Bookshelf | the catalog `/books` | the page of a book `/books/{id}` |
 
@@ -61,10 +62,22 @@ returns the `data`, or throws a `CapabilityError` with `status`, `code`, `messag
 application it sends the visitor's session and the CSRF token by itself. **Generate it again after every change to
 a capability.**
 
-**Controller call.** A **controller** is a PHP class in `application/controllers/` whose methods (actions) answer
-routes. `$this->call('get_book')` runs a capability as the visitor, with the same checks as every other channel. The
-inputs are the route variables (`{id}`) and the posted form fields; you can also pass them:
-`$this->call('list_authors', array())`. It returns the data, or throws the `ServiceError`.
+**`Route::page`.** One line declares a page: `Route::page('/books', 'Bookshelf/books')` shows the view
+`application/views/Bookshelf/books.pug`. Every page declared this way gets `$authorized` (is someone signed in?),
+`$user` and the route variables (`{id}` becomes `$id`). With `data`, the page also gets what capabilities return:
+`Route::page('/books/{id}', 'Bookshelf/book', ['data' => ['found' => 'get_book']])` calls `get_book` with the `{id}`
+of the address, as the person who opens the page (the same checks as every other channel), and gives the view
+`$found`. When the capability refuses, the page does not render: a missing book answers **404**.
+
+**Pages never read the models.** The data of a page comes from capabilities, so the rules stay in one place: the
+page, REST and AI agents all follow them.
+
+**Controller.** A **controller** is a PHP class in `application/controllers/` whose methods (actions) answer
+routes. You write one only when a page has **logic of its own**: here, the edit form, which saves, then either
+redirects or shows the page again with the messages. A controller only calls capabilities:
+`$this->call('update_book')` runs one as the visitor, with the route variables (`{id}`) and the posted form fields
+as inputs (you can also pass them: `$this->call('list_authors', array())`), and returns the data or throws the
+`ServiceError`.
 
 **CSRF and PUT from a form.** A form changes data with POST. Caligrafy refuses a browser POST that does not carry
 the CSRF token of the visitor's session (`[ERROR 3000] Security Error - Cross Site Forgery`, 403): it proves the
@@ -232,21 +245,23 @@ await showBooks()
 - `showError()` shows the `fields` of a `CapabilityError` under the form: the messages of `$rules` and `handle()`.
 - The rows are built with `textContent`, never by pasting a title into HTML: a title like `<b>` stays text.
 
-### Step 3 - The routes of the catalog
+### Step 3 - The routes of the pages
 
 In `application/config/routing/web.php`, replace the first route (`Route::get('/', function() { return view('default/index'); });`) with:
 ```php
-    Route::get('/', function() { return view('Bookshelf/books'); });
+    Route::page('/', 'Bookshelf/books');
 ```
 Then add these lines above `// MUST NOT BE REMOVED` and `Route::run();`:
 ```php
-    // BOOKSHELF PAGES: the catalog (public/js/books.js) and the page of one book (Bookshelf\BookController)
-    Route::get('/books', function () { return view('Bookshelf/books'); });
-    Route::get('/books/{id}', 'Bookshelf\\BookController@show');
-    Route::put('/books/{id}', 'Bookshelf\\BookController@update');
+    // BOOKSHELF PAGES: the catalog (public/js/books.js) and the page of one book (data: get_book and list_authors)
+    Route::page('/books', 'Bookshelf/books');
+    Route::page('/books/{id}', 'Bookshelf/book', ['data' => ['found' => 'get_book', 'authors' => ['list_authors', []]]]);
+    Route::put('/books/{id}', 'Bookshelf\\BookController@update');   // the edit form: a page with logic of its own
 ```
-`view('Bookshelf/books')` shows `application/views/Bookshelf/books.pug`. The two other routes use the controller of
-step 5. The full file is in the checkpoint.
+`Route::page('/books', 'Bookshelf/books')` shows `application/views/Bookshelf/books.pug`. The page of a book (step 5)
+gets two pieces of data: `found` from `get_book` (with the `{id}` of the address) and `authors` from `list_authors`
+(with no inputs: `['list_authors', []]`). The `PUT` route uses the controller of step 6. The full file is in the
+checkpoint.
 
 ### Step 4 - Try the catalog
 
@@ -274,92 +289,23 @@ Now check each capability through the page:
 > | An error page that names `books.pug` and a line | An indentation error in the view (a tab, or one space too many) | Indent with 4 spaces per level, as in the File block |
 > | `Something went wrong. Try again.` under the form | A call failed without a capability error (server stopped) | `docker compose ps`; reload the page |
 
-### Step 5 - The controller of the book page
+### Step 5 - The book page
 
-Create the folder `application/controllers/Bookshelf` and:
-
-**File `application/controllers/Bookshelf/BookController.php`** (renders the page from get_book; saves with update_book):
-
-```php
-<?php
-
-namespace Bookshelf;
-
-use Caligrafy\Controller;
-use Caligrafy\ServiceError;
-
-// The page of one book: rendered on the server from the get_book and update_book capabilities
-class BookController extends Controller
-{
-    // GET /books/{id}
-    public function show()
-    {
-        try {
-            $found = $this->call('get_book');   // the input is {id}, from the route
-            return $this->page($found, $found['book']);
-        } catch (ServiceError $e) {
-            return $this->notFound($e);
-        }
-    }
-
-    // PUT /books/{id}: the edit form of the page is sent here
-    public function update()
-    {
-        try {
-            $book = $this->call('update_book');   // the inputs are {id} and the fields of the form
-            redirect('/books/' . $book['id']);
-            exit;
-        } catch (ServiceError $e) {
-            if ($e->kind !== 'invalid') {
-                return $this->notFound($e);
-            }
-            // show the page again: the form keeps what was typed, with a message per field
-            http_response_code(422);
-            $found = $this->call('get_book');
-            return $this->page($found, array_merge($found['book'], $this->request->parameters), $e->fields);
-        }
-    }
-
-    private function page(array $found, array $form, array $errors = array())
-    {
-        return view('Bookshelf/book', array(
-            'book' => $found['book'],
-            'author' => $found['author'],
-            'form' => $form,
-            'authors' => $this->call('list_authors', array()),
-            'errors' => $errors
-        ));
-    }
-
-    private function notFound(ServiceError $e)
-    {
-        http_response_code($e->status());
-        return view('Bookshelf/notfound', array('message' => $e->getMessage()));
-    }
-}
-```
-- `namespace Bookshelf;`: controllers live in a namespace that matches their folder. That is why the routes say
-  `'Bookshelf\\BookController@show'` (class, then `@`, then the action).
-- `show()`: `$this->call('get_book')` gets `{id}` from the route. A `ServiceError` (no such book) shows the
-  `notfound` view with its message and status (`$e->status()`: 404).
-- `update()`: `$this->call('update_book')` gets `{id}` and the fields of the form. When it works, `redirect()` sends
-  the browser to the page of the book, which loads it with GET (so *Reload* does not send the form again); `exit`
-  stops right after. The address uses `$book['id']`, the id that update_book returned.
-- When the inputs are invalid, the page is shown again with status **422**, the fields keep what was typed
-  (`$this->request->parameters`), and `$e->fields` gives one message per field. Other errors (`kind` not
-  `invalid`, such as 404) show the Not found page.
-- No rule is written here: the controller only calls capabilities and chooses what to show.
-
-### Step 6 - The views of the book page
+The route of step 3 already gives the page its data. Write the view:
 
 **File `application/views/Bookshelf/book.pug`** (one card: the book, then its edit form):
 
 ```pug
 extends ../default/master/layoutblocks
 
-//- One book, rendered on the server by Bookshelf\BookController from get_book; the form calls update_book
+//- One book, rendered on the server by Route::page with the data of get_book; the form calls update_book
 
 block content
+    //- $found: what get_book returned (Route::page data). After a refused save, the controller also gives $form and $errors
+    - $book = $found['book'];
+    - $author = $found['author'];
+    - $form = isset($form) ? $form : $book;
+    - $errors = isset($errors) ? $errors : array();
     main.cq-page
         .cq-card
             .cq-card-head
@@ -395,9 +341,66 @@ block content
             .cq-foot
                 a(href="{$home}books") All books
 ```
+- `$found` is what `get_book` returned: the book and its author. The four `-` lines at the top are PHP: they name
+  `$book` and `$author`, and set `$form` (the values of the form) and `$errors` when the controller of step 6 did not.
 - The header uses `$book` (what is saved); the form uses `$form` (what was typed, after a refusal).
 - `=csrf()` and `=methodField('PUT')`: the two hidden fields of the concepts above.
 - `$book['summary'] ?: 'No summary yet.'`: the summary, or this text when it is empty.
+- No PHP class was needed to show this page: `Route::page` called the capabilities and rendered the view.
+
+### Step 6 - The edit form: a controller
+
+Saving the form is logic of its own: on success, go back to the page; on a refusal, show the page again with what
+was typed and the messages. That is a job for a controller. Create the folder `application/controllers/Bookshelf` and:
+
+**File `application/controllers/Bookshelf/BookController.php`** (saves with update_book):
+
+```php
+<?php
+
+namespace Bookshelf;
+
+use Caligrafy\Controller;
+use Caligrafy\ServiceError;
+
+// The edit form of the book page (PUT /books/{id}). Showing a page is Route::page's job; saving a form, then
+// redirecting or showing the page again with the messages, is logic of its own: a controller. It only calls capabilities.
+class BookController extends Controller
+{
+    // PUT /books/{id}: the edit form of the page is sent here
+    public function update()
+    {
+        try {
+            $book = $this->call('update_book');   // the inputs are {id} and the fields of the form
+            redirect('/books/' . $book['id']);
+            exit;
+        } catch (ServiceError $e) {
+            if ($e->kind !== 'invalid') {
+                http_response_code($e->status());
+                return view('Bookshelf/notfound', array('message' => $e->getMessage()));
+            }
+            // show the page again: the form keeps what was typed, with a message per field
+            http_response_code(422);
+            $found = $this->call('get_book');
+            return view('Bookshelf/book', array(
+                'found' => $found,
+                'authors' => $this->call('list_authors', array()),
+                'form' => array_merge($found['book'], $this->request->parameters),
+                'errors' => $e->fields
+            ));
+        }
+    }
+}
+```
+- `namespace Bookshelf;`: controllers live in a namespace that matches their folder. That is why the route says
+  `'Bookshelf\\BookController@update'` (class, then `@`, then the action).
+- `update()`: `$this->call('update_book')` gets `{id}` and the fields of the form. When it works, `redirect()` sends
+  the browser to the page of the book, which loads it with GET (so *Reload* does not send the form again); `exit`
+  stops right after. The address uses `$book['id']`, the id that update_book returned.
+- When the inputs are invalid, the same view is shown with status **422**: `found` and `authors` from the
+  capabilities, `form` with what was typed (`$this->request->parameters`), and `errors`, one message per field
+  (`$e->fields`). Other errors (`kind` not `invalid`, such as 404) show the Not found page with the message.
+- No rule is written here: the controller only calls capabilities and chooses what to show.
 
 **File `application/views/Bookshelf/notfound.pug`** (the message of the ServiceError):
 
@@ -423,7 +426,8 @@ You should see the title, `by Ursula K. Le Guin, 1974`, `No summary yet.`, and t
    shows the real title, and a red line says `The Title field is required` (the message of update_book).
 2. Type the title back, add the summary `An anarchist physicist crosses to the twin world.` and save. You are back
    on `/books/7` with the summary.
-3. Open http://localhost:8080/books/99: a **Not found** card with `There is no book #99`.
+3. Open http://localhost:8080/books/99: `[ERROR 1005] Page Not Found`. `get_book` refused (`There is no book #99`),
+   so `Route::page` answered 404 instead of rendering a broken page.
 
 Check the statuses from the terminal:
 ```bash
@@ -442,7 +446,9 @@ pages show one column, and the page does not scroll sideways.
 > | `[ERROR 3000] Security Error - Cross Site Forgery` on Save | `=csrf()` is missing from the form | Add it under `form.cq-form(...)`, indented like `=methodField('PUT')` |
 > | `/books/7` shows the catalog instead of the book | The route `/books/{id}` is missing: an address that matches no route shows the first route, `/` | Check the lines of step 3 |
 > | Save shows the catalog instead of the book | `=methodField('PUT')` is missing, so the form is a POST that matches no route | Add it under `=csrf()` |
-> | An error about the class `Bookshelf\BookController` | The file is not in `application/controllers/Bookshelf/`, or the `namespace` line is missing | Check the folder and the first lines |
+> | An error about the class `Bookshelf\BookController` on Save | The file is not in `application/controllers/Bookshelf/`, or the `namespace` line is missing | Check the folder and the first lines |
+> | `/books/7` answers `[ERROR 1005] Page Not Found` for a book that exists | The data name or the capability name in the `Route::page` line is wrong | Compare with step 3: `'found' => 'get_book'` |
+> | An error that names `book.pug` and `$found` | The view uses `$found` but the route has no `data` | Use the `Route::page` line of step 3 for `/books/{id}` |
 > | After a save, the address ends with `/books/` and no id | The redirect used an id that is not in the posted fields (the route's `{id}` is not one of them) | Use the id returned by update_book: `redirect('/books/' . $book['id'])` |
 
 ---
@@ -453,7 +459,8 @@ Start Claude Code in the `bookshelf` folder (`claude`) and give it this prompt:
 
 ```
 Add the Bookshelf web pages. They must only use the existing capabilities (list_books, get_book, list_authors,
-create_book, update_book, delete_book): no rules, SQL or models in the pages or the controller.
+create_book, update_book, delete_book): no rules, SQL or models in the pages or the controller. Pages are declared
+with Route::page; a controller only for the edit form.
 1. Regenerate the JS client: php caligrafer.php client public/js/capabilities.js (in the dev-box container).
 2. application/views/Bookshelf/books.pug: the catalog, with the page components (main.cq-page > one .cq-card,
    .cq-card-head with h2.cq-title "Bookshelf" and a .cq-note). A form#new-book.cq-form with Title (book-title),
@@ -464,16 +471,17 @@ create_book, update_book, delete_book): no rules, SQL or models in the pages or 
    ./capabilities.js. Tabs "All" + one per author filter the list (list_books with author_id). Each row: the title
    as a link to books/<id>, "author, year", a Delete button with confirm('Delete "<title>"?'). Show CapabilityError
    field messages in #error; after adding, reset the form and focus Title. Build rows with textContent.
-4. application/controllers/Bookshelf/BookController.php (namespace Bookshelf): show() calls $this->call('get_book')
-   and renders Bookshelf/book with book, author, form, authors (list_authors) and errors; update() calls
-   $this->call('update_book'), then redirect('/books/' . $book['id']) and exit; on an invalid ServiceError, status
-   422 and the same page with the typed values and $e->fields; other ServiceErrors render Bookshelf/notfound with
-   the message and $e->status().
-5. application/views/Bookshelf/book.pug (one card: title, "by <author>, <year>", the summary or "No summary yet.",
-   an edit form with =csrf() and =methodField('PUT') posting to {$home}books/<id>, button "Save changes", errors in
-   p.cq-error, a footer link "All books") and notfound.pug (card "Not found" with the message).
-6. web.php: the route / shows Bookshelf/books; add a "// BOOKSHELF PAGES" block above Route::run(): GET /books
-   (view Bookshelf/books), GET /books/{id} Bookshelf\\BookController@show, PUT /books/{id} Bookshelf\\BookController@update.
+4. web.php: the route / is Route::page('/', 'Bookshelf/books'); add a "// BOOKSHELF PAGES" block above Route::run():
+   Route::page('/books', 'Bookshelf/books'), Route::page('/books/{id}', 'Bookshelf/book', ['data' => ['found' =>
+   'get_book', 'authors' => ['list_authors', []]]]) and Route::put('/books/{id}', 'Bookshelf\\BookController@update').
+5. application/views/Bookshelf/book.pug: $found is what get_book returns (book, author); set $book, $author, $form
+   (default $book) and $errors (default empty) at the top. One card: title, "by <author>, <year>", the summary or
+   "No summary yet.", an edit form with =csrf() and =methodField('PUT') posting to {$home}books/<id>, button
+   "Save changes", errors in p.cq-error, a footer link "All books"; and notfound.pug (card "Not found" with $message).
+6. application/controllers/Bookshelf/BookController.php (namespace Bookshelf), update() only: $this->call('update_book'),
+   then redirect('/books/' . $book['id']) and exit; on an invalid ServiceError, status 422 and the view Bookshelf/book
+   with found (get_book), authors (list_authors), form (the typed values) and errors ($e->fields); other ServiceErrors
+   render Bookshelf/notfound with the message and $e->status().
 Then check both pages at desktop width and at 375 px.
 ```
 
@@ -483,15 +491,17 @@ Then check both pages at desktop width and at 375 px.
 - [ ] `capabilities.js` was regenerated (6 capabilities), not edited by hand.
 - [ ] Every page uses `main.cq-page > .cq-card` and the classes of the page components; no Bootstrap color classes (`btn-danger`...), no `style` block.
 - [ ] `books.js` calls only the generated functions (no `fetch` of its own) and shows errors in `#error`, never `alert()`.
-- [ ] The controller has no rules, no SQL and no `new Book(...)`: only `$this->call(...)` and views.
+- [ ] The pages are declared with `Route::page`; `/books/{id}` gets its data from `get_book` and `list_authors`.
+- [ ] The controller has only `update()`, no rules, no SQL and no `new Book(...)`: only `$this->call(...)` and views.
 - [ ] `update()` redirects with the id returned by `update_book`, then `exit`.
 - [ ] The edit form has `=csrf()` and `=methodField('PUT')`.
 - [ ] The checks of steps 4 and 7 give what the lesson describes, at desktop width and at 375 px.
 
 **If Claude's result differs:** Claude may render the catalog on the server too, or call `fetch('/capabilities/...')`
-directly. Both work, but the course uses the JS client for the catalog and the controller for the book page, to show
-both ways: ask for the version of the prompt. If Claude writes the validation again in the controller, remove it:
-the rules live in the capabilities only.
+directly. Both work, but the course uses the JS client for the catalog and `Route::page` for the book page, to show
+both ways: ask for the version of the prompt. If Claude writes a `show()` action in the controller to render the book
+page, replace it with the `Route::page` line: a page needs a controller only when it has logic of its own. If Claude
+writes the validation again in the controller, remove it: the rules live in the capabilities only.
 
 ---
 
@@ -507,9 +517,10 @@ Reference: [`checkpoints/lesson-06`](https://github.com/caligrafy/caligrafy-quil
 ## Quiz
 
 1. You add a capability `search_books` but do not run `php caligrafer.php client` again. What happens when `books.js` imports `searchBooks`?
-2. The catalog uses the JS client; the book page uses a controller. Name one reason to render a page on the server.
+2. The catalog uses the JS client; the book page is rendered on the server by `Route::page`. Name one reason to render a page on the server.
 3. Where is the rule "a title is required" written, and which places show its message?
 4. Why does `update()` call `get_book` again after a refusal?
+5. Why is there a controller for the edit form but not for showing the book?
 
 <details><summary>Show the solution</summary>
 
@@ -520,6 +531,9 @@ Reference: [`checkpoints/lesson-06`](https://github.com/caligrafy/caligrafy-quil
    catalog form, on the book page, for `curl` (lesson 05) and for AI agents.
 4. To show the header with the book as it is saved (the refused title was not saved), while the form keeps what the
    visitor typed.
+5. Showing the book is only "call get_book, render the view": `Route::page` does that in one line. Saving has logic
+   of its own (redirect on success, the page again with the messages on a refusal): that is what a controller is for.
+   Both only call capabilities.
 </details>
 
 ---

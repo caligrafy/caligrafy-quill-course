@@ -258,14 +258,14 @@ full file is in the checkpoint):
 
 ```php
     // LOANS: one more feature, every experience: the page, REST, the JS client and AI agents
-    Route::get('/loans', function () { return view('Loans/index', array('authorized' => authorized())); });
+    Route::page('/loans', 'Loans/index');
     Route::capability('GET', '/api/loans', 'list_loans');
     Route::capability('POST', '/api/loans', 'lend_book');
     Route::capability('POST', '/api/books/{book_id}/return', 'return_book');
 ```
 
-The page route is a closure: the page has no server-side data, `public/js/loans.js` does the work in the browser.
-`authorized` tells the layout whether to show "Sign out".
+The page is a `Route::page` with no data: `public/js/loans.js` does the work in the browser. `Route::page` still gives
+the view `authorized`, so the layout shows "Sign out" when someone is signed in.
 
 ### Step 5 - Check REST
 
@@ -521,7 +521,7 @@ Write descriptions for AI agents (say where book_id comes from: list_books, sear
 Experiences:
 - REST in web.php, in a "// LOANS" block above "// MUST NOT BE REMOVED": GET /api/loans list_loans,
   POST /api/loans lend_book, POST /api/books/{book_id}/return return_book.
-- A page /loans (closure route, view Loans/index with 'authorized' => authorized()) built with the page components:
+- A page /loans (Route::page('/loans', 'Loans/index'), no data) built with the page components:
   one card "Loans", a form (Book select of titles from list_books, Borrower, Days with placeholder 14, Lend button),
   the list of open loans ("<borrower>, due <date>", "(late)" when overdue) with a Returned button, an empty state
   "Every book is on the shelf.", errors in .cq-error. Its script public/js/loans.js uses the JS client; visitors

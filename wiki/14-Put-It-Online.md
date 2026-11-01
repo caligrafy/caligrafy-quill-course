@@ -1,7 +1,7 @@
 # Lesson 14 - Put it online
 
-**In this lesson** Bookshelf leaves your computer: you update the project to Caligrafy Quill 2.4.0, which adds a
-production image and a deploy step, put the code on GitHub, and deploy it with **Caligrafy Cloud** to
+**In this lesson** Bookshelf leaves your computer: you check that the project has the production image and the deploy
+step (Caligrafy Quill 2.4.0 and later), put the code on GitHub, and deploy it with **Caligrafy Cloud** to
 `https://bookshelf-<you>.caligrafy.com`: the catalog, the REST API, sign-in and the phone app, on the internet. You
 use the dashboard first, then the same service from the command line.
 
@@ -74,28 +74,28 @@ In this lesson the app is named `bookshelf-sam` and the GitHub account is `sam`:
 everywhere. An app name is 3 to 30 lowercase letters, digits or single dashes, starting with a letter, and it must be
 free on Caligrafy Cloud.
 
-### Step 1 - Check that the project is on Caligrafy Quill 2.4.0
+### Step 1 - Check that the project is on Caligrafy Quill 2.4.0 or later
 
-The production image and the deploy step come with Caligrafy Quill 2.4.0, the release of lesson 01. Check it:
+The production image and the deploy step come with Caligrafy Quill 2.4.0; the release of lesson 01, 2.5.0, has them. Check it:
 ```bash
 docker compose exec dev-box php caligrafer.php version
 ```
-Expected: `Caligrafy Quill 2.4.0` (or later). Then `ls Dockerfile` shows the file, and you can go to step 2.
+Expected: `Caligrafy Quill 2.5.0` (2.4.0 or later is enough here). Then `ls Dockerfile` shows the file, and you can go to step 2.
 
-**Only if it says 2.3.0** (you started the course before 2.4.0 was released): update the project the way lesson 12
-described: get the release in a folder next to `bookshelf`, copy the framework's files over, then let `upgrade`
-handle `application/`.
+**Only if it says 2.3.0** (you started the course before 2.4.0 was released): update the project to the course's
+release, 2.5.0, the way lesson 12 described: get the release in a folder next to `bookshelf`, copy the framework's
+files over, then let `upgrade` handle `application/`.
 
 From the folder that **contains** `bookshelf`:
 ```bash
-git clone --depth 1 --branch v2.4.0 https://github.com/caligrafy/caligrafy-quill.git quill-2.4.0
+git clone --depth 1 --branch v2.5.0 https://github.com/caligrafy/caligrafy-quill.git quill-2.5.0
 ```
 Then from the `bookshelf` folder:
 ```bash
 rm -rf framework claude-plugin
-cp -R ../quill-2.4.0/framework ../quill-2.4.0/claude-plugin .
-cp ../quill-2.4.0/caligrafer.php ../quill-2.4.0/Dockerfile ../quill-2.4.0/Dockerfile.dockerignore ../quill-2.4.0/.gitignore .
-cp ../quill-2.4.0/public/css/tokens.css public/css/
+cp -R ../quill-2.5.0/framework ../quill-2.5.0/claude-plugin .
+cp ../quill-2.5.0/caligrafer.php ../quill-2.5.0/Dockerfile ../quill-2.5.0/Dockerfile.dockerignore ../quill-2.5.0/.gitignore .
+cp ../quill-2.5.0/public/css/tokens.css public/css/
 docker compose exec dev-box php caligrafer.php upgrade
 ```
 - `framework/`, `claude-plugin/`, `caligrafer.php` and `public/css/tokens.css` belong to the framework: you never
@@ -110,15 +110,15 @@ Check the version and the new command:
 docker compose exec dev-box php caligrafer.php doctor
 docker compose exec dev-box php caligrafer.php help
 ```
-Expected: the first line of `doctor` is `Caligrafy doctor (read-only): Caligrafy Quill 2.4.0`, and `help` lists
-`deploy` and `cloud`. Run the unit tests and the smoke test of lesson 12: they still pass. Delete the `quill-2.4.0`
+Expected: the first line of `doctor` is `Caligrafy doctor (read-only): Caligrafy Quill 2.5.0`, and `help` lists
+`deploy` and `cloud`. Run the unit tests and the smoke test of lesson 12: they still pass. Delete the `quill-2.5.0`
 folder when you are done.
 
 > **If it doesn't work**
 >
 > | What you see | Cause | Fix |
 > |---|---|---|
-> | `cp: ../quill-2.4.0/framework: No such file or directory` | The release was cloned somewhere else | Clone it in the folder that contains `bookshelf` |
+> | `cp: ../quill-2.5.0/framework: No such file or directory` | The release was cloned somewhere else | Clone it in the folder that contains `bookshelf` |
 > | `doctor` still says 2.3.0 | `framework/` was not replaced | Run the `rm` and `cp` lines again, from the `bookshelf` folder |
 > | `Command "cloud" not found` or the old help | `caligrafer.php` was not copied | Copy it again |
 
@@ -175,7 +175,7 @@ Caligrafy Cloud builds from GitHub. Commit first:
 ```bash
 git add -A
 git status --short | grep -E "\.env$|\.caligrafy" || echo "no .env and no token: good"
-git commit -m "Lesson 14: Caligrafy Quill 2.4.0 and the online data"
+git commit -m "Lesson 14: the online data"
 ```
 On GitHub, create a new repository: **New repository**, name `bookshelf`, **Private**, and do not add a README,
 a license or a `.gitignore` (your project has them). GitHub then shows the commands for "an existing repository".
@@ -338,8 +338,11 @@ Among the first lines: `application/models/Online/create_db.sql: up to date` and
 `application/models/Team/create_db.sql: run`. The scripts that did not change are not run again; the new one is.
 Sign out and in again as `reader1`: **Delete** is there.
 
-To make another person an administrator later, add their username to the script (`WHERE username IN ('reader1', 'sam')`):
-it changed, so the next deploy runs it again.
+This script is for the **first** administrator. After it, an administrator manages the others without a deploy:
+the user capabilities (`list_users`, `update_user`, lesson 11) work online too. Uncomment the
+`// User Administration Routes` of `web.php`, deploy, and an administrator changes permissions on `/users`. Adding
+usernames to the script
+(`WHERE username IN ('reader1', 'sam')`) also works: it changed, so the next deploy runs it again.
 
 > **If it doesn't work**
 >
@@ -404,7 +407,7 @@ Start Claude Code in the `bookshelf` folder (`claude`). The update of step 1 bro
 /caligrafy-quill:deploy bookshelf-sam
 ```
 
-**What Claude should do:** check that the project is ready before it deploys: Caligrafy Quill 2.4.0 with a `Dockerfile`
+**What Claude should do:** check that the project is ready before it deploys: Caligrafy Quill 2.4.0 or later with a `Dockerfile`
 at the root, everything committed and pushed to GitHub, a `create_db.sql` for every table, no `.env` or token in git,
 and data the online database needs (step 2). Then drive `php caligrafer.php cloud ...`: `account`, `create` (with
 `--repo`), the deploy key to add for a private repository, `deploy`, `status`. When it needs a token, it asks **you**

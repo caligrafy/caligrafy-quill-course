@@ -23,7 +23,7 @@ try {
     // Auth::authentication('User', 'users');
     
     // ROUTE DEFINITION: get, post, put and delete
-    Route::get('/', function() { return view('Bookshelf/books', array('install' => true)); });
+    Route::page('/', 'Bookshelf/books', ['with' => ['install' => true]]);
     Route::get('/helloworld', function() { echo "Hello World"; });
 	
     // Auth Routes - Uncomment only if AUTHENTICATION activated above
@@ -74,10 +74,10 @@ try {
     Route::capabilities('/capabilities');   // the capabilities for the JS client of the Vue apps
     Route::mcp('/mcp');                     // the capabilities as tools for AI agents (personal access tokens)
 
-    // BOOKSHELF PAGES: the catalog (public/js/books.js) and the page of one book (Bookshelf\BookController)
-    Route::get('/books', function () { return view('Bookshelf/books', array('install' => true)); });   // install: offer to add it to the home screen
-    Route::get('/books/{id}', 'Bookshelf\\BookController@show');
-    Route::put('/books/{id}', 'Bookshelf\\BookController@update');
+    // BOOKSHELF PAGES: the catalog (public/js/books.js) and the page of one book (data: get_book and list_authors)
+    Route::page('/books', 'Bookshelf/books', ['with' => ['install' => true]]);   // install: offer to add it to the home screen
+    Route::page('/books/{id}', 'Bookshelf/book', ['data' => ['found' => 'get_book', 'authors' => ['list_authors', []]]]);
+    Route::put('/books/{id}', 'Bookshelf\\BookController@update');   // the edit form: a page with logic of its own
 
     // BOOKSHELF API: the same capabilities, for other applications (JSON)
     Route::capability('GET', '/api/books', 'list_books');

@@ -1,8 +1,13 @@
 extends ../default/master/layoutblocks
 
-//- One book, rendered on the server by Bookshelf\BookController from get_book; the form calls update_book
+//- One book, rendered on the server by Route::page with the data of get_book; the form calls update_book
 
 block content
+    //- $found: what get_book returned (Route::page data). After a refused save, the controller also gives $form and $errors
+    - $book = $found['book'];
+    - $author = $found['author'];
+    - $form = isset($form) ? $form : $book;
+    - $errors = isset($errors) ? $errors : array();
     main.cq-page
         .cq-card
             .cq-card-head

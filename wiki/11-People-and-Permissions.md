@@ -73,14 +73,10 @@ In `application/config/routing/web.php`:
    ```php
        Auth::authentication('User', 'users');
    ```
-2. Replace the route of `/` with:
-   ```php
-       Route::get('/', 'Bookshelf\\BookController@catalog');
-   ```
-3. Replace the commented block `// Auth Routes - Uncomment only if AUTHENTICATION activated above` and its 7 lines with:
+2. Replace the commented block `// Auth Routes - Uncomment only if AUTHENTICATION activated above` and its 7 lines with:
    ```php
        // SIGN IN, SIGN OUT, REGISTER: the controllers of the framework; after signing in, /home is the catalog
-       Route::get('/home', 'Bookshelf\\BookController@catalog');
+       Route::page('/home', 'Bookshelf/books', ['with' => ['install' => true]]);
        Route::get('/login', 'Caligrafy\\Controllers\\AuthController');
        Route::get('/logout', 'Caligrafy\\Controllers\\AuthController@logout');
        Route::get('/notAuthorized', 'Caligrafy\\Controllers\\AuthController@notAuthorized');
@@ -88,12 +84,9 @@ In `application/config/routing/web.php`:
        Route::post('/login', 'Caligrafy\\Controllers\\AuthController@login');
        Route::post('/register', 'Caligrafy\\Controllers\\AuthController@register');
    ```
-4. In the `// BOOKSHELF PAGES` block, replace the route of `/books` with:
-   ```php
-       Route::get('/books', 'Bookshelf\\BookController@catalog');
-   ```
-
-The sign-in page sends people to `/home` after signing in and signing out: it now shows the catalog. The full file is
+The sign-in page sends people to `/home` after signing in and signing out: it now shows the catalog. The routes of
+`/` and `/books` do not change: a page declared with `Route::page` gets `$authorized` by itself, so the header shows
+**Sign out** as soon as someone is signed in. The full file is
 in the checkpoint.
 
 ### Step 3 - Close the doors, once
@@ -124,7 +117,7 @@ That is the whole security change. Everything below is about telling people and 
 
 ### Step 4 - The pages show what the visitor may do
 
-**File `application/controllers/Bookshelf/BookController.php`** (a new `catalog()` action; every view gets `authorized`; `update()` shows any refusal):
+**File `application/controllers/Bookshelf/BookController.php`** (`update()` shows any refusal, and gives the page `authorized`):
 
 ```php
 <?php
@@ -134,27 +127,10 @@ namespace Bookshelf;
 use Caligrafy\Controller;
 use Caligrafy\ServiceError;
 
-// The Bookshelf pages: the catalog, and the page of one book rendered from the get_book and update_book capabilities
+// The edit form of the book page (PUT /books/{id}). Showing a page is Route::page's job; saving a form, then
+// redirecting or showing the page again with the messages, is logic of its own: a controller. It only calls capabilities.
 class BookController extends Controller
 {
-    // GET /, /books and /home: the catalog (public/js/books.js does the rest)
-    public function catalog()
-    {
-        // install: offer to add it to the home screen; authorized: the header shows Sign out
-        return view('Bookshelf/books', array('install' => true, 'authorized' => authorized()));
-    }
-
-    // GET /books/{id}
-    public function show()
-    {
-        try {
-            $found = $this->call('get_book');   // the input is {id}, from the route
-            return $this->page($found, $found['book']);
-        } catch (ServiceError $e) {
-            return $this->notFound($e);
-        }
-    }
-
     // PUT /books/{id}: the edit form of the page is sent here
     public function update()
     {
@@ -164,48 +140,45 @@ class BookController extends Controller
             exit;
         } catch (ServiceError $e) {
             if ($e->kind === 'not_found') {
-                return $this->notFound($e);
+                http_response_code($e->status());
+                return view('Bookshelf/notfound', array('message' => $e->getMessage(), 'authorized' => authorized()));
             }
             // show the page again: the form keeps what was typed, with the messages of the capability
             http_response_code($e->status());
             $found = $this->call('get_book');
-            $errors = $e->fields ?: array($e->getMessage());   // "Sign in or send a personal access token"
-            return $this->page($found, array_merge($found['book'], $this->request->parameters), $errors);
+            return view('Bookshelf/book', array(
+                'found' => $found,
+                'authors' => $this->call('list_authors', array()),
+                'form' => array_merge($found['book'], $this->request->parameters),
+                'errors' => $e->fields ?: array($e->getMessage()),   // "Sign in or send a personal access token"
+                'authorized' => authorized()
+            ));
         }
-    }
-
-    private function page(array $found, array $form, array $errors = array())
-    {
-        return view('Bookshelf/book', array(
-            'book' => $found['book'],
-            'author' => $found['author'],
-            'form' => $form,
-            'authors' => $this->call('list_authors', array()),
-            'errors' => $errors,
-            'authorized' => authorized()
-        ));
-    }
-
-    private function notFound(ServiceError $e)
-    {
-        http_response_code($e->status());
-        return view('Bookshelf/notfound', array('message' => $e->getMessage(), 'authorized' => authorized()));
     }
 }
 ```
 
-- `authorized()` is `true` when someone is signed in: the layout then shows **Sign out** in the header.
+- `Route::page` gives its pages `authorized` (`true` when someone is signed in): the layout then shows **Sign out** in
+  the header. This controller renders the page itself after a refused save, so it passes `authorized()` too.
 - When `update_book` refuses a visitor, `$e->fields` is empty, so the page shows the message of the capability
   (`Sign in or send a personal access token`) with its status.
+- A page that only signed-in people may open would say so on its route: `Route::page('/account', 'Account/index',
+  ['signedIn' => true])` sends visitors to `/login`, and `['level' => 1]` sends people below level 1 to `/notAuthorized`.
+  Bookshelf's pages stay open to visitors: they may read.
 
 **File `application/views/Bookshelf/book.pug`** (the edit form only for people signed in):
 
 ```pug
 extends ../default/master/layoutblocks
 
-//- One book, rendered on the server by Bookshelf\BookController from get_book; the form (signed in only) calls update_book
+//- One book, rendered on the server by Route::page with the data of get_book; the form (signed in only) calls update_book
 
 block content
+    //- $found: what get_book returned (Route::page data). After a refused save, the controller also gives $form and $errors
+    - $book = $found['book'];
+    - $author = $found['author'];
+    - $form = isset($form) ? $form : $book;
+    - $errors = isset($errors) ? $errors : array();
     main.cq-page
         .cq-card
             .cq-card-head
@@ -375,6 +348,14 @@ docker compose exec mysql mysql -uroot -proot caligrafy -e "UPDATE users SET per
 session: **sign in again** as reader1. Now every book has **Delete**. The librarian agent's tools/list now includes
 `delete_book`, because it acts for reader1. Click **Sign out**: the book page says **Sign in to edit this book** again.
 
+**The next administrators, without SQL.** The `UPDATE` above is only for the first one. Once someone is an
+administrator, the framework's user capabilities manage the others: `list_users`, `get_user`, `update_user` and
+`delete_user` (administrators only, never a password). To try it, uncomment the `// User Administration Routes`
+block of `web.php`, sign in as reader1 and open `/users`: a name opens its page, where you change the permissions.
+Or let an agent do it with a token of reader1 that has the `users:read` and `users:write` scopes
+(`token create "admin agent" --scopes users:read,users:write --user <id of reader1>`): "make reader2 an administrator"
+calls `update_user` with `permissions: 1`. The same rules, the same audit log.
+
 ### Step 9 - Read the audit log and the other experiences
 
 ```bash
@@ -396,8 +377,8 @@ Every refusal is there, with the channel and who: `rest  token  2  create_book  
 > | What you see | Cause | Fix |
 > |---|---|---|
 > | An error that ends with `Table 'caligrafy.users' doesn't exist` | Step 1 was skipped | Run the users script |
-> | After signing in you see the Caligrafy welcome page | `/home` still points to `AuthController@home` | `Route::get('/home', 'Bookshelf\\BookController@catalog');` |
-> | Signed in, but no **Sign out** and no form | The view did not receive `authorized`, or the clients were not regenerated | Compare `BookController`; run step 5; reload with <kbd>Shift</kbd> |
+> | After signing in you see the Caligrafy welcome page | `/home` still points to `AuthController@home` | `Route::page('/home', 'Bookshelf/books', ['with' => ['install' => true]]);` |
+> | Signed in, but no **Sign out** and no form | A page route is not a `Route::page` (a closure does not give `authorized`), or the clients were not regenerated | Compare the routes with the checkpoint; run step 5; reload with <kbd>Shift</kbd> |
 > | The form still shows to visitors | `books.pug` has no `hidden` on the form, or `books.js` is the old one | Compare with step 4 |
 > | No **Delete** for the administrator | You did not sign in again after the `UPDATE` | Sign out, sign in |
 > | Sign up says the inputs are invalid | A space or a dash in the username, or a passcode under 8 characters | Letters and digits; 8 to 72 characters |
@@ -416,11 +397,11 @@ then:
 ```
 Turn on people and permissions in Bookshelf. In web.php: uncomment Auth::authentication('User', 'users'); replace
 the commented "Auth Routes" block with the AuthController routes (GET /login, /logout, /notAuthorized, /register,
-POST /login, /register) and GET /home; /, /books and /home use a new action Bookshelf\BookController@catalog that
-returns view('Bookshelf/books', array('install' => true, 'authorized' => authorized())). Capabilities: remove
+POST /login, /register) and Route::page('/home', 'Bookshelf/books', ['with' => ['install' => true]]) (/ and /books
+are already Route::page: they get authorized by themselves). Capabilities: remove
 public: true from create_book and update_book; delete_book gets level: 1 instead (only permissions >= 1); the reads
-stay public. BookController: every view gets 'authorized' => authorized(); in update(), only not_found shows the
-not-found page; otherwise answer $e->status() and show $e->fields or, when empty, the capability's message.
+stay public. BookController::update(): only not_found shows the not-found page; otherwise answer $e->status() and show
+the book view with $e->fields or, when empty, the capability's message; pass 'authorized' => authorized() to both views.
 book.pug: the edit form only when $authorized, else a "Sign in to edit this book" button to /login. books.pug: the
 form is hidden by default, plus a hidden #sign-in section with "Sign in to add books". books.js: ask capabilities()
 once; show the form only if create_book is allowed (else #sign-in), and Delete only if delete_book is allowed.
