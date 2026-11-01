@@ -53,7 +53,9 @@ calls its own routes with the session instead: `{ headers: apiHeaders() }` (from
 
 **`upgrade`.** `quickstart` copied the framework's template files into `application/`. When a later release of
 Caligrafy Quill comes out, `php caligrafer.php upgrade` compares your copies with the new templates and updates the
-files you never changed. Without `--apply` it is a **dry run**: it only shows the plan.
+files you never changed. Without `--apply` it is a **dry run**: it only shows the plan. Since 2.9.0,
+`php caligrafer.php update` goes further: it brings the whole project to a newer release (the framework, its other
+files, the new settings) and runs `upgrade --apply` at the end. Lesson 14 uses it.
 
 ---
 
