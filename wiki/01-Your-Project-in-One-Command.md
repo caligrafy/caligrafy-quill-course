@@ -61,7 +61,7 @@ git clone --branch v2.7.0 https://github.com/caligrafy/caligrafy-quill.git books
 cd bookshelf
 ```
 Expected: `Cloning into 'bookshelf'...`, then a line
-`warning: refs/tags/v2.7.0 <a long hexadecimal id> is not a commit!` and a note that you are in
+`warning: refs/tags/v2.7.0 82c2872985866cee0f115f380b2e636811b2e3b4 is not a commit!` and a note that you are in
 `'detached HEAD' state`. Both are **harmless**: a release tag points to a fixed version, not to a branch.
 
 > **Already have PHP, Composer and MAMP, XAMPP or LAMP?** You can start without Git or Docker: in your server's web
