@@ -61,7 +61,7 @@ git clone --branch v2.5.0 https://github.com/caligrafy/caligrafy-quill.git books
 cd bookshelf
 ```
 Expected: `Cloning into 'bookshelf'...`, then a line
-`warning: refs/tags/v2.5.0 <TAG-OBJECT-HASH> is not a commit!` and a note that you are in
+`warning: refs/tags/v2.5.0 9aa5dd3ab0d4fa9ed997610c8037ea300c61b61c is not a commit!` and a note that you are in
 `'detached HEAD' state`. Both are **harmless**: a release tag points to a fixed version, not to a branch.
 
 **From now on, every command of the course runs in this `bookshelf` folder**, unless a lesson says otherwise.
