@@ -228,8 +228,8 @@ Bio and "Add author".
 
 ## With Claude
 
-The plugin's `/caligrafy-quill:new-resource` command scaffolds a whole classic resource (table, model, controller with
-validated actions, routes). Authors already exist, so here ask directly:
+This appendix writes the classic way on purpose, so ask Claude directly (the plugin's `/caligrafy-quill:new-resource`
+builds a resource capabilities first, the way of the lessons, not this way). Authors already exist:
 ```
 The classic way, without capabilities: add to Bookshelf\AuthorController a createForm() action for GET /authors/new
 and a create() action for POST /authors. Both are for signed-in users only (redirect('/login') and exit otherwise).

@@ -234,7 +234,9 @@ folder.
 | Command | `/caligrafy-quill:db <file.sql\|tables\|query "SQL">` | 03 |
 | Command | `/caligrafy-quill:new-capability <name> [scope] [read-only\|destructive]` | 04, 05, 08, 13 |
 | Command | `/caligrafy-quill:new-app <app\|create\|bot\|facedetect\|ml> <name>` | 09, 10 |
-| Command | `/caligrafy-quill:new-resource` (classic MVC) | appendix |
+| Command | `/caligrafy-quill:new-resource` (a whole resource: table, model, capabilities, REST routes, pages) | not used: the course builds each part by hand first |
+| Command | `/caligrafy-quill:deploy [app-name]`: checks the project and puts it online | 14 |
+| Command | `/caligrafy-quill:idea <your idea>`: from an idea to an application online, every step at once | after the course |
 | Agent | `caligrafy-reviewer`: reviews your Caligrafy code | 12 |
 
 **How to work with Claude in this course**
