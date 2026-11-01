@@ -70,8 +70,8 @@ Every lesson has the same structure:
 - [Appendix A - Routes and controllers by hand](A-Routes-and-Controllers)
 - [Appendix B - Classic forms and controller APIs](B-Classic-Forms)
 
-The course was written and checked against **Caligrafy Quill 2.3.0**; lesson 14 updates the project to **2.4.0**,
-which adds the production image and the deploy step. The full framework documentation is the
+The course uses **Caligrafy Quill 2.4.0**, the release with the production image and the deploy step of lesson 14
+(a project started with 2.3.0 is updated at the start of lesson 14). The full framework documentation is the
 [Caligrafy Quill wiki](https://github.com/caligrafy/caligrafy-quill/wiki). This course replaces the older
 [caligrafy-course](https://github.com/caligrafy/caligrafy-course) and
 [caligrafy-vue-course](https://github.com/caligrafy/caligrafy-vue-course).

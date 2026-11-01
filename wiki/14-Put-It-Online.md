@@ -74,11 +74,17 @@ In this lesson the app is named `bookshelf-sam` and the GitHub account is `sam`:
 everywhere. An app name is 3 to 30 lowercase letters, digits or single dashes, starting with a letter, and it must be
 free on Caligrafy Cloud.
 
-### Step 1 - Update the project to Caligrafy Quill 2.4.0
+### Step 1 - Check that the project is on Caligrafy Quill 2.4.0
 
-The production image and the deploy step come with Caligrafy Quill 2.4.0. Your project was made with 2.3.0. Update it
-the way lesson 12 described: get the release in a folder next to `bookshelf`, copy the framework's files over, then
-let `upgrade` handle `application/`.
+The production image and the deploy step come with Caligrafy Quill 2.4.0, the release of lesson 01. Check it:
+```bash
+docker compose exec dev-box php caligrafer.php version
+```
+Expected: `Caligrafy Quill 2.4.0` (or later). Then `ls Dockerfile` shows the file, and you can go to step 2.
+
+**Only if it says 2.3.0** (you started the course before 2.4.0 was released): update the project the way lesson 12
+described: get the release in a folder next to `bookshelf`, copy the framework's files over, then let `upgrade`
+handle `application/`.
 
 From the folder that **contains** `bookshelf`:
 ```bash
@@ -112,7 +118,6 @@ folder when you are done.
 >
 > | What you see | Cause | Fix |
 > |---|---|---|
-> | `Remote branch v2.4.0 not found` | That release is not out yet | Wait for it: this lesson needs 2.4.0 |
 > | `cp: ../quill-2.4.0/framework: No such file or directory` | The release was cloned somewhere else | Clone it in the folder that contains `bookshelf` |
 > | `doctor` still says 2.3.0 | `framework/` was not replaced | Run the `rm` and `cp` lines again, from the `bookshelf` folder |
 > | `Command "cloud" not found` or the old help | `caligrafer.php` was not copied | Copy it again |

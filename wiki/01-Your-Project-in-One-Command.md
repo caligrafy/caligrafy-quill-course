@@ -18,7 +18,7 @@ your connection. Later starts take seconds.
 the framework into a new folder, and that folder becomes your project. Your code goes in `application/` and
 `public/`; the framework stays in `framework/`.
 
-**A release.** `--branch v2.3.0` gets exactly the version 2.3.0 of the framework, the one this course was written
+**A release.** `--branch v2.4.0` gets exactly the version 2.4.0 of the framework, the one this course was written
 and checked with, even after newer versions come out.
 
 **Caligrafer.** The command line tool of Caligrafy. It has two doors:
@@ -57,11 +57,11 @@ Choose the folder where you keep your projects (here `~/code`) and clone the rel
 ```bash
 mkdir -p ~/code
 cd ~/code
-git clone --branch v2.3.0 https://github.com/caligrafy/caligrafy-quill.git bookshelf
+git clone --branch v2.4.0 https://github.com/caligrafy/caligrafy-quill.git bookshelf
 cd bookshelf
 ```
 Expected: `Cloning into 'bookshelf'...`, then a line
-`warning: refs/tags/v2.3.0 d1915f5af39b90a2f5b33dddcc7d44af5a11ea27 is not a commit!` and a note that you are in
+`warning: refs/tags/v2.4.0 80d194300d5ada55d326ed4cb1e5d558f8de8708 is not a commit!` and a note that you are in
 `'detached HEAD' state`. Both are **harmless**: a release tag points to a fixed version, not to a branch.
 
 **From now on, every command of the course runs in this `bookshelf` folder**, unless a lesson says otherwise.
@@ -136,7 +136,7 @@ Expected: `{"data":[]}` (or your tasks, if you left some on the page).
 ```bash
 docker compose exec dev-box php caligrafer.php doctor
 ```
-Expected: the first line `Caligrafy doctor (read-only): Caligrafy Quill 2.3.0`, then one line per check, and the
+Expected: the first line `Caligrafy doctor (read-only): Caligrafy Quill 2.4.0`, then one line per check, and the
 last line:
 ```
  13 OK, 0 WARN, 0 FAIL, 6 SKIP
@@ -211,8 +211,8 @@ Two ways, both reach the same project.
 
 **A. Let Claude create the project.** In the folder where you keep your projects (`~/code`), start `claude` and ask:
 ```
-Clone the Caligrafy Quill release v2.3.0 into a new folder named bookshelf:
-git clone --branch v2.3.0 https://github.com/caligrafy/caligrafy-quill.git bookshelf
+Clone the Caligrafy Quill release v2.4.0 into a new folder named bookshelf:
+git clone --branch v2.4.0 https://github.com/caligrafy/caligrafy-quill.git bookshelf
 Then, inside bookshelf, set it up with quickstart. It deletes the .git folder of the framework: ask me first,
 and once I agree, run .bin/caligrafer quickstart --example --yes. Then run docker compose exec dev-box php caligrafer.php doctor and show me
 the summary line. Do not print the contents of .env.

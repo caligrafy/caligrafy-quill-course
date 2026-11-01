@@ -41,7 +41,7 @@ CSS to write ([page components](https://github.com/caligrafy/caligrafy-quill/wik
 | `main.cq-page > .cq-card` | the page, then one centered white card below the header |
 | `.cq-card-head > h2.cq-title + p.cq-note` | the title of the card and one line of context |
 | `form.cq-form > .cq-fields.cq-fields--2 > div > label + input` | labeled fields, two columns on wide screens, one on phones |
-| `button.btn.btn-primary.cq-submit` | the full-width black button |
+| `button.btn.btn-primary.cq-submit` | the black button (at least 150px, on the left, like the sign-in screen) |
 | `p.cq-error(role='alert')` | where the messages of a refusal go |
 | `.cq-tabs`, `ul.cq-list > li.cq-item`, `p.cq-empty`, `.cq-section`, `.cq-foot` | tabs, list rows, the empty state, a block of text, the footer |
 
