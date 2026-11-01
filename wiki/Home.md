@@ -76,8 +76,9 @@ Every lesson has the same structure:
 - [Appendix A - Routes and controllers by hand](A-Routes-and-Controllers)
 - [Appendix B - Classic forms and controller APIs](B-Classic-Forms)
 
-The course uses **Caligrafy Quill 2.11.0**: `Route::page` and Caligrafy's look (the master `site.pug`, `layout.css`
-and `look.css`, 2.11.0 and later) for the pages of lesson 06, and the production image and the deploy step of lesson
+The course uses **Caligrafy Quill 2.12.0**: `Route::page` and Caligrafy's look (the master `site.pug`, `layout.css`
+and `look.css`, 2.11.0 and later) for the pages of lesson 06, the list and its detail side by side (`.cq-split`,
+2.12.0 and later) for the apps of lessons 09 and 10, and the production image and the deploy step of lesson
 14 (2.4.0 and later). The full framework documentation is the
 [Caligrafy Quill wiki](https://github.com/caligrafy/caligrafy-quill/wiki). This course replaces the older
 [caligrafy-course](https://github.com/caligrafy/caligrafy-course) and

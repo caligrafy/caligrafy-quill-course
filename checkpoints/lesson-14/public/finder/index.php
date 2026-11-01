@@ -29,9 +29,9 @@
                 <p class="cq-lead">Type a few words of a title or a summary: the search_books capability answers as you type.</p>
             </section>
 
-            <!-- the search field and the books found -->
-            <section class="cq-band cq-band--tight">
-                <div class="cq-inner cq-inner--narrow">
+            <!-- side by side from tablets up: the search and the books found, the book opened (get_book) -->
+            <div class="cq-split">
+                <section class="cq-split-main">
                     <form @submit.prevent>
                         <div class="cq-field">
                             <label for="query">Search</label>
@@ -53,19 +53,18 @@
                     </ul>
                     <p class="cq-empty-state" v-if="!books.length">No book matches "{{ query }}".</p>
                     <p class="cq-auth-note">{{ books.length }} book(s)</p>
-                </div>
-            </section>
+                </section>
 
-            <!-- the book opened: get_book, in a grey band under the list -->
-            <section class="cq-band cq-band--surface">
-                <div class="cq-inner cq-inner--narrow" v-if="selected">
-                    <h2 class="cq-heading">{{ selected.book.title }}</h2>
-                    <p class="cq-lead">by {{ selected.author.name }}, {{ selected.book.published_year }}</p>
-                    <p class="cq-lead">{{ selected.book.summary || 'No summary yet.' }}</p>
-                    <p class="cq-row-meta">{{ selected.author.bio }}</p>
-                </div>
-                <p class="cq-empty-state" v-else>Open a book to read about it.</p>
-            </section>
+                <aside class="cq-split-detail" aria-live="polite">
+                    <template v-if="selected">
+                        <h2 class="cq-heading">{{ selected.book.title }}</h2>
+                        <p class="cq-lead">by {{ selected.author.name }}, {{ selected.book.published_year }}</p>
+                        <p class="cq-lead">{{ selected.book.summary || 'No summary yet.' }}</p>
+                        <p class="cq-row-meta">{{ selected.author.bio }}</p>
+                    </template>
+                    <p class="cq-empty-state" v-else>Open a book to read about it.</p>
+                </aside>
+            </div>
         </div>
 
         <!-- Vue 3 (pinned by Caligrafy), then app.js, which defines loadEnvironment() and loadVue() -->

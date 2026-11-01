@@ -1,4 +1,4 @@
-<!-- The catalog: the list filtered as you type, then the form in a grey band (one column, on every screen) -->
+<!-- The catalog: the list filtered as you type and the form, side by side from tablets up (one column on phones) -->
 <template>
   <main>
     <section class="cq-hero cq-hero--page">
@@ -6,9 +6,9 @@
       <p class="cq-lead">The same catalog as the web pages, the REST API and AI agents.</p>
     </section>
 
-    <!-- the list, filtered as you type (search_books) -->
-    <section class="cq-band cq-band--tight">
-      <div class="cq-inner cq-inner--narrow">
+    <!-- side by side from tablets up: the list, filtered as you type (search_books), and the form (create_book) -->
+    <div class="cq-split">
+      <section class="cq-split-main">
         <div class="cq-field">
           <label for="query">Search</label>
           <input id="query" class="form-control" type="search" v-model="query" @input="search" placeholder="magic, time..." autocomplete="off">
@@ -22,12 +22,10 @@
           </li>
         </ul>
         <p class="cq-empty-state" v-if="!books.length">No book here: add one.</p>
-      </div>
-    </section>
+      </section>
 
-    <!-- the form (create_book): the messages come from its rules -->
-    <section class="cq-band cq-band--surface">
-      <div class="cq-inner cq-inner--narrow cq-stack">
+      <!-- the messages of the form come from the rules of create_book -->
+      <aside class="cq-split-detail">
         <h2 class="cq-heading">Add a book</h2>
         <form @submit.prevent="add" novalidate>
           <div class="cq-form-grid">
@@ -49,8 +47,8 @@
           <button class="btn btn-primary" type="submit">Add book</button>
           <p class="cq-field-error" role="alert">{{ error }}</p>
         </form>
-      </div>
-    </section>
+      </aside>
+    </div>
   </main>
 </template>
 

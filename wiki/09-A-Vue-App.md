@@ -81,7 +81,7 @@ the top bar, the title *My Vue app* and the capabilities you may call, as rows. 
 
 ### Step 2 - The HTML of the app
 
-**File `public/finder/index.php`** (the same look as the pages: the top bar, a title band, a band with the search field and the rows, a grey band for the book):
+**File `public/finder/index.php`** (the same look as the pages: the top bar, a title band, then the search field and the rows side by side with the book):
 
 ```php
 <!DOCTYPE html>
@@ -115,9 +115,9 @@ the top bar, the title *My Vue app* and the capabilities you may call, as rows. 
                 <p class="cq-lead">Type a few words of a title or a summary: the search_books capability answers as you type.</p>
             </section>
 
-            <!-- the search field and the books found -->
-            <section class="cq-band cq-band--tight">
-                <div class="cq-inner cq-inner--narrow">
+            <!-- side by side from tablets up: the search and the books found, the book opened (get_book) -->
+            <div class="cq-split">
+                <section class="cq-split-main">
                     <form @submit.prevent>
                         <div class="cq-field">
                             <label for="query">Search</label>
@@ -139,19 +139,18 @@ the top bar, the title *My Vue app* and the capabilities you may call, as rows. 
                     </ul>
                     <p class="cq-empty-state" v-if="!books.length">No book matches "{{ query }}".</p>
                     <p class="cq-auth-note">{{ books.length }} book(s)</p>
-                </div>
-            </section>
+                </section>
 
-            <!-- the book opened: get_book, in a grey band under the list -->
-            <section class="cq-band cq-band--surface">
-                <div class="cq-inner cq-inner--narrow" v-if="selected">
-                    <h2 class="cq-heading">{{ selected.book.title }}</h2>
-                    <p class="cq-lead">by {{ selected.author.name }}, {{ selected.book.published_year }}</p>
-                    <p class="cq-lead">{{ selected.book.summary || 'No summary yet.' }}</p>
-                    <p class="cq-row-meta">{{ selected.author.bio }}</p>
-                </div>
-                <p class="cq-empty-state" v-else>Open a book to read about it.</p>
-            </section>
+                <aside class="cq-split-detail" aria-live="polite">
+                    <template v-if="selected">
+                        <h2 class="cq-heading">{{ selected.book.title }}</h2>
+                        <p class="cq-lead">by {{ selected.author.name }}, {{ selected.book.published_year }}</p>
+                        <p class="cq-lead">{{ selected.book.summary || 'No summary yet.' }}</p>
+                        <p class="cq-row-meta">{{ selected.author.bio }}</p>
+                    </template>
+                    <p class="cq-empty-state" v-else>Open a book to read about it.</p>
+                </aside>
+            </div>
         </div>
 
         <!-- Vue 3 (pinned by Caligrafy), then app.js, which defines loadEnvironment() and loadVue() -->
@@ -167,12 +166,13 @@ the top bar, the title *My Vue app* and the capabilities you may call, as rows. 
 
 What to notice:
 - The `<link>` tags load the same CSS as the Pug pages (`theme.css`, `tokens.css`, then `layout.css` and `look.css`),
-  and `<body class="cq-site">` turns Caligrafy's look on: same top bar, same title band, bands and rows
-  (`cq-hero`, `cq-band`, `cq-rows`) as the pages of lesson 06. The PHP of `index.php` writes the address of the site
+  and `<body class="cq-site">` turns Caligrafy's look on: same top bar, same title band and rows (`cq-hero`,
+  `cq-rows`) as the pages of lesson 06. The PHP of `index.php` writes the address of the site
   (`session('home')`) and of its `public` folder (`session('public')`) for the links and the mark.
-- `.cq-band--surface` is a band with a grey background: the opened book stands apart from the list. On every width
-  the page is one column; you write no CSS for that.
-- The book of the grey band comes from `get_book`: `selected.book` and `selected.author`, the two parts of its answer.
+- `.cq-split` puts two parts side by side: `.cq-split-main` (the search field and the rows) and
+  `aside.cq-split-detail` (the book opened), a grey panel that stays in view while the list scrolls. From tablets up
+  they sit side by side; on a phone the panel comes after the list. You write no CSS for that.
+- The book of the panel comes from `get_book`: `selected.book` and `selected.author`, the two parts of its answer.
 
 ### Step 3 - The Vue code
 
@@ -234,13 +234,13 @@ What to notice:
 
 Open http://localhost:8080/apps/finder (reload if it was open).
 1. Under the title **Find a book**, the rows list every book; the note under them says how many (`5 book(s)`, or
-   more if you added some). The grey band says `Open a book to read about it.`
+   more if you added some). The grey panel on the right says `Open a book to read about it.`
 2. Type `time` and pause: only **Kindred** stays (its summary says "pulled back in time"). The note: `1 book(s)`.
-3. Click **Open**: in the grey band under the list, "Kindred", "by Octavia E. Butler, 1979", the summary, then the
+3. Click **Open**: in the grey panel beside the list, "Kindred", "by Octavia E. Butler, 1979", the summary, then the
    author's bio.
 4. Type `zzzz`: `No book matches "zzzz".`
-5. Make the window narrow (or open the browser's device toolbar at 375 px): the same column, each Open button under its
-   book, no horizontal scroll.
+5. Make the window narrow (or open the browser's device toolbar at 375 px): one column, the book's panel after the
+   list, each Open button under its book, no horizontal scroll.
 
 Check what the app sends: open the developer tools (<kbd>F12</kbd>), tab **Network**, reload, type `magic`.
 You see `GET capabilities` once (the client fetches the CSRF token), then `POST list_books` and `POST search_books`.
@@ -278,13 +278,12 @@ Turn public/finder into a Vue 3 app (Vue as a library) that finds books with the
 use axios or the API key: in mounted(), load the JS client with this.api = await import(env.home +
 'public/js/capabilities.js'), then show listBooks(). A search field calls searchBooks({ query }) 250 ms after the
 typing pauses (listBooks() when the query has fewer than 2 characters). Each book has an Open button that calls
-getBook({ id }) and shows, in a grey band under the list, the title, "by <author>, <year>", the summary (or "No
+getBook({ id }) and shows, in a panel beside the list, the title, "by <author>, <year>", the summary (or "No
 summary yet.") and the author's bio. Show a CapabilityError's field messages (or its message) in p.cq-field-error.
 Use Caligrafy's look, like the app template: body.cq-site, the top bar nav.cq-nav, a title band
-section.cq-hero.cq-hero--page ("Find a book"), section.cq-band.cq-band--tight > .cq-inner.cq-inner--narrow with the
-search .cq-field, ul.cq-rows > li.cq-row (.cq-row-main, .cq-row-actions), p.cq-empty-state and a p.cq-auth-note with
-"N book(s)", then a section.cq-band.cq-band--surface for the book; link theme.css, tokens.css, layout.css and look.css
-like the template.
+section.cq-hero.cq-hero--page ("Find a book"), then .cq-split: section.cq-split-main with the search .cq-field,
+ul.cq-rows > li.cq-row (.cq-row-main, .cq-row-actions), p.cq-empty-state and a p.cq-auth-note with "N book(s)", and
+aside.cq-split-detail for the book; link theme.css, tokens.css, layout.css and look.css like the template.
 Do not add routes or server code: /apps/{appName} already serves it.
 ```
 
@@ -296,8 +295,8 @@ Do not add routes or server code: /apps/{appName} already serves it.
 - [ ] The client is loaded with `import(env.home + 'public/js/capabilities.js')`, and the app calls `listBooks`,
       `searchBooks` and `getBook` only.
 - [ ] `git status --short` shows only `?? public/finder/`: no change in `web.php`, `application/` or the services.
-- [ ] The page has `body.cq-site`, uses `cq-hero`, `cq-band`, `cq-rows` (no `cq-card`) and loads `layout.css` and `look.css`.
-- [ ] Step 4 works: `time` finds Kindred, Open shows the author's bio, phone width is one column.
+- [ ] The page has `body.cq-site`, uses `cq-hero`, `cq-split`, `cq-rows` (no `cq-card`) and loads `layout.css` and `look.css`.
+- [ ] Step 4 works: `time` finds Kindred, Open shows the author's bio beside the list, phone width is one column.
 
 **If Claude's result differs:** if it adds a route such as `/finder`, ask it to remove it: `/apps/finder` is enough.
 If it writes `import { searchBooks } from ...` at the top of `main.js`, the app does not start (a classic script
