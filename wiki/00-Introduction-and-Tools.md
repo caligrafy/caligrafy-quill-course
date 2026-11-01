@@ -1,7 +1,7 @@
 # Lesson 00 - What you will build, and your tools
 
 **In this lesson** you learn the one idea of the course (build once, experience everywhere), see what Bookshelf
-will be at the end, learn how the lessons work, and install every tool the course uses. You do not write code yet.
+will be at the end (online, used everywhere), learn how the lessons work, and install every tool the course uses. You do not write code yet.
 
 **Before you start:** a computer with macOS, Windows 10/11 or Linux, and an internet connection.
 
@@ -54,7 +54,8 @@ message everywhere.
 - a **phone and tablet app** that you can install on the home screen;
 - **sign-in with permissions**: visitors read, signed-in people add, administrators delete, each agent has its own
   limited key;
-- **loans**: who borrowed which book, until when.
+- **loans**: who borrowed which book, until when;
+- and it is **online**: at `https://bookshelf-<you>.caligrafy.com`, deployed from your GitHub repository.
 
 | Part | Lessons | What you do |
 |---|---|---|
@@ -62,7 +63,7 @@ message everywhere.
 | Part 1 - Build once | 03 to 05 | The tables, then the Bookshelf capabilities and their rules |
 | Part 2 - Experience everywhere | 06 to 10 | Web pages, the REST API, AI agents, a Vue app, phones and tablets |
 | Part 3 - People and trust | 11 | Sign-in, permission levels, tokens with limited scopes |
-| Part 4 - Ship it | 12, 13 | Tests, review, `doctor`; a last feature (loans) built everywhere on your own |
+| Part 4 - Ship it | 12 to 14 | Tests, review, `doctor`; a last feature (loans) built everywhere on your own; Bookshelf online |
 | Appendix (optional) | A, B | Under the hood: routes, controllers and classic forms by hand (any time after lesson 06; the exercise of B after lesson 13) |
 
 ## How the course works

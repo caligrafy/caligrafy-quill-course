@@ -3,7 +3,8 @@
 **Build once, experience everywhere, from zero.** In this course you build **Bookshelf**, a small catalog of books
 and authors, the Caligrafy way: every feature is written **once**, as a **capability**, and every experience of the
 application uses it: web pages, a REST API for other programs, AI agents such as Claude, a Vue app, and an app for
-phones and tablets. The same rules, the same permissions and the same audit log everywhere.
+phones and tablets. The same rules, the same permissions and the same audit log everywhere. And it ends on the
+internet: the last lesson puts Bookshelf online, so you go from an idea to an application anyone can open.
 
 You need a little HTML, CSS, JavaScript, PHP and SQL. Everything else (Docker, Caligrafy, Pug, Vue, Vite, MCP) is
 explained when it first appears. You do not install PHP or MySQL: they run in Docker.

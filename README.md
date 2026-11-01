@@ -4,8 +4,9 @@
 
 A step by step course for people who have **never used Caligrafy Quill**, the **"Build Once, Experience
 Everywhere"** framework. You build **Bookshelf**, a small catalog of books and authors, from an empty folder to a
-complete application where every feature is written **once**, as a capability, and used everywhere: web pages, a
-REST API, AI agents such as Claude and Cursor, a Vue app, and an installable app for phones and tablets.
+complete application **online**, where every feature is written **once**, as a capability, and used everywhere: web
+pages, a REST API, AI agents such as Claude and Cursor, a Vue app, and an installable app for phones and tablets.
+From the first command to a public address, zero to one, in one project.
 
 **[Start the course on the Wiki](https://github.com/caligrafy/caligrafy-quill-course/wiki)** (the same pages are in
 the [`wiki/`](wiki) folder of this repository).

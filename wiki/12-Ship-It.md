@@ -364,7 +364,9 @@ the unit tests, the smoke test and `doctor` afterwards.
 
 ### Step 6 - Before going live
 
-Go through this list before you put Bookshelf on a server. Lesson 11 and this lesson already did the first ones.
+Go through this list before you put Bookshelf online ([lesson 14](14-Put-It-Online) does it). Lesson 11 and this
+lesson already did the first ones; on Caligrafy Cloud, HTTPS, `APP_ENV=production`, `APP_DEBUG=false` and
+`LEGACY_API_KEY=false` are set for you.
 
 - [ ] Nothing that writes is `public: true` (lesson 11): `docker compose exec dev-box php caligrafer.php capabilities` shows `public` only on the read capabilities.
 - [ ] `LEGACY_API_KEY=false` in the `.env` of the server (step 4).
