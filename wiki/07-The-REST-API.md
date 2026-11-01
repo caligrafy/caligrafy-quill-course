@@ -104,7 +104,7 @@ A book that does not exist:
 curl -s -H "Accept: application/json" -w " [%{http_code}]\n" http://localhost:8080/api/books/42
 ```
 Expected: `{"error":{"code":"not_found","message":"There is no book #42"}} [404]`: the `ServiceError::notFound` of
-get_book, the same that the book page shows as a Not found card.
+get_book, the same that the book page shows as its Not found page.
 
 `-i` prints the headers of the answer; `head -1` keeps the first line, the status line:
 ```bash

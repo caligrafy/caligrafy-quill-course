@@ -1,51 +1,56 @@
-<!-- The catalog: the list and the form side by side on tablets and computers, one under the other on phones -->
+<!-- The catalog: the list filtered as you type, then the form in a grey band (one column, on every screen) -->
 <template>
-  <main class="cq-page cq-page--wide">
-    <div class="cq-card">
-      <div class="cq-card-head">
-        <h2 class="cq-title">Bookshelf</h2>
-        <p class="cq-note">The same catalog as the web pages, the REST API and AI agents.</p>
-      </div>
+  <main>
+    <section class="cq-hero cq-hero--page">
+      <h1 class="cq-display">Bookshelf</h1>
+      <p class="cq-lead">The same catalog as the web pages, the REST API and AI agents.</p>
+    </section>
 
-      <div class="cq-section cq-split">
-        <!-- the list, filtered as you type (search_books) -->
-        <div>
+    <!-- the list, filtered as you type (search_books) -->
+    <section class="cq-band cq-band--tight">
+      <div class="cq-inner cq-inner--narrow">
+        <div class="cq-field">
           <label for="query">Search</label>
           <input id="query" class="form-control" type="search" v-model="query" @input="search" placeholder="magic, time..." autocomplete="off">
-          <ul class="cq-list">
-            <li class="cq-item" v-for="book in books" :key="book.id">
-              <div class="cq-item-body">
-                <p class="cq-item-title"><router-link :to="{ name: 'book', params: { id: book.id } }">{{ book.title }}</router-link></p>
-                <p class="cq-item-meta">{{ book.published_year }}</p>
-              </div>
-            </li>
-          </ul>
-          <p class="cq-empty" v-if="!books.length">No book here: add one.</p>
         </div>
+        <ul class="cq-rows">
+          <li class="cq-row" v-for="book in books" :key="book.id">
+            <div class="cq-row-main">
+              <p class="cq-row-title"><router-link :to="{ name: 'book', params: { id: book.id } }">{{ book.title }}</router-link></p>
+              <p class="cq-row-meta">{{ book.published_year }}</p>
+            </div>
+          </li>
+        </ul>
+        <p class="cq-empty-state" v-if="!books.length">No book here: add one.</p>
+      </div>
+    </section>
 
-        <!-- the form (create_book): the messages come from its rules -->
-        <form class="cq-form" @submit.prevent="add" novalidate>
-          <div class="cq-fields">
-            <div>
+    <!-- the form (create_book): the messages come from its rules -->
+    <section class="cq-band cq-band--surface">
+      <div class="cq-inner cq-inner--narrow cq-stack">
+        <h2 class="cq-heading">Add a book</h2>
+        <form @submit.prevent="add" novalidate>
+          <div class="cq-form-grid">
+            <div class="cq-field">
               <label for="title">* Title</label>
               <input id="title" class="form-control" type="text" v-model="form.title" maxlength="200">
             </div>
-            <div>
+            <div class="cq-field">
               <label for="author_id">* Author</label>
               <select id="author_id" class="form-select" v-model="form.author_id">
                 <option v-for="author in authors" :key="author.id" :value="author.id">{{ author.name }}</option>
               </select>
             </div>
-            <div>
+            <div class="cq-field">
               <label for="published_year">* Year</label>
               <input id="published_year" class="form-control" type="number" v-model="form.published_year" placeholder="1969">
             </div>
           </div>
-          <button class="btn btn-primary cq-submit" type="submit">Add book</button>
-          <p class="cq-error" role="alert">{{ error }}</p>
+          <button class="btn btn-primary" type="submit">Add book</button>
+          <p class="cq-field-error" role="alert">{{ error }}</p>
         </form>
       </div>
-    </div>
+    </section>
   </main>
 </template>
 

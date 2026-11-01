@@ -142,38 +142,40 @@ class AuthorController extends Controller
 
 ### Step 2 - The form
 
-**File `application/views/Bookshelf/authorform.pug`**:
+**File `application/views/Bookshelf/authorform.pug`** (a page that is only a form: the narrow column of the sign-in page):
 
 ```pug
-extends ../default/master/layoutblocks
+extends ../default/master/site
 
 //- Add an author: a classic form posted to Bookshelf\AuthorController@create
 
+block title
+    | Add an author · Bookshelf
+
 block content
-    main.cq-page
-        .cq-card
-            .cq-card-head
-                h2.cq-title Add an author
-                p.cq-note A classic form: the page is sent to the server, which answers with a new page.
+    main.cq-auth.cq-auth--wide
+        h1 Add an author
+        p.cq-lead A classic form: the page is sent to the server, which answers with a new page.
 
-            form.cq-form(method='POST', action="{$home}authors", novalidate)
-                =csrf()
-                .cq-fields
-                    div
-                        label(for='name') * Name
-                        input#name.form-control(type='text', name='name', value=$values['name'], maxlength='150')
-                    div
-                        label(for='bio') Bio
-                        textarea#bio.form-control(name='bio', rows='3', maxlength='2000')= $values['bio']
-                button.btn.btn-primary.cq-submit(type='submit') Add author
+        form(method='POST', action="{$home}authors", novalidate)
+            =csrf()
+            .cq-field
+                label(for='name') * Name
+                input#name.form-control(type='text', name='name', value=$values['name'], maxlength='150')
+            .cq-field
+                label(for='bio') Bio
+                textarea#bio.form-control(name='bio', rows='3', maxlength='2000')= $values['bio']
+            button.btn.btn-primary(type='submit') Add author
 
-            if $errors
-                p.cq-error(role='alert')= implode(' ', $errors)
+        if $errors
+            p.cq-field-error(role='alert')= implode(' ', $errors)
 
-            .cq-foot
-                a(href="{$home}books") All books
+        p.cq-auth-note
+            a(href="{$home}books") All books
 ```
 
+- `main.cq-auth.cq-auth--wide` is the column of Caligrafy's sign-in page, a little wider: the title, a lead, the
+  fields (`.cq-field`) and a full-width black button. `p.cq-auth-note` holds the link under it.
 - `=csrf()` right under `form(...)` writes the hidden `_token` field.
 - `value=$values['name']` and the textarea content keep what the visitor typed when the form comes back with errors.
 - `novalidate` turns off the browser's own checks, so you see the server's messages (the ones every client gets).
@@ -204,12 +206,12 @@ curl -s -o /dev/null -w '%{http_code}\n' -X POST -d 'name=Forged' http://localho
 ```
 Expected: `403`. Nothing was saved.
 
-In the browser, sign in as `reader1` and open http://localhost:8080/authors/new: the card "Add an author" with Name,
+In the browser, sign in as `reader1` and open http://localhost:8080/authors/new: the page "Add an author" with Name,
 Bio and "Add author".
 - Click "Add author" with an empty name: the same form, with "The Name field is required" (status 422).
 - Type `N. K. Jemisin` and a bio (for example "American author of the Broken Earth trilogy."), click "Add author":
   you land on http://localhost:8080/authors/4, her page (no books yet).
-- Open http://localhost:8080/books: the author tabs (one per author, from `list_authors`) now include N. K. Jemisin. The data is shared by everyone; only
+- Open http://localhost:8080/books: the author segments (one per author, from `list_authors`) now include N. K. Jemisin. The data is shared by everyone; only
   the **form** is private to this page.
 
 > Before lesson 11 nobody can sign in, so `/authors/new` always redirects to `/login`. Remove the two `$this->signedInOnly();` lines to try the form, and put them back afterwards.
@@ -237,8 +239,9 @@ create() reads the posted fields with $this->request->parameters(), keeps only n
 $this->validator->filter(), validates with $this->validator->validate() (name required, max 150; bio max 2000), and
 on failure shows the form again with status 422 and $this->validator->get_errors_array(). On success:
 associate('Author', 'authors'), save(), redirect to /authors/<id> and exit. The view
-application/views/Bookshelf/authorform.pug uses the page components, =csrf(), keeps the typed values and shows the
-errors in .cq-error. In web.php, add GET /authors/new above GET /authors/{id}, and POST /authors.
+application/views/Bookshelf/authorform.pug extends ../default/master/site, puts the form in main.cq-auth.cq-auth--wide
+(h1, p.cq-lead, .cq-field), uses =csrf(), keeps the typed values and shows the errors in p.cq-field-error. In
+web.php, add GET /authors/new above GET /authors/{id}, and POST /authors.
 ```
 
 **Check** before you accept:

@@ -36,7 +36,7 @@ the first time it appears.
 [Lesson 00](https://github.com/caligrafy/caligrafy-quill-course/wiki/00-Introduction-and-Tools) installs and checks
 each tool. The first command of the course gives you a running application:
 ```bash
-git clone --branch v2.9.1 https://github.com/caligrafy/caligrafy-quill.git bookshelf
+git clone --branch v2.11.0 https://github.com/caligrafy/caligrafy-quill.git bookshelf
 cd bookshelf
 .bin/caligrafer quickstart --example
 ```
@@ -67,7 +67,7 @@ git tag) and a short **quiz or exercise** with its solution.
 | 04 | [Your first capabilities](https://github.com/caligrafy/caligrafy-quill-course/wiki/04-Your-First-Capabilities) | `#[Capability]`, `$rules`, `handle()`, read-only and public capabilities |
 | 05 | [Rules: adding, changing and deleting books](https://github.com/caligrafy/caligrafy-quill-course/wiki/05-Rules-and-Changes) | validation, `ServiceError`, destructive capabilities |
 | | **Part 2 - Experience everywhere** | |
-| 06 | [Web pages](https://github.com/caligrafy/caligrafy-quill-course/wiki/06-Web-Pages) | Pug, the page components, the JS client, `Route::page` with data from capabilities, a controller for a form |
+| 06 | [Web pages](https://github.com/caligrafy/caligrafy-quill-course/wiki/06-Web-Pages) | Pug, the master `site.pug` and Caligrafy's look (title band, bands, rows), the JS client, `Route::page` with data from capabilities, a controller for a form |
 | 07 | [The REST API](https://github.com/caligrafy/caligrafy-quill-course/wiki/07-The-REST-API) | `Route::capability`, JSON, HTTP status codes |
 | 08 | [AI agents](https://github.com/caligrafy/caligrafy-quill-course/wiki/08-AI-Agents) | MCP, tools and hints, tokens, Claude Code and Cursor, descriptions that agents understand |
 | 09 | [A Vue app](https://github.com/caligrafy/caligrafy-quill-course/wiki/09-A-Vue-App) | Vue as a library on the JS client, search as you type |

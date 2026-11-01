@@ -311,40 +311,42 @@ the loan with a `returned_at` date `[200]`, then `{"error":{"code":"not_found","
 
 ### Step 6 - The page
 
-**File `application/views/Loans/index.pug`** (the page components of lesson 06: one card, a form, a list, an empty
-state):
+**File `application/views/Loans/index.pug`** (the parts of lesson 06: a title band, a form, rows, an empty state):
 
 ```pug
-extends ../default/master/layoutblocks
+extends ../default/master/site
 
 //- Loans: lend a book, see who has what, record returns (public/js/loans.js, the loan capabilities)
 
-block content
-    main.cq-page
-        .cq-card
-            .cq-card-head
-                h2.cq-title Loans
-                p.cq-note Who borrowed which book. AI agents with a loans token see the same list.
+block title
+    | Loans · Bookshelf
 
-            .cq-section#sign-in(hidden)
+block content
+    section.cq-hero.cq-hero--page
+        h1.cq-display Loans
+        p.cq-lead Who borrowed which book. AI agents with a loans token see the same list.
+
+    section.cq-band.cq-band--tight
+        .cq-inner.cq-inner--narrow
+            p#sign-in(hidden)
                 a.btn.btn-secondary(href="{$home}login") Sign in to manage loans
 
-            form#lend.cq-form(novalidate, hidden)
-                .cq-fields.cq-fields--3
-                    div
+            form#lend(novalidate, hidden)
+                .cq-form-grid
+                    .cq-field
                         label(for='loan-book') * Book
                         select#loan-book.form-select(name='book_id')
-                    div
+                    .cq-field
                         label(for='loan-borrower') * Borrower
                         input#loan-borrower.form-control(type='text', name='borrower', maxlength='100', autocomplete='off')
-                    div
+                    .cq-field
                         label(for='loan-days') Days
                         input#loan-days.form-control(type='number', name='days', placeholder='14')
-                button.btn.btn-primary.cq-submit(type='submit') Lend
+                button.btn.btn-primary(type='submit') Lend
 
-            p#error.cq-error(role='alert')
-            ul#loans.cq-list
-            p#empty.cq-empty(hidden) Every book is on the shelf.
+            p#error.cq-field-error(role='alert')
+            ul#loans.cq-rows
+            p#empty.cq-empty-state(hidden) Every book is on the shelf.
 
 block additional_scripts
     script(type='module', src="{$home}public/js/loans.js")
@@ -372,10 +374,10 @@ function showError (e) {
 
 function row (loan) {
   const li = document.createElement('li')
-  li.className = 'cq-item'
-  li.innerHTML = '<div class="cq-item-body"><p class="cq-item-title"></p><p class="cq-item-meta"></p></div><div class="cq-actions"></div>'
-  li.querySelector('.cq-item-title').textContent = loan.title
-  li.querySelector('.cq-item-meta').textContent = loan.borrower + ', due ' + loan.due_on + (loan.overdue ? ' (late)' : '')
+  li.className = 'cq-row'
+  li.innerHTML = '<div class="cq-row-main"><p class="cq-row-title"></p><p class="cq-row-meta"></p></div><div class="cq-row-actions"></div>'
+  li.querySelector('.cq-row-title').textContent = loan.title
+  li.querySelector('.cq-row-meta').textContent = loan.borrower + ', due ' + loan.due_on + (loan.overdue ? ' (late)' : '')
 
   const back = document.createElement('button')
   back.type = 'button'
@@ -389,7 +391,7 @@ function row (loan) {
       showError(e)
     }
   })
-  li.querySelector('.cq-actions').append(back)
+  li.querySelector('.cq-row-actions').append(back)
   return li
 }
 
@@ -438,7 +440,7 @@ Expected for the first: ` public/js/capabilities.js written: 10 capabilities, ca
 now has `lendBook`, `listLoans` and `returnBook`.
 
 Open http://localhost:8080/loans:
-- signed out: the card "Loans" and the button "Sign in to manage loans";
+- signed out: the title "Loans" and the button "Sign in to manage loans";
 - signed in as `reader1`: a form with Book (a list of titles), Borrower, Days (placeholder `14`) and Lend. Lend
   Invisible Cities to Sam for 7 days: the list shows "Invisible Cities" and "Sam, due <date>", with a Returned button;
 - lend Invisible Cities again to someone else: "This book is already lent to Sam" appears under the form.
@@ -476,7 +478,7 @@ yours may differ). The successful `list_loans` call is not there: read-only succ
 > | `Table 'caligrafy.loans' doesn't exist` | Step 1 was skipped | Run the `sql` command of step 1 |
 > | `403 This needs the scope loans:write` with the loans desk token | The token was created with other scopes (for example without quotes around `books:read,loans:*`) | `token list` shows its scopes; create it again with the quotes, revoke the old one |
 > | `zsh: no matches found: books:read,loans:*` (no token created) | zsh reads the `*` of unquoted scopes as a file pattern | Quote the scopes: `--scopes "books:read,loans:*"` |
-> | The card shows no form and no sign-in button, and the browser Console says `does not provide an export named 'listLoans'` | The client was not regenerated, so `listLoans` is missing | Run both `client` commands of step 6 and reload |
+> | The page shows its title but no form and no sign-in button, and the browser Console says `does not provide an export named 'listLoans'` | The client was not regenerated, so `listLoans` is missing | Run both `client` commands of step 6 and reload |
 > | `due_on` is a day off | The due date uses the PHP time zone (`SERVER_TIMEZONE` in `.env`) | Normal near midnight; set `SERVER_TIMEZONE` to yours |
 > | `POST /api/books/3/return` answers `422` with `book_id` in `fields` | The route variable is not named `{book_id}` (for example `{id}`), so the input `book_id` is missing | Compare the route with step 4 |
 > | `Book #3 is not lent` the first time you return it | The book was already returned (or never lent) | `GET /api/loans` shows what is out |
@@ -521,10 +523,11 @@ Write descriptions for AI agents (say where book_id comes from: list_books, sear
 Experiences:
 - REST in web.php, in a "// LOANS" block above "// MUST NOT BE REMOVED": GET /api/loans list_loans,
   POST /api/loans lend_book, POST /api/books/{book_id}/return return_book.
-- A page /loans (Route::page('/loans', 'Loans/index'), no data) built with the page components:
-  one card "Loans", a form (Book select of titles from list_books, Borrower, Days with placeholder 14, Lend button),
-  the list of open loans ("<borrower>, due <date>", "(late)" when overdue) with a Returned button, an empty state
-  "Every book is on the shelf.", errors in .cq-error. Its script public/js/loans.js uses the JS client; visitors
+- A page /loans (Route::page('/loans', 'Loans/index'), no data) in Caligrafy's look (extends default/master/site):
+  a title band "Loans", then a band with a form (a .cq-form-grid: Book select of titles from list_books, Borrower,
+  Days with placeholder 14; a Lend button), the open loans as ul.cq-rows ("<borrower>, due <date>", "(late)" when
+  overdue) with a Returned button in .cq-row-actions, an empty state p.cq-empty-state "Every book is on the shelf.",
+  errors in p.cq-field-error. Its script public/js/loans.js uses the JS client; visitors
   who may not call list_loans see a "Sign in to manage loans" button instead.
 - Regenerate public/js/capabilities.js and public/bookshelf-spa/src/capabilities.js.
 Then verify every experience with curl and show me the results.

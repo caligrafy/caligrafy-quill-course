@@ -140,28 +140,31 @@ class AuthorController extends Controller
   view) and the "Not found" page of lesson 06. Otherwise the author page, with the books of the author.
 - `index()`: every author, sorted by name, as JSON for programs.
 
-**File `application/views/Bookshelf/author.pug`** (the page components of lesson 06; `$author` and `$books` are
-models, so their columns are read with `->`):
+**File `application/views/Bookshelf/author.pug`** (the parts of lesson 06; `$author` and `$books` are models, so their columns are read with `->`):
 
 ```pug
-extends ../default/master/layoutblocks
+extends ../default/master/site
 
 //- An author and their books, rendered by Bookshelf\AuthorController (the classic way)
 
+block title
+    = $author->name . ' · Bookshelf'
+
 block content
-    main.cq-page
-        .cq-card
-            .cq-card-head
-                h2.cq-title= $author->name
-                p.cq-note= $author->bio
-            ul.cq-list
+    section.cq-hero.cq-hero--page
+        h1.cq-display= $author->name
+        p.cq-lead= $author->bio
+
+    section.cq-band.cq-band--tight
+        .cq-inner.cq-inner--narrow
+            ul.cq-rows
                 each $book in $books
-                    li.cq-item
-                        .cq-item-body
-                            p.cq-item-title
+                    li.cq-row
+                        .cq-row-main
+                            p.cq-row-title
                                 a(href="{$home}books/{$book->id}")= $book->title
-                            p.cq-item-meta= $book->published_year
-            .cq-foot
+                            p.cq-row-meta= $book->published_year
+            p.cq-auth-note
                 a(href="{$home}books") All books
 ```
 
@@ -171,9 +174,9 @@ Add the two routes below the lines of step 1:
     Route::get('/v1/authors', 'Bookshelf\\AuthorController@index');
 ```
 
-Open http://localhost:8080/authors/2: the card "Octavia E. Butler", her bio, and her books (Kindred, Parable of the
+Open http://localhost:8080/authors/2: the title "Octavia E. Butler", her bio, and her books (Kindred, Parable of the
 Sower, and the ones you added) with links to their pages, and "All books" at the bottom. Open
-http://localhost:8080/authors/99: the "Not found" card with "There is no such author.". Check the status:
+http://localhost:8080/authors/99: the "Not found" page with "There is no such author.". Check the status:
 ```bash
 curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8080/authors/99
 ```
@@ -241,8 +244,9 @@ GET /about that echoes "Bookshelf: a small catalog of the books we love." and GE
 application/controllers/Bookshelf/AuthorController.php (namespace Bookshelf, extends Caligrafy\Controller) with
 show(): associate('Author', 'authors'), find() the {id} of the route, 404 with the view Bookshelf/notfound and the
 message "There is no such author." when missing, else the view Bookshelf/author with the author and $author->books();
-and index(): api(['authors' => all authors ordered by name]). Write application/views/Bookshelf/author.pug with the
-page components (one card: name, bio, the books as links to /books/<id> with their year, a link to all books). Pass
+and index(): api(['authors' => all authors ordered by name]). Write application/views/Bookshelf/author.pug in
+Caligrafy's look (extends ../default/master/site; a title band with the name and the bio, then a band with the books
+as ul.cq-rows, links to /books/<id> with their year, and a p.cq-auth-note link to all books). Pass
 'authorized' => authorized() to the views. Routes: GET /authors/{id} show, GET /v1/authors index.
 ```
 

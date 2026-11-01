@@ -55,7 +55,9 @@ calls its own routes with the session instead: `{ headers: apiHeaders() }` (from
 Caligrafy Quill comes out, `php caligrafer.php upgrade` compares your copies with the new templates and updates the
 files you never changed. Without `--apply` it is a **dry run**: it only shows the plan. Since 2.9.0,
 `php caligrafer.php update` goes further: it brings the whole project to a newer release (the framework, its other
-files, the new settings) and runs `upgrade --apply` at the end. Lesson 14 uses it.
+files, the new settings) and runs `upgrade --apply` at the end. Lesson 14 uses it. Since 2.10.0, `upgrade` first asks
+GitHub for the latest release and, when there is a newer one, plans the move to it like `update`; `upgrade --local`
+compares with the templates of the release you have, and nothing else.
 
 ---
 
@@ -318,7 +320,7 @@ Run the health check:
 ```bash
 docker compose exec dev-box php caligrafer.php doctor
 ```
-It ends with `13 OK, 0 WARN, 0 FAIL, 6 SKIP` and contains this line:
+It ends with `14 OK, 0 WARN, 0 FAIL, 6 SKIP` and contains this line:
 ```
 OK    Legacy API key: allowed (every generated key is the same key: full access, no revocation); set LEGACY_API_KEY=false once clients use tokens
 ```
@@ -330,7 +332,7 @@ Save, and run `doctor` again. The line is now:
 ```
 OK    Legacy API key: off: API clients use personal access tokens
 ```
-and it still ends with `13 OK, 0 WARN, 0 FAIL, 6 SKIP`. The `SKIP` lines are the optional services you did not
+and it still ends with `14 OK, 0 WARN, 0 FAIL, 6 SKIP`. The `SKIP` lines are the optional services you did not
 configure (OpenAI, Groq, Stripe, Coinbase, Watson, mail): normal. Run the smoke test again: all checks pass, because
 no experience of Bookshelf uses the old key. `.env` is not committed, so remember to set it on every server.
 
@@ -344,12 +346,13 @@ no experience of Bookshelf uses the old key. `.env` is not committed, so remembe
 ### Step 5 - Preview an upgrade
 
 ```bash
-docker compose exec dev-box php caligrafer.php upgrade
+docker compose exec dev-box php caligrafer.php upgrade --local
 ```
+`--local`: compare with the templates of your release only, so the answer does not depend on newer releases.
 Expected (among other lines):
 ```
   routes      application/config/routing/web.php: your routes: never replaced
-  identical  35 file(s)
+  identical  44 file(s)
  Nothing was changed.
 ```
 Your project was created with the current release, so every template is `identical`, and `web.php` is yours: it is
@@ -362,10 +365,10 @@ changing them:
 That is expected: you rewrote both files in lesson 09. The Vite app `public/bookshelf-spa` is not listed: `upgrade`
 compares only the apps made from `framework/plugins` (`app`, `bot`, `facedetect`, `ml`).
 
-When a later release comes out, you update the `framework/` folder, run `upgrade` to read the plan, then
-`docker compose exec dev-box php caligrafer.php upgrade --apply`: files you never changed are updated (with a backup
-in `backups/`), files you changed get the new version next to them as `<file>.caligrafy-new` for you to merge. Run
-the unit tests, the smoke test and `doctor` afterwards.
+When a later release comes out, `upgrade` (without `--local`) shows the plan to move to it, and
+`docker compose exec dev-box php caligrafer.php upgrade --apply` applies it: files you never changed are updated (with
+a backup in `backups/`), files you changed get the new version next to them as `<file>.caligrafy-new` for you to
+merge. Run the unit tests, the smoke test and `doctor` afterwards.
 
 ### Step 6 - Before going live
 
@@ -423,7 +426,7 @@ docker compose exec dev-box vendor/bin/phpunit -c qa/bookshelf/phpunit.xml and s
 
 ```
 Run php caligrafer.php doctor in the dev-box container and explain each WARN or FAIL. Then run
-php caligrafer.php upgrade as a dry run and explain the plan. Do not run upgrade --apply. Do not print .env.
+php caligrafer.php upgrade --local as a dry run and explain the plan. Do not run upgrade --apply. Do not print .env.
 ```
 
 **Check:**

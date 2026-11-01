@@ -17,10 +17,10 @@ function showError (e) {
 
 function row (loan) {
   const li = document.createElement('li')
-  li.className = 'cq-item'
-  li.innerHTML = '<div class="cq-item-body"><p class="cq-item-title"></p><p class="cq-item-meta"></p></div><div class="cq-actions"></div>'
-  li.querySelector('.cq-item-title').textContent = loan.title
-  li.querySelector('.cq-item-meta').textContent = loan.borrower + ', due ' + loan.due_on + (loan.overdue ? ' (late)' : '')
+  li.className = 'cq-row'
+  li.innerHTML = '<div class="cq-row-main"><p class="cq-row-title"></p><p class="cq-row-meta"></p></div><div class="cq-row-actions"></div>'
+  li.querySelector('.cq-row-title').textContent = loan.title
+  li.querySelector('.cq-row-meta').textContent = loan.borrower + ', due ' + loan.due_on + (loan.overdue ? ' (late)' : '')
 
   const back = document.createElement('button')
   back.type = 'button'
@@ -34,7 +34,7 @@ function row (loan) {
       showError(e)
     }
   })
-  li.querySelector('.cq-actions').append(back)
+  li.querySelector('.cq-row-actions').append(back)
   return li
 }
 

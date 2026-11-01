@@ -85,9 +85,9 @@ In `application/config/routing/web.php`:
        Route::post('/register', 'Caligrafy\\Controllers\\AuthController@register');
    ```
 The sign-in page sends people to `/home` after signing in and signing out: it now shows the catalog. The routes of
-`/` and `/books` do not change: a page declared with `Route::page` gets `$authorized` by itself, so the header shows
-**Sign out** as soon as someone is signed in. The full file is
-in the checkpoint.
+`/` and `/books` do not change: a page declared with `Route::page` gets `$authorized` by itself, so the top bar of
+the master shows **Sign out** as soon as someone is signed in (**Sign in** and **Create account** before). The full
+file is in the checkpoint.
 
 ### Step 3 - Close the doors, once
 
@@ -158,8 +158,8 @@ class BookController extends Controller
 }
 ```
 
-- `Route::page` gives its pages `authorized` (`true` when someone is signed in): the layout then shows **Sign out** in
-  the header. This controller renders the page itself after a refused save, so it passes `authorized()` too.
+- `Route::page` gives its pages `authorized` (`true` when someone is signed in): the master then shows **Sign out** in
+  the top bar. This controller renders the page itself after a refused save, so it passes `authorized()` too.
 - When `update_book` refuses a visitor, `$e->fields` is empty, so the page shows the message of the capability
   (`Sign in or send a personal access token`) with its status.
 - A page that only signed-in people may open would say so on its route: `Route::page('/account', 'Account/index',
@@ -169,9 +169,12 @@ class BookController extends Controller
 **File `application/views/Bookshelf/book.pug`** (the edit form only for people signed in):
 
 ```pug
-extends ../default/master/layoutblocks
+extends ../default/master/site
 
 //- One book, rendered on the server by Route::page with the data of get_book; the form (signed in only) calls update_book
+
+block title
+    = $found['book']['title'] . ' · Bookshelf'
 
 block content
     //- $found: what get_book returned (Route::page data). After a refused save, the controller also gives $form and $errors
@@ -179,54 +182,54 @@ block content
     - $author = $found['author'];
     - $form = isset($form) ? $form : $book;
     - $errors = isset($errors) ? $errors : array();
-    main.cq-page
-        .cq-card
-            .cq-card-head
-                h2.cq-title= $book['title']
-                p.cq-note
-                    | by #{$author['name']}, #{$book['published_year']}
-            .cq-section
-                p= $book['summary'] ?: 'No summary yet.'
+    section.cq-hero.cq-hero--page
+        h1.cq-display= $book['title']
+        p.cq-lead
+            | by #{$author['name']}, #{$book['published_year']}
+
+    section.cq-band.cq-band--tight
+        .cq-inner.cq-inner--narrow
+            p= $book['summary'] ?: 'No summary yet.'
 
             if $authorized
-                form.cq-form(method='POST', action="{$home}books/{$book['id']}", novalidate)
+                form(method='POST', action="{$home}books/{$book['id']}", novalidate)
                     =csrf()
                     =methodField('PUT')
-                    .cq-fields.cq-fields--2
-                        div
+                    .cq-form-grid.cq-form-grid--2
+                        .cq-field
                             label(for='title') * Title
                             input#title.form-control(type='text', name='title', value=$form['title'], maxlength='200')
-                        div
+                        .cq-field
                             label(for='author_id') * Author
                             select#author_id.form-select(name='author_id')
                                 each $a in $authors
                                     option(value=$a['id'], selected=$a['id'] == $form['author_id'])= $a['name']
-                        div
+                        .cq-field
                             label(for='published_year') * Year
                             input#published_year.form-control(type='number', name='published_year', value=$form['published_year'])
-                        div
+                        .cq-field
                             label(for='summary') Summary
                             input#summary.form-control(type='text', name='summary', value=$form['summary'], maxlength='2000')
-                    button.btn.btn-primary.cq-submit(type='submit') Save changes
+                    button.btn.btn-primary(type='submit') Save changes
             else
-                .cq-section
+                p
                     a.btn.btn-secondary(href="{$home}login") Sign in to edit this book
 
             if $errors
-                p.cq-error(role='alert')= implode(' ', $errors)
+                p.cq-field-error(role='alert')= implode(' ', $errors)
 
-            .cq-foot
+            p.cq-auth-note
                 a(href="{$home}books") All books
 ```
 
 In `application/views/Bookshelf/books.pug`, hide the form until `books.js` decides, and add a sign-in button after
-the form (above `p#error.cq-error(role='alert')`):
+the form (above `p#error.cq-field-error(role='alert')`):
 ```pug
             //- shown by books.js when the visitor may call create_book
-            form#new-book.cq-form(novalidate, hidden)
+            form#new-book(novalidate, hidden)
 ```
 ```pug
-            .cq-section#sign-in(hidden)
+            p#sign-in(hidden)
                 a.btn.btn-secondary(href="{$home}login") Sign in to add books
 ```
 In `public/js/books.js`, import `capabilities` too, and remember what the visitor may call:
@@ -265,7 +268,7 @@ Expected: `... written: 7 capabilities ...` twice. In the comments, `create_book
 2. Click **Sign in**, then the link to register (http://localhost:8080/register). Username `reader1`, passcode
    `bookshelf-2026` twice. You land on the sign-in page (`/login`). Usernames are letters and digits only; passcodes
    8 to 72 characters.
-3. Sign in as `reader1`. You land on `/home`: the catalog, with **Sign out** in the header and the form. Still no
+3. Sign in as `reader1`. You land on `/home`: the catalog, with **Sign out** in the top bar and the form. Still no
    **Delete**: reader1 has permissions 0. Add a book: it works.
 4. Open a book, empty its title, **Save changes**: `The Title field is required`.
 
@@ -404,7 +407,7 @@ public: true from create_book and update_book; delete_book gets level: 1 instead
 stay public. BookController::update(): only not_found shows the not-found page; otherwise answer $e->status() and show
 the book view with $e->fields or, when empty, the capability's message; pass 'authorized' => authorized() to both views.
 book.pug: the edit form only when $authorized, else a "Sign in to edit this book" button to /login. books.pug: the
-form is hidden by default, plus a hidden #sign-in section with "Sign in to add books". books.js: ask capabilities()
+form is hidden by default, plus a hidden p#sign-in with a "Sign in to add books" button. books.js: ask capabilities()
 once; show the form only if create_book is allowed (else #sign-in), and Delete only if delete_book is allowed.
 Regenerate public/js/capabilities.js and public/bookshelf-spa/src/capabilities.js. Do not create tokens or users.
 ```
@@ -465,7 +468,7 @@ and the tokens section of [11. Build Once](https://github.com/caligrafy/caligraf
      },
    ```
    In the template, add `v-if="allowed.includes('create_book')"` to the
-   `<form>`, and after it `<p class="cq-note" v-else>Sign in on Bookshelf to add books.</p>`. Do the same in
+   `<form>`, and after it `<p class="cq-auth-note" v-else>Sign in on Bookshelf to add books.</p>`. Do the same in
    `BookPage.vue` for Delete with `delete_book`. No server change: the capabilities already say who may do what.
    (This is not in the checkpoint: undo it with `git checkout public/bookshelf-spa` if you want to stay identical.)
 2. `level` applies to people, and to tokens created with `--user`. A token without `--user` is an application token:

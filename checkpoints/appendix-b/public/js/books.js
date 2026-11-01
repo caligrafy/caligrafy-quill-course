@@ -38,12 +38,12 @@ function showAuthors () {
 
 function row (book) {
   const li = document.createElement('li')
-  li.className = 'cq-item'
-  li.innerHTML = '<div class="cq-item-body"><p class="cq-item-title"><a></a></p><p class="cq-item-meta"></p></div><div class="cq-actions"></div>'
+  li.className = 'cq-row'
+  li.innerHTML = '<div class="cq-row-main"><p class="cq-row-title"><a></a></p><p class="cq-row-meta"></p></div><div class="cq-row-actions"></div>'
   const link = li.querySelector('a')
   link.href = 'books/' + book.id
   link.textContent = book.title
-  li.querySelector('.cq-item-meta').textContent = book.author + ', ' + book.published_year
+  li.querySelector('.cq-row-meta').textContent = book.author + ', ' + book.published_year
 
   if (!allowed.has('delete_book')) return li   // only administrators see Delete
   const remove = document.createElement('button')
@@ -59,7 +59,7 @@ function row (book) {
       showError(e)
     }
   })
-  li.querySelector('.cq-actions').append(remove)
+  li.querySelector('.cq-row-actions').append(remove)
   return li
 }
 

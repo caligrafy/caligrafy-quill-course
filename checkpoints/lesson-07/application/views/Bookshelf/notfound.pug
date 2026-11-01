@@ -1,12 +1,13 @@
-extends ../default/master/layoutblocks
+extends ../default/master/site
 
 //- The message of a refused capability ($message): Route::page's notFound for a missing book, or BookController after a save
 
+block title
+    | Not found · Bookshelf
+
 block content
-    main.cq-page
-        .cq-card
-            .cq-card-head
-                h2.cq-title Not found
-                p.cq-note= $message
-            .cq-foot
-                a(href="{$home}books") All books
+    section.cq-hero
+        h1.cq-display Not found
+        p.cq-lead= $message
+        .cq-cta
+            a.btn.btn-primary(href="{$home}books") All books

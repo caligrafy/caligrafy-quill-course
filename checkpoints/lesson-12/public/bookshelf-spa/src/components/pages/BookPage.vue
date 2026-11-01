@@ -1,25 +1,27 @@
 <!-- One book (get_book), and a Delete button (delete_book) -->
 <template>
-  <main class="cq-page">
-    <div class="cq-card" v-if="found">
-      <div class="cq-card-head">
-        <h2 class="cq-title">{{ found.book.title }}</h2>
-        <p class="cq-note">by {{ found.author.name }}, {{ found.book.published_year }}</p>
-      </div>
-      <div class="cq-section">
+  <main v-if="found">
+    <section class="cq-hero cq-hero--page">
+      <h1 class="cq-display">{{ found.book.title }}</h1>
+      <p class="cq-lead">by {{ found.author.name }}, {{ found.book.published_year }}</p>
+    </section>
+    <section class="cq-band cq-band--tight">
+      <div class="cq-inner cq-inner--narrow">
         <p>{{ found.book.summary || 'No summary yet.' }}</p>
-        <button class="btn btn-secondary" type="button" @click="remove">Delete</button>
+        <div class="cq-buttons">
+          <button class="btn btn-secondary" type="button" @click="remove">Delete</button>
+        </div>
+        <p class="cq-auth-note"><router-link :to="{ name: 'home' }">All books</router-link></p>
       </div>
-      <div class="cq-foot"><router-link :to="{ name: 'home' }">All books</router-link></div>
-    </div>
+    </section>
+  </main>
 
-    <div class="cq-card" v-else>
-      <div class="cq-card-head">
-        <h2 class="cq-title">{{ error ? 'Not found' : 'Loading...' }}</h2>
-        <p class="cq-note">{{ error }}</p>
-      </div>
-      <div class="cq-foot"><router-link :to="{ name: 'home' }">All books</router-link></div>
-    </div>
+  <main v-else>
+    <section class="cq-hero">
+      <h1 class="cq-display">{{ error ? 'Not found' : 'Loading...' }}</h1>
+      <p class="cq-lead">{{ error }}</p>
+      <div class="cq-cta"><router-link class="btn btn-primary" :to="{ name: 'home' }">All books</router-link></div>
+    </section>
   </main>
 </template>
 

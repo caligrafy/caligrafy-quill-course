@@ -76,84 +76,82 @@ Expected:
  Type cd public/finder to access it anytime
 ```
 It copied a template to `public/finder/`: `index.php` and `scripts/main.js`. Open
-http://localhost:8080/apps/finder: it answers (status 200), with the template's content. You replace both files.
+http://localhost:8080/apps/finder: it answers (status 200) with the template's content, already in Caligrafy's look:
+the top bar, the title *My Vue app* and the capabilities you may call, as rows. You replace both files.
 
 ### Step 2 - The HTML of the app
 
-**File `public/finder/index.php`** (the same look as the pages: one card, a search field, `.cq-split` for the list and the book):
+**File `public/finder/index.php`** (the same look as the pages: the top bar, a title band, a band with the search field and the rows, a grey band for the book):
 
 ```php
 <!DOCTYPE html>
 <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
         <title>Bookshelf finder</title>
 
-        <!-- The same look as the Caligrafy pages: Bootstrap 5, the black and white theme and the page components -->
+        <!-- The same look as the Caligrafy pages: Bootstrap 5, the tokens, the structure (layout.css) and the look (look.css) -->
         <link rel="shortcut icon" href="<?php echo scripts('favicon'); ?>" type="image/x-icon" />
-        <link rel="stylesheet" type="text/css" href="<?php echo scripts('css'); ?>" />
         <link rel="stylesheet" href="<?php echo scripts('bootstrap_css'); ?>" />
         <link rel="stylesheet" href="<?php echo session('public').'css/theme.css'; ?>">
         <link rel="stylesheet" href="<?php echo session('public').'css/tokens.css'; ?>">
+        <link rel="stylesheet" href="<?php echo session('public').'css/layout.css'; ?>">
+        <link rel="stylesheet" href="<?php echo session('public').'css/look.css'; ?>">
+        <?php if (design_stylesheet()): ?><link rel="stylesheet" href="<?php echo design_stylesheet(); ?>"><?php endif; ?>
     </head>
 
-    <body>
+    <body class="cq-site">
         <!-- Vue controls everything inside #app -->
         <div id="app" v-cloak>
-            <header class="color0 caligrafy-header">
-                <nav class="horizontal">
-                    <h1 class="large-text horizontal-center"><span class="semibold">Cali</span>grafy</h1>
-                </nav>
-            </header>
+            <!-- the top bar of the Caligrafy pages -->
+            <nav class="cq-nav" aria-label="Main">
+                <a class="cq-nav-brand" href="<?php echo session('home'); ?>"><img class="cq-nav-mark" src="<?php echo session('public').'images/resources/caligrafy-mark.svg'; ?>" alt="" width="28" height="28"><span class="semibold">Cali</span>grafy</a>
+            </nav>
 
-            <main class="cq-page cq-page--wide">
-                <div class="cq-card">
-                    <div class="cq-card-head">
-                        <h2 class="cq-title">Find a book</h2>
-                        <p class="cq-note">Type a few words of a title or a summary: the search_books capability answers as you type.</p>
-                    </div>
+            <!-- the title band -->
+            <section class="cq-hero cq-hero--page">
+                <h1 class="cq-display">Find a book</h1>
+                <p class="cq-lead">Type a few words of a title or a summary: the search_books capability answers as you type.</p>
+            </section>
 
-                    <form class="cq-form" @submit.prevent>
-                        <div class="cq-fields">
-                            <div>
-                                <label for="query">Search</label>
-                                <input id="query" class="form-control" type="search" v-model="query" @input="search" placeholder="magic, time, cities..." autocomplete="off">
-                            </div>
+            <!-- the search field and the books found -->
+            <section class="cq-band cq-band--tight">
+                <div class="cq-inner cq-inner--narrow">
+                    <form @submit.prevent>
+                        <div class="cq-field">
+                            <label for="query">Search</label>
+                            <input id="query" class="form-control" type="search" v-model="query" @input="search" placeholder="magic, time, cities..." autocomplete="off">
                         </div>
                     </form>
-                    <p class="cq-error" role="alert">{{ error }}</p>
+                    <p class="cq-field-error" role="alert">{{ error }}</p>
 
-                    <div class="cq-section cq-split">
-                        <!-- the books found -->
-                        <div>
-                            <ul class="cq-list">
-                                <li class="cq-item" v-for="book in books" :key="book.id">
-                                    <div class="cq-item-body">
-                                        <p class="cq-item-title">{{ book.title }}</p>
-                                        <p class="cq-item-meta">{{ book.published_year }}</p>
-                                    </div>
-                                    <div class="cq-actions">
-                                        <button type="button" class="btn btn-secondary" @click="open(book.id)">Open</button>
-                                    </div>
-                                </li>
-                            </ul>
-                            <p class="cq-empty" v-if="!books.length">No book matches "{{ query }}".</p>
-                        </div>
-
-                        <!-- the book opened: get_book -->
-                        <div v-if="selected">
-                            <h3 class="cq-title">{{ selected.book.title }}</h3>
-                            <p class="cq-note">by {{ selected.author.name }}, {{ selected.book.published_year }}</p>
-                            <p>{{ selected.book.summary || 'No summary yet.' }}</p>
-                            <p class="cq-item-meta">{{ selected.author.bio }}</p>
-                        </div>
-                        <p class="cq-empty" v-else>Open a book to read about it.</p>
-                    </div>
-
-                    <div class="cq-foot">{{ books.length }} book(s)</div>
+                    <ul class="cq-rows">
+                        <li class="cq-row" v-for="book in books" :key="book.id">
+                            <div class="cq-row-main">
+                                <p class="cq-row-title">{{ book.title }}</p>
+                                <p class="cq-row-meta">{{ book.published_year }}</p>
+                            </div>
+                            <div class="cq-row-actions">
+                                <button type="button" class="btn btn-secondary" @click="open(book.id)">Open</button>
+                            </div>
+                        </li>
+                    </ul>
+                    <p class="cq-empty-state" v-if="!books.length">No book matches "{{ query }}".</p>
+                    <p class="cq-auth-note">{{ books.length }} book(s)</p>
                 </div>
-            </main>
+            </section>
+
+            <!-- the book opened: get_book, in a grey band under the list -->
+            <section class="cq-band cq-band--surface">
+                <div class="cq-inner cq-inner--narrow" v-if="selected">
+                    <h2 class="cq-heading">{{ selected.book.title }}</h2>
+                    <p class="cq-lead">by {{ selected.author.name }}, {{ selected.book.published_year }}</p>
+                    <p class="cq-lead">{{ selected.book.summary || 'No summary yet.' }}</p>
+                    <p class="cq-row-meta">{{ selected.author.bio }}</p>
+                </div>
+                <p class="cq-empty-state" v-else>Open a book to read about it.</p>
+            </section>
         </div>
 
         <!-- Vue 3 (pinned by Caligrafy), then app.js, which defines loadEnvironment() and loadVue() -->
@@ -168,11 +166,13 @@ http://localhost:8080/apps/finder: it answers (status 200), with the template's 
 ```
 
 What to notice:
-- The `<link>` tags load the same CSS as the Pug pages (`theme.css`, `tokens.css`): same black and white look, same
-  page components (`cq-page`, `cq-card`, `cq-list`).
-- `.cq-split` puts its two children side by side from 768 px wide (tablets, computers) and one under the other on
-  phones. You write no CSS for that.
-- The book on the right comes from `get_book`: `selected.book` and `selected.author`, the two parts of its answer.
+- The `<link>` tags load the same CSS as the Pug pages (`theme.css`, `tokens.css`, then `layout.css` and `look.css`),
+  and `<body class="cq-site">` turns Caligrafy's look on: same top bar, same title band, bands and rows
+  (`cq-hero`, `cq-band`, `cq-rows`) as the pages of lesson 06. The PHP of `index.php` writes the address of the site
+  (`session('home')`) and of its `public` folder (`session('public')`) for the links and the mark.
+- `.cq-band--surface` is a band with a grey background: the opened book stands apart from the list. On every width
+  the page is one column; you write no CSS for that.
+- The book of the grey band comes from `get_book`: `selected.book` and `selected.author`, the two parts of its answer.
 
 ### Step 3 - The Vue code
 
@@ -233,12 +233,14 @@ What to notice:
 ### Step 4 - Try it
 
 Open http://localhost:8080/apps/finder (reload if it was open).
-1. The card **Find a book** lists every book; the footer says how many (`5 book(s)`, or more if you added some).
-2. Type `time` and pause: only **Kindred** stays (its summary says "pulled back in time"). Footer: `1 book(s)`.
-3. Click **Open**: on the right, "Kindred", "by Octavia E. Butler, 1979", the summary, then the author's bio.
+1. Under the title **Find a book**, the rows list every book; the note under them says how many (`5 book(s)`, or
+   more if you added some). The grey band says `Open a book to read about it.`
+2. Type `time` and pause: only **Kindred** stays (its summary says "pulled back in time"). The note: `1 book(s)`.
+3. Click **Open**: in the grey band under the list, "Kindred", "by Octavia E. Butler, 1979", the summary, then the
+   author's bio.
 4. Type `zzzz`: `No book matches "zzzz".`
-5. Make the window narrow (or open the browser's device toolbar at 375 px): the book moves under the list, one column,
-   no horizontal scroll.
+5. Make the window narrow (or open the browser's device toolbar at 375 px): the same column, each Open button under its
+   book, no horizontal scroll.
 
 Check what the app sends: open the developer tools (<kbd>F12</kbd>), tab **Network**, reload, type `magic`.
 You see `GET capabilities` once (the client fetches the CSRF token), then `POST list_books` and `POST search_books`.
@@ -276,10 +278,13 @@ Turn public/finder into a Vue 3 app (Vue as a library) that finds books with the
 use axios or the API key: in mounted(), load the JS client with this.api = await import(env.home +
 'public/js/capabilities.js'), then show listBooks(). A search field calls searchBooks({ query }) 250 ms after the
 typing pauses (listBooks() when the query has fewer than 2 characters). Each book has an Open button that calls
-getBook({ id }) and shows, on the right, the title, "by <author>, <year>", the summary (or "No summary yet.") and
-the author's bio. Show a CapabilityError's field messages (or its message) in p.cq-error. Use the page components:
-main.cq-page.cq-page--wide > .cq-card with .cq-card-head (title "Find a book"), .cq-form, .cq-section.cq-split
-(list | book), .cq-list/.cq-item, a .cq-foot with "N book(s)", and link theme.css and tokens.css like the Pug layout.
+getBook({ id }) and shows, in a grey band under the list, the title, "by <author>, <year>", the summary (or "No
+summary yet.") and the author's bio. Show a CapabilityError's field messages (or its message) in p.cq-field-error.
+Use Caligrafy's look, like the app template: body.cq-site, the top bar nav.cq-nav, a title band
+section.cq-hero.cq-hero--page ("Find a book"), section.cq-band.cq-band--tight > .cq-inner.cq-inner--narrow with the
+search .cq-field, ul.cq-rows > li.cq-row (.cq-row-main, .cq-row-actions), p.cq-empty-state and a p.cq-auth-note with
+"N book(s)", then a section.cq-band.cq-band--surface for the book; link theme.css, tokens.css, layout.css and look.css
+like the template.
 Do not add routes or server code: /apps/{appName} already serves it.
 ```
 
@@ -291,7 +296,7 @@ Do not add routes or server code: /apps/{appName} already serves it.
 - [ ] The client is loaded with `import(env.home + 'public/js/capabilities.js')`, and the app calls `listBooks`,
       `searchBooks` and `getBook` only.
 - [ ] `git status --short` shows only `?? public/finder/`: no change in `web.php`, `application/` or the services.
-- [ ] The page uses `cq-page`, `cq-card`, `cq-split`, `cq-list` and loads `tokens.css`.
+- [ ] The page has `body.cq-site`, uses `cq-hero`, `cq-band`, `cq-rows` (no `cq-card`) and loads `layout.css` and `look.css`.
 - [ ] Step 4 works: `time` finds Kindred, Open shows the author's bio, phone width is one column.
 
 **If Claude's result differs:** if it adds a route such as `/finder`, ask it to remove it: `/apps/finder` is enough.
@@ -318,9 +323,9 @@ and its optional `author_id`); choosing "Every author" shows them all again. Sti
 
 <details><summary>Show the solution</summary>
 
-In `public/finder/index.php`, add a second field in `.cq-fields`, after the Search field:
+In `public/finder/index.php`, add a second field in the form, after the Search field:
 ```html
-<div>
+<div class="cq-field">
     <label for="author">Author</label>
     <select id="author" class="form-select" v-model="authorId" @change="filter">
         <option value="">Every author</option>

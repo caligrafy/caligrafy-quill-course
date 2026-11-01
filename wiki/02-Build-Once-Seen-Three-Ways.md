@@ -238,7 +238,7 @@ In `application/config/routing/web.php`, delete the `// TASKS EXAMPLE` comment, 
 line that follows them:
 ```php
     // TASKS EXAMPLE: one set of capabilities (application/services/Tasks) served to every channel
-    Route::get('/tasks', function () { return view('Tasks/index'); });   // the web page (public/js/tasks.js)
+    Route::page('/tasks', 'Tasks/index');   // the web page (public/js/tasks.js)
     Route::capability('GET', '/api/tasks', 'list_tasks');                // REST
     Route::capability('GET', '/api/tasks/{id}', 'get_task');
     Route::capability('POST', '/api/tasks', 'create_task');

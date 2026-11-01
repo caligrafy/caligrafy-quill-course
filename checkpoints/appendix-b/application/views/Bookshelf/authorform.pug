@@ -1,27 +1,27 @@
-extends ../default/master/layoutblocks
+extends ../default/master/site
 
 //- Add an author: a classic form posted to Bookshelf\AuthorController@create
 
+block title
+    | Add an author · Bookshelf
+
 block content
-    main.cq-page
-        .cq-card
-            .cq-card-head
-                h2.cq-title Add an author
-                p.cq-note A classic form: the page is sent to the server, which answers with a new page.
+    main.cq-auth.cq-auth--wide
+        h1 Add an author
+        p.cq-lead A classic form: the page is sent to the server, which answers with a new page.
 
-            form.cq-form(method='POST', action="{$home}authors", novalidate)
-                =csrf()
-                .cq-fields
-                    div
-                        label(for='name') * Name
-                        input#name.form-control(type='text', name='name', value=$values['name'], maxlength='150')
-                    div
-                        label(for='bio') Bio
-                        textarea#bio.form-control(name='bio', rows='3', maxlength='2000')= $values['bio']
-                button.btn.btn-primary.cq-submit(type='submit') Add author
+        form(method='POST', action="{$home}authors", novalidate)
+            =csrf()
+            .cq-field
+                label(for='name') * Name
+                input#name.form-control(type='text', name='name', value=$values['name'], maxlength='150')
+            .cq-field
+                label(for='bio') Bio
+                textarea#bio.form-control(name='bio', rows='3', maxlength='2000')= $values['bio']
+            button.btn.btn-primary(type='submit') Add author
 
-            if $errors
-                p.cq-error(role='alert')= implode(' ', $errors)
+        if $errors
+            p.cq-field-error(role='alert')= implode(' ', $errors)
 
-            .cq-foot
-                a(href="{$home}books") All books
+        p.cq-auth-note
+            a(href="{$home}books") All books

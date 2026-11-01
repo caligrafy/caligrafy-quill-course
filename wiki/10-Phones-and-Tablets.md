@@ -172,19 +172,24 @@ export default defineConfig({
 </html>
 ```
 
-Keep `src/main.js` of the template: it loads Caligrafy's CSS (`tokens.css` included), so the page components look
-the same as on the pages. (It also prepares axios, Pinia and an API key: the course does not use them.)
+Keep `src/main.js` of the template: it loads Caligrafy's CSS (`tokens.css`, then `layout.css` and `look.css`) and
+adds `cq-site` to the `<body>`, so the screens get the same look as the pages: top bar, title band, bands, rows. Keep
+`src/components/global/ShowNavigation.vue` too: it is the top bar, with the Caligrafy mark linked to the home screen.
+(`main.js` also prepares axios, Pinia and an API key: the course does not use them.)
 
 ### Step 6 - The screens
 
-**File `src/App.vue`** (the frame of every screen):
+**File `src/App.vue`** (the frame of every screen: the top bar, the screen, the footer):
 
 ```html
-<!-- The frame of every screen: the Caligrafy header, then the page of the current address
+<!-- The frame of every screen: the Caligrafy top bar, the page of the current address, then the footer
      (:key loads the page again when only the id changes, from #/books/1 to #/books/2) -->
 <template>
   <show-navigation></show-navigation>
   <router-view :key="$route.fullPath"></router-view>
+  <footer class="cq-footer">
+    <p>Copyright &copy; {{ new Date().getFullYear() }}</p>
+  </footer>
 </template>
 
 <script>
@@ -216,57 +221,62 @@ const router = createRouter({
 export default router
 ```
 
-**File `src/components/pages/BooksPage.vue`** (the list with search, and the form):
+**File `src/components/pages/BooksPage.vue`** (a title band, the rows with search, then the form in a grey band):
 
 ```html
-<!-- The catalog: the list and the form side by side on tablets and computers, one under the other on phones -->
+<!-- The catalog: the list filtered as you type, then the form in a grey band (one column, on every screen) -->
 <template>
-  <main class="cq-page cq-page--wide">
-    <div class="cq-card">
-      <div class="cq-card-head">
-        <h2 class="cq-title">Bookshelf</h2>
-        <p class="cq-note">The same catalog as the web pages, the REST API and AI agents.</p>
-      </div>
+  <main>
+    <section class="cq-hero cq-hero--page">
+      <h1 class="cq-display">Bookshelf</h1>
+      <p class="cq-lead">The same catalog as the web pages, the REST API and AI agents.</p>
+    </section>
 
-      <div class="cq-section cq-split">
-        <!-- the list, filtered as you type (search_books) -->
-        <div>
+    <!-- the list, filtered as you type (search_books) -->
+    <section class="cq-band cq-band--tight">
+      <div class="cq-inner cq-inner--narrow">
+        <div class="cq-field">
           <label for="query">Search</label>
           <input id="query" class="form-control" type="search" v-model="query" @input="search" placeholder="magic, time..." autocomplete="off">
-          <ul class="cq-list">
-            <li class="cq-item" v-for="book in books" :key="book.id">
-              <div class="cq-item-body">
-                <p class="cq-item-title"><router-link :to="{ name: 'book', params: { id: book.id } }">{{ book.title }}</router-link></p>
-                <p class="cq-item-meta">{{ book.published_year }}</p>
-              </div>
-            </li>
-          </ul>
-          <p class="cq-empty" v-if="!books.length">No book here: add one.</p>
         </div>
+        <ul class="cq-rows">
+          <li class="cq-row" v-for="book in books" :key="book.id">
+            <div class="cq-row-main">
+              <p class="cq-row-title"><router-link :to="{ name: 'book', params: { id: book.id } }">{{ book.title }}</router-link></p>
+              <p class="cq-row-meta">{{ book.published_year }}</p>
+            </div>
+          </li>
+        </ul>
+        <p class="cq-empty-state" v-if="!books.length">No book here: add one.</p>
+      </div>
+    </section>
 
-        <!-- the form (create_book): the messages come from its rules -->
-        <form class="cq-form" @submit.prevent="add" novalidate>
-          <div class="cq-fields">
-            <div>
+    <!-- the form (create_book): the messages come from its rules -->
+    <section class="cq-band cq-band--surface">
+      <div class="cq-inner cq-inner--narrow cq-stack">
+        <h2 class="cq-heading">Add a book</h2>
+        <form @submit.prevent="add" novalidate>
+          <div class="cq-form-grid">
+            <div class="cq-field">
               <label for="title">* Title</label>
               <input id="title" class="form-control" type="text" v-model="form.title" maxlength="200">
             </div>
-            <div>
+            <div class="cq-field">
               <label for="author_id">* Author</label>
               <select id="author_id" class="form-select" v-model="form.author_id">
                 <option v-for="author in authors" :key="author.id" :value="author.id">{{ author.name }}</option>
               </select>
             </div>
-            <div>
+            <div class="cq-field">
               <label for="published_year">* Year</label>
               <input id="published_year" class="form-control" type="number" v-model="form.published_year" placeholder="1969">
             </div>
           </div>
-          <button class="btn btn-primary cq-submit" type="submit">Add book</button>
-          <p class="cq-error" role="alert">{{ error }}</p>
+          <button class="btn btn-primary" type="submit">Add book</button>
+          <p class="cq-field-error" role="alert">{{ error }}</p>
         </form>
       </div>
-    </div>
+    </section>
   </main>
 </template>
 
@@ -306,31 +316,33 @@ export default {
 </script>
 ```
 
-**File `src/components/pages/BookPage.vue`** (one book, and Delete):
+**File `src/components/pages/BookPage.vue`** (one book in a title band, and Delete; a full-screen message when it is missing):
 
 ```html
 <!-- One book (get_book), and a Delete button (delete_book) -->
 <template>
-  <main class="cq-page">
-    <div class="cq-card" v-if="found">
-      <div class="cq-card-head">
-        <h2 class="cq-title">{{ found.book.title }}</h2>
-        <p class="cq-note">by {{ found.author.name }}, {{ found.book.published_year }}</p>
-      </div>
-      <div class="cq-section">
+  <main v-if="found">
+    <section class="cq-hero cq-hero--page">
+      <h1 class="cq-display">{{ found.book.title }}</h1>
+      <p class="cq-lead">by {{ found.author.name }}, {{ found.book.published_year }}</p>
+    </section>
+    <section class="cq-band cq-band--tight">
+      <div class="cq-inner cq-inner--narrow">
         <p>{{ found.book.summary || 'No summary yet.' }}</p>
-        <button class="btn btn-secondary" type="button" @click="remove">Delete</button>
+        <div class="cq-buttons">
+          <button class="btn btn-secondary" type="button" @click="remove">Delete</button>
+        </div>
+        <p class="cq-auth-note"><router-link :to="{ name: 'home' }">All books</router-link></p>
       </div>
-      <div class="cq-foot"><router-link :to="{ name: 'home' }">All books</router-link></div>
-    </div>
+    </section>
+  </main>
 
-    <div class="cq-card" v-else>
-      <div class="cq-card-head">
-        <h2 class="cq-title">{{ error ? 'Not found' : 'Loading...' }}</h2>
-        <p class="cq-note">{{ error }}</p>
-      </div>
-      <div class="cq-foot"><router-link :to="{ name: 'home' }">All books</router-link></div>
-    </div>
+  <main v-else>
+    <section class="cq-hero">
+      <h1 class="cq-display">{{ error ? 'Not found' : 'Loading...' }}</h1>
+      <p class="cq-lead">{{ error }}</p>
+      <div class="cq-cta"><router-link class="btn btn-primary" :to="{ name: 'home' }">All books</router-link></div>
+    </section>
   </main>
 </template>
 
@@ -360,6 +372,10 @@ export default {
 }
 </script>
 ```
+
+The screens use the classes of the Pug pages of lesson 06, in Vue templates: `section.cq-hero.cq-hero--page` for the
+title band, `section.cq-band` (`.cq-band--surface`: grey) with a `.cq-inner.cq-inner--narrow` column, `ul.cq-rows`,
+`.cq-form-grid` of `.cq-field`, `p.cq-field-error`. `.cq-stack` puts 24px between the heading and the form.
 
 Delete the welcome screen of the template, which nothing uses any more:
 ```bash
@@ -395,13 +411,15 @@ Expected:
   ➜  Local:   http://localhost:5173/
 ```
 Open http://localhost:5173/:
-1. The header, then the card **Bookshelf**: the list on the left, the form on the right (on a wide window).
+1. The top bar, the title **Bookshelf**, the search field and the rows, then the grey band **Add a book** with the form.
 2. Type `magic` in Search: only A Wizard of Earthsea stays.
 3. Type `Ghost` as title, leave Year empty, click **Add book**: `The Published Year field is required`, the message
    of `create_book`.
-4. Click **A Wizard of Earthsea**: the address becomes `#/books/1` and the book shows. Click **All books**.
-5. Type `http://localhost:5173/#/books/42` in the address bar: **Not found** and `There is no book #42`.
-6. At phone width (375 px in the device toolbar): one column, the form under the list.
+4. Click **A Wizard of Earthsea**: the address becomes `#/books/1` and the book shows in the title band. Click
+   **All books**.
+5. Type `http://localhost:5173/#/books/42` in the address bar: a full-screen **Not found**, `There is no book #42`
+   and an **All books** button.
+6. At phone width (375 px in the device toolbar): the fields of the form one under the other, no horizontal scroll.
 
 Stop the server with <kbd>Ctrl</kbd>+<kbd>C</kbd> when you are done.
 
@@ -413,9 +431,9 @@ npm run build
 ```
 Expected (the names after `index-` vary):
 ```
-dist/assets/index-....css   35.78 kB
-dist/assets/index-....js   149.94 kB
-✓ built in 322ms
+dist/assets/index-....css   63.50 kB
+dist/assets/index-....js   150.83 kB
+✓ built in 377ms
 ```
 Caligrafy serves the built app: open http://localhost:8080/public/bookshelf-spa/dist/index.html, then add
 `#/books/1` and then `#/books/3` to the address: Kindred shows. No Node.js runs now: these are plain files.
@@ -423,7 +441,7 @@ Caligrafy serves the built app: open http://localhost:8080/public/bookshelf-spa/
 Go back with `cd ../..`.
 
 You now have three experiences of one catalog: the pages, the finder and the SPA. Same capabilities, same messages,
-same look (`tokens.css`).
+same look (`layout.css` and `look.css`).
 
 > **If it doesn't work**
 >
@@ -461,13 +479,16 @@ Turn public/bookshelf-spa into the Bookshelf SPA. Generate its client with
 php caligrafer.php client public/bookshelf-spa/src/capabilities.js and import the functions from it (no axios, no
 API key, no Pinia). vite.config.js: base './' and server.proxy { '/capabilities': 'http://localhost:8080' }.
 index.html: title Bookshelf. Router: createWebHashHistory, '/' named home -> BooksPage, '/books/:id' named book ->
-BookPage with props: true. App.vue: show-navigation then <router-view :key="$route.fullPath">. BooksPage: page
-components (main.cq-page.cq-page--wide > .cq-card, .cq-section.cq-split): on the left a search field (searchBooks
-250 ms after typing pauses, listBooks under 2 characters) and the list with router-links to the books; on the right
-a form (title, author select from listAuthors, year) that calls createBook and shows a CapabilityError's field
-messages in p.cq-error. BookPage: getBook({ id }), title, "by <author>, <year>", summary, a Delete button
-(confirm, deleteBook, back home), "Not found" and the error message when getBook fails. Delete
-src/components/pages/HomePage.vue. Do not change any server file. Run npm install on my computer, not in Docker.
+BookPage with props: true. App.vue: show-navigation (keep the template's ShowNavigation.vue and main.js), then
+<router-view :key="$route.fullPath">, then footer.cq-footer. Use Caligrafy's look of the pages (layout.css): BooksPage
+is a title band (section.cq-hero.cq-hero--page, "Bookshelf"), a section.cq-band.cq-band--tight >
+.cq-inner.cq-inner--narrow with a search .cq-field (searchBooks 250 ms after typing pauses, listBooks under 2
+characters) and ul.cq-rows of router-links to the books, then a section.cq-band.cq-band--surface "Add a book" with a
+.cq-form-grid form (title, author select from listAuthors, year) that calls createBook and shows a CapabilityError's
+field messages in p.cq-field-error. BookPage: getBook({ id }), a title band (title, "by <author>, <year>"), the
+summary, a Delete button (confirm, deleteBook, back home); a full-screen section.cq-hero "Not found" with the error
+message when getBook fails. No cq-card. Delete src/components/pages/HomePage.vue. Do not change any server file.
+Run npm install on my computer, not in Docker.
 ```
 
 **What Claude should do:** change the manifest and two routes; run `create`, then `npm install` on your computer,
@@ -478,6 +499,7 @@ src/components/pages/HomePage.vue. Do not change any server file. Run npm instal
 - [ ] `vite.config.js` has `base: './'` and the `/capabilities` proxy.
 - [ ] The router uses `createWebHashHistory()`; `App.vue` has `:key="$route.fullPath"`.
 - [ ] The pages import from `../../capabilities.js`; no `apiKey`, `VITE_API_KEY` or `Authorization` in the files it wrote.
+- [ ] The screens use the title band, bands and rows (`cq-hero`, `cq-band`, `cq-rows`), not `cq-card`; `src/main.js` still imports `layout.css` and `look.css`.
 - [ ] Step 8 works (search, the 422 message, `#/books/42` Not found, one column on a phone), then step 9.
 
 **If Claude's result differs:** if it uses `createWebHistory()`, the addresses have no `#`, but then the server

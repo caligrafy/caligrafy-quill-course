@@ -1,35 +1,37 @@
-extends ../default/master/layoutblocks
+extends ../default/master/site
 
 //- The catalog: every action calls a capability through the JS client (public/js/books.js)
 
-block content
-    main.cq-page
-        .cq-card
-            .cq-card-head
-                h2.cq-title Bookshelf
-                p.cq-note The books we love. The same catalog that the REST API and AI agents use.
+block title
+    | Bookshelf
 
-            form#new-book.cq-form(novalidate)
-                .cq-fields.cq-fields--2
-                    div
+block content
+    section.cq-hero.cq-hero--page
+        h1.cq-display Bookshelf
+        p.cq-lead The books we love. The same catalog that the REST API and AI agents use.
+
+    section.cq-band.cq-band--tight
+        .cq-inner.cq-inner--narrow
+            form#new-book(novalidate)
+                .cq-form-grid.cq-form-grid--2
+                    .cq-field
                         label(for='book-title') * Title
                         input#book-title.form-control(type='text', name='title', maxlength='200', autocomplete='off')
-                    div
+                    .cq-field
                         label(for='book-author') * Author
                         select#book-author.form-select(name='author_id')
-                    div
+                    .cq-field
                         label(for='book-year') * Year
                         input#book-year.form-control(type='number', name='published_year', placeholder='1969')
-                    div
+                    .cq-field
                         label(for='book-summary') Summary
                         input#book-summary.form-control(type='text', name='summary', placeholder='Optional', maxlength='2000', autocomplete='off')
-                button.btn.btn-primary.cq-submit(type='submit') Add book
+                button.btn.btn-primary(type='submit') Add book
+            p#error.cq-field-error(role='alert')
 
-            p#error.cq-error(role='alert')
-
-            .cq-tabs#authors(role='tablist')
-            ul#books.cq-list
-            p#empty.cq-empty(hidden) No books here yet: add the first one above.
+            .cq-segments#authors(role='tablist')
+            ul#books.cq-rows
+            p#empty.cq-empty-state(hidden) No books here yet: add the first one above.
 
 block additional_scripts
     script(type='module', src="{$home}public/js/books.js")

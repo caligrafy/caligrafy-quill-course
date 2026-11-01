@@ -1,5 +1,7 @@
 # Caligrafy Quill Course
 
+![Caligrafy: Build Once, Experience Everywhere](https://github.com/caligrafy/caligrafy-quill/blob/master/public/images/resources/build-once-banner.png)
+
 **Build once, experience everywhere, from zero.** In this course you build **Bookshelf**, a small catalog of books
 and authors, the Caligrafy way: every feature is written **once**, as a **capability**, and every experience of the
 application uses it: web pages, a REST API for other programs, AI agents such as Claude, a Vue app, and an app for
@@ -21,7 +23,7 @@ explained when it first appears. You do not install PHP or MySQL: they run in Do
 | A REST API | `GET /api/books`, `POST /api/books`... for other programs | 07 |
 | AI agent tools | Claude or Cursor search the catalog, add books, lend them | 08, 13 |
 | A Vue "finder" app | search as you type | 09 |
-| A phone and tablet app | installable, list and form side by side on tablets | 10 |
+| A phone and tablet app | installable, a list, a form and a page per book in one Vue app | 10 |
 | People and permissions | sign in, administrators, scoped tokens for agents | 11 |
 | Loans | one more feature, built once, in every experience at once | 13 |
 | Online | Bookshelf on the internet at `https://bookshelf-<you>.caligrafy.com`, deployed from GitHub | 14 |
@@ -74,8 +76,9 @@ Every lesson has the same structure:
 - [Appendix A - Routes and controllers by hand](A-Routes-and-Controllers)
 - [Appendix B - Classic forms and controller APIs](B-Classic-Forms)
 
-The course uses **Caligrafy Quill 2.9.1**: `Route::page` for the pages of lesson 06, and the production image and the
-deploy step of lesson 14 (2.4.0 and later). The full framework documentation is the
+The course uses **Caligrafy Quill 2.11.0**: `Route::page` and Caligrafy's look (the master `site.pug`, `layout.css`
+and `look.css`, 2.11.0 and later) for the pages of lesson 06, and the production image and the deploy step of lesson
+14 (2.4.0 and later). The full framework documentation is the
 [Caligrafy Quill wiki](https://github.com/caligrafy/caligrafy-quill/wiki). This course replaces the older
 [caligrafy-course](https://github.com/caligrafy/caligrafy-course) and
 [caligrafy-vue-course](https://github.com/caligrafy/caligrafy-vue-course).
