@@ -213,10 +213,14 @@ exercise of this lesson.
 
 ### Step 4 - Your Caligrafy Cloud account
 
-1. Open https://deploy.caligrafy.com/signup, enter your email and a password (10 characters or more), **Sign up**.
-2. Open the email "Confirm your Caligrafy Cloud account" (look in the spam folder too) and click the link. No email
-   after a few minutes: the sign-up page and the dashboard have **Send the link again**.
-3. Sign in at https://deploy.caligrafy.com/login with your email and password.
+1. Open https://deploy.caligrafy.com/signup. Enter your email (it is your username), a password of 10 to 72
+   characters twice, accept the terms of use, then **Create account**. The form tells you what to fix as you type.
+2. Open the email "Confirm your email for Caligrafy" (look in the spam folder too) and click **Confirm my email**.
+3. Sign in at https://deploy.caligrafy.com/login with your email and password. Before the link is opened, sign-in says
+   **Confirm your email first** and offers **Send the confirmation link again**.
+
+The same account signs in to caligrafy.com. Forgot your password? **Forgot your password?** on the sign-in page emails
+you a 6-digit code (10 minutes), then you choose a new password.
 
 The dashboard shows your email and `0 credits`. You need no credits yet: every new app is free for its first 30
 minutes online.
@@ -252,7 +256,8 @@ code, installing PHP, `composer install`, starting. A first build takes about 3 
 > |---|---|---|
 > | `bookshelf-sam.caligrafy.com is taken: choose another name` | Someone has that name | Choose another one, for example `bookshelf-sam-2` |
 > | `This name is reserved` | Names such as `www`, `api`, `admin` are kept for the service | Choose another one |
-> | `Confirm your email first: open the link we sent to ...` | The confirmation link was not opened | Open it, or **Send the confirmation link again** on the dashboard |
+> | **Confirm your email first** when you sign in | The confirmation link was not opened | Open it, or **Send the confirmation link again** under the message |
+> | **Too many tries** when you sign in | 10 wrong passwords in 15 minutes | Wait 15 minutes, or use **Forgot your password?** |
 > | `No Dockerfile at the root of ...` (public repository), or a build that fails because the Dockerfile is missing (private repository) | The update of step 1 was not committed or pushed | Commit, `git push`, then **Deploy** again |
 > | The status becomes `failed`, the build log ends with `Permission denied (publickey)` | The deploy key is not on the repository | Add it (above), then **Deploy** again |
 > | `failed` with a PHP or composer error | The build itself failed | **Show the logs**: the end of the build log says which file or package |

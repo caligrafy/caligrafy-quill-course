@@ -43,8 +43,8 @@ Claude now works without asking you anything: it sets up the project, builds eve
 private GitHub repository and puts the app online. It stops only when **you** must approve something, in your
 browser:
 
-- **Caligrafy Cloud**: a page opens. The first time, sign up and confirm your email, then approve the code your
-  terminal shows.
+- **Caligrafy Cloud**: a page opens. The first time, choose **Create account** (your email and a password, twice),
+  open the confirmation email from Caligrafy, then sign in on that page and approve the code your terminal shows.
 - **GitHub**, only if your computer has no GitHub access yet: approve the code GitHub shows.
 
 At the end, Claude gives you your addresses. Open `https://quotes-<you>.caligrafy.com`: sign up (a username of letters
@@ -78,5 +78,7 @@ what to look for at each step, so that your OK means something.
 > | A port is already in use | let Claude use other ports: it proposes them |
 > | The name is taken | Claude proposes another one |
 > | The browser page did not open | Claude prints its address: open it, approve, Claude goes on |
+> | Caligrafy Cloud says **Confirm your email first** | open the link of the email from Caligrafy (look in spam), then sign in again |
+> | You forgot your Caligrafy password | **Forgot your password?** on the sign-in page emails you a 6-digit code |
 
 **Next:** [Lesson 2 - Describe it](Lesson-2-Describe-It)
