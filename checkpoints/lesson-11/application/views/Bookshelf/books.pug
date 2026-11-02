@@ -13,7 +13,7 @@ block content
     section.cq-band.cq-band--tight
         .cq-inner.cq-inner--narrow
             //- shown by books.js when the visitor may call create_book
-            form#new-book(novalidate, hidden)
+            form#new-book(method='POST', novalidate, hidden)
                 .cq-form-grid.cq-form-grid--2
                     .cq-field
                         label(for='book-title') * Title

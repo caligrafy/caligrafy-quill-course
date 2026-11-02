@@ -331,7 +331,7 @@ block content
             p#sign-in(hidden)
                 a.btn.btn-secondary(href="{$home}login") Sign in to manage loans
 
-            form#lend(novalidate, hidden)
+            form#lend(method='POST', novalidate, hidden)
                 .cq-form-grid
                     .cq-field
                         label(for='loan-book') * Book

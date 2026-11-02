@@ -226,7 +226,7 @@ In `application/views/Bookshelf/books.pug`, hide the form until `books.js` decid
 the form (above `p#error.cq-field-error(role='alert')`):
 ```pug
             //- shown by books.js when the visitor may call create_book
-            form#new-book(novalidate, hidden)
+            form#new-book(method='POST', novalidate, hidden)
 ```
 ```pug
             p#sign-in(hidden)

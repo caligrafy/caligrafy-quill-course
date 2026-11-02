@@ -132,7 +132,7 @@ block content
 
     section.cq-band.cq-band--tight
         .cq-inner.cq-inner--narrow
-            form#new-book(novalidate)
+            form#new-book(method='POST', novalidate)
                 .cq-form-grid.cq-form-grid--2
                     .cq-field
                         label(for='book-title') * Title
@@ -256,6 +256,8 @@ await showBooks()
 - `createBook(Object.fromEntries(new FormData(form)))` sends the fields of the form, named like the inputs of
   create_book (`title`, `author_id`, `published_year`, `summary`).
 - `showError()` shows the `fields` of a `CapabilityError` under the form: the messages of `$rules` and `handle()`.
+- `event.preventDefault()` keeps the browser from sending the form itself: the script sends it. The form still has
+  `method='POST'`: if the script does not run, a form without a method is sent as a GET, its fields in the address.
 - The rows are built with `textContent`, never by pasting a title into HTML: a title like `<b>` stays text. Each row
   is `li.cq-row`: the title and "author, year" in `.cq-row-main`, the Delete button in `.cq-row-actions`.
 
