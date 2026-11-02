@@ -18,7 +18,7 @@ your connection. Later starts take seconds.
 the framework into a new folder, and that folder becomes your project. Your code goes in `application/` and
 `public/`; the framework stays in `framework/`.
 
-**A release.** `--branch v2.12.4` gets exactly the version 2.12.4 of the framework, the one this course was written
+**A release.** `--branch v2.13.0` gets exactly the version 2.13.0 of the framework, the one this course was written
 and checked with, even after newer versions come out.
 
 **Caligrafer.** The command line tool of Caligrafy. It has two doors:
@@ -57,15 +57,15 @@ Choose the folder where you keep your projects (here `~/code`) and clone the rel
 ```bash
 mkdir -p ~/code
 cd ~/code
-git clone --branch v2.12.4 https://github.com/caligrafy/caligrafy-quill.git bookshelf
+git clone --branch v2.13.0 https://github.com/caligrafy/caligrafy-quill.git bookshelf
 cd bookshelf
 ```
-Expected: `Cloning into 'bookshelf'...`, then a line `warning: refs/tags/v2.12.4 ... is not a commit!` (with the id
+Expected: `Cloning into 'bookshelf'...`, then a line `warning: refs/tags/v2.13.0 ... is not a commit!` (with the id
 of the tag in place of `...`) and a note that you are in `'detached HEAD' state`. Both are **harmless**: a release tag
 points to a fixed version, not to a branch.
 
 > **Already have PHP, Composer and MAMP, XAMPP or LAMP?** You can start without Git or Docker: in your server's web
-> folder, `composer create-project caligrafy/caligrafy-quill:2.12.4 bookshelf`, then `cd bookshelf` and
+> folder, `composer create-project caligrafy/caligrafy-quill:2.13.0 bookshelf`, then `cd bookshelf` and
 > `.bin/caligrafer quickstart --example --local`. It asks for your MySQL settings and prints the address of the project
 > (see [Quickstart with Composer](https://github.com/caligrafy/caligrafy-quill/wiki/Quickstart#composer)). The course
 > is written for the Docker server: on your own server, type `php caligrafer.php ...` where a lesson says
@@ -147,7 +147,7 @@ Expected: `{"data":[]}` (or your tasks, if you left some on the page).
 ```bash
 docker compose exec dev-box php caligrafer.php doctor
 ```
-Expected: the first line `Caligrafy doctor (read-only): Caligrafy Quill 2.12.4`, then one line per check, and the
+Expected: the first line `Caligrafy doctor (read-only): Caligrafy Quill 2.13.0`, then one line per check, and the
 last line:
 ```
  14 OK, 0 WARN, 0 FAIL, 6 SKIP
@@ -222,8 +222,8 @@ Two ways, both reach the same project.
 
 **A. Let Claude create the project.** In the folder where you keep your projects (`~/code`), start `claude` and ask:
 ```
-Clone the Caligrafy Quill release v2.12.4 into a new folder named bookshelf:
-git clone --branch v2.12.4 https://github.com/caligrafy/caligrafy-quill.git bookshelf
+Clone the Caligrafy Quill release v2.13.0 into a new folder named bookshelf:
+git clone --branch v2.13.0 https://github.com/caligrafy/caligrafy-quill.git bookshelf
 Then, inside bookshelf, set it up with quickstart. It deletes the .git folder of the framework: ask me first,
 and once I agree, run .bin/caligrafer quickstart --example --yes. Then run docker compose exec dev-box php caligrafer.php doctor and show me
 the summary line. Do not print the contents of .env.
