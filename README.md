@@ -1,96 +1,56 @@
-# Caligrafy Quill Course
+# Caligrafy Course
 
 ![Caligrafy: Describe it. Approve it. Ship it.](https://github.com/caligrafy/caligrafy-quill/blob/master/public/images/resources/describe-approve-ship-banner.png)
 
-A step by step course for people who have **never used Caligrafy Quill**: **Describe it. Approve it. Ship it.**
-With Caligrafy, you describe an idea to Claude, approve the plan, and ship a complete app. This course teaches you
-what happens in each of those three steps, so that you know what you approve. You build **Bookshelf**, a small catalog of books and authors, from an empty folder to a
-complete application **online**, where every feature is written **once**, as a capability, and used everywhere: web
-pages, a REST API, AI agents such as Claude and Cursor, a Vue app, and an installable app for phones and tablets.
-From the first command to a public address, zero to one, in one project.
+**Describe it. Approve it. Ship it.** With Caligrafy, Claude turns your idea into a complete app online. This course
+teaches you to do it well: describe what you want clearly, approve with confidence, and ship. You build **Bookshelf**,
+a catalog of books for a book club, then an app of your own.
 
-**In a hurry?** The [Quickstart with Claude](https://github.com/caligrafy/caligrafy-quill/wiki/Quickstart-with-Claude)
-describes, approves and ships an idea of yours in one conversation (`/caligrafy-quill:idea`). This course is the
-same three steps, one lesson at a time, so that you understand and can change everything Claude does:
-
-| | With Claude, after the course | What the course teaches you |
-|---|---|---|
-| **1. Describe it** | your idea, in a sentence: `/caligrafy-quill:idea` | what a description becomes: the tables and the capabilities (Part 1) |
-| **2. Approve it** | read Claude's plan, say OK | what you approve: every experience and every permission, checked (Parts 2 and 3) |
-| **3. Ship it** | approve the sign-ins in your browser | tests, review, and Bookshelf online (Part 4) |
-
+Nine short lessons. No code to write: Claude writes it, and you learn what to look for before you say OK.
 
 **[Start the course on the Wiki](https://github.com/caligrafy/caligrafy-quill-course/wiki)** (the same pages are in
 the [`wiki/`](wiki) folder of this repository).
 
-## Who this course is for
-
-You know a little HTML, CSS and JavaScript, a little PHP (variables, arrays, functions, classes) and a little SQL
-(`SELECT`, `INSERT`). You have never used Caligrafy, Docker, Pug, Vue, Vite or MCP: every one of them is explained
-the first time it appears.
-
 ## What you need
 
-| Tool | Version | Needed for |
-|---|---|---|
-| A terminal | macOS Terminal, Ubuntu on WSL 2 (Windows), any Linux terminal | everything |
-| [Git](https://git-scm.com/) | 2.x | everything |
-| [Docker Desktop](https://www.docker.com/products/docker-desktop/) | Docker Compose 2.24+ | everything: PHP 8.5 + Apache, MySQL 8.4 and phpMyAdmin run in containers |
-| A code editor | for example [VS Code](https://code.visualstudio.com/) | everything |
-| [Node.js](https://nodejs.org/) | 20.19+ or 22.12+ | lesson 10 (the Vite app) |
-| [Claude Code](https://claude.com/claude-code) | current | the "With Claude" track, and the AI agent of lessons 02, 08 and 13 |
-| A [GitHub](https://github.com/) account | free | lesson 14 (putting Bookshelf online) |
-
-[Lesson 00](https://github.com/caligrafy/caligrafy-quill-course/wiki/00-Introduction-and-Tools) installs and checks
-each tool. The first command of the course gives you a running application:
-```bash
-git clone --branch v2.13.1 https://github.com/caligrafy/caligrafy-quill.git bookshelf
-cd bookshelf
-.bin/caligrafer quickstart --example
-```
-
-## Two tracks in every lesson
-
-| Track | What you do |
-|---|---|
-| **Manual** | You type every command and write every file. Every step says which file, gives its complete content (no `...`), what you should see, and how to check it worked. |
-| **With Claude** | You give [Claude Code](https://claude.com/claude-code) the exact prompt of the lesson. The `caligrafy-quill` plugin, which ships inside every Caligrafy Quill project, gives Claude the framework documentation, commands (`/caligrafy-quill:new-capability`, `/caligrafy-quill:server`, `/caligrafy-quill:db`, `/caligrafy-quill:new-app`, `/caligrafy-quill:deploy`, `/caligrafy-quill:ship`) and a reviewer agent (`caligrafy-reviewer`). The lesson tells you what Claude should do and gives a **Check** list to review it. |
-
-Do the **Manual** track first: it is how you learn what the framework does, and what you approve when Claude does it. Use the **With Claude** track on a
-second pass, or for a lesson you already understand, and always go through its Check list.
-
-Every lesson also has an **If it doesn't work** box with the real errors of that step, a **checkpoint** (commit +
-git tag) and a short **quiz or exercise** with its solution.
+[Git](https://git-scm.com/), [Docker Desktop](https://www.docker.com/products/docker-desktop/),
+[Claude Code](https://claude.com/claude-code) and a [GitHub](https://github.com/) account.
+[Lesson 0](https://github.com/caligrafy/caligrafy-quill-course/wiki/Lesson-0-Get-Ready) checks each one.
 
 ## Lessons
 
 | # | Lesson | You learn |
 |---|---|---|
-| | **Part 0 - Start** | |
-| 00 | [What you will build, and your tools](https://github.com/caligrafy/caligrafy-quill-course/wiki/00-Introduction-and-Tools) | capabilities and experiences, the two tracks, Git, Docker, Node.js, Claude Code |
-| 01 | [Your project in one command](https://github.com/caligrafy/caligrafy-quill-course/wiki/01-Your-Project-in-One-Command) | `quickstart`, the folders, `doctor`, your own git repository |
-| 02 | [Build once, seen three ways](https://github.com/caligrafy/caligrafy-quill-course/wiki/02-Build-Once-Seen-Three-Ways) | one capability used from a page, `curl` and Claude; the audit log |
-| | **Part 1 - Describe it: build once** | |
-| 03 | [Your data](https://github.com/caligrafy/caligrafy-quill-course/wiki/03-Your-Data) | tables, `php caligrafer.php sql`, models and relationships |
-| 04 | [Your first capabilities](https://github.com/caligrafy/caligrafy-quill-course/wiki/04-Your-First-Capabilities) | `#[Capability]`, `$rules`, `handle()`, read-only and public capabilities |
-| 05 | [Rules: adding, changing and deleting books](https://github.com/caligrafy/caligrafy-quill-course/wiki/05-Rules-and-Changes) | validation, `ServiceError`, destructive capabilities |
-| | **Part 2 - Approve it: experience everywhere** | |
-| 06 | [Web pages](https://github.com/caligrafy/caligrafy-quill-course/wiki/06-Web-Pages) | Pug, the master `site.pug` and Caligrafy's look (title band, bands, rows), the JS client, `Route::page` with data from capabilities, a controller for a form |
-| 07 | [The REST API](https://github.com/caligrafy/caligrafy-quill-course/wiki/07-The-REST-API) | `Route::capability`, JSON, HTTP status codes |
-| 08 | [AI agents](https://github.com/caligrafy/caligrafy-quill-course/wiki/08-AI-Agents) | MCP, tools and hints, tokens, Claude Code and Cursor, descriptions that agents understand |
-| 09 | [A Vue app](https://github.com/caligrafy/caligrafy-quill-course/wiki/09-A-Vue-App) | Vue as a library on the JS client, search as you type |
-| 10 | [Phones and tablets](https://github.com/caligrafy/caligrafy-quill-course/wiki/10-Phones-and-Tablets) | install to the home screen, a Vite single page application, Vue Router, the build |
-| | **Part 3 - Approve it: people and trust** | |
-| 11 | [People and permissions](https://github.com/caligrafy/caligrafy-quill-course/wiki/11-People-and-Permissions) | sign in, scopes, levels, tokens for agents, the audit log |
-| | **Part 4 - Ship it** | |
-| 12 | [Ship it: tests, review, doctor](https://github.com/caligrafy/caligrafy-quill-course/wiki/12-Ship-It) | PHPUnit, a smoke test, `doctor`, the reviewer, `upgrade`, going live |
-| 13 | [Capstone: one more feature, everywhere](https://github.com/caligrafy/caligrafy-quill-course/wiki/13-Capstone-Loans) | Loans, built once and used by every experience, with `/caligrafy-quill:new-capability` |
-| 14 | [Put it online](https://github.com/caligrafy/caligrafy-quill-course/wiki/14-Put-It-Online) | the production image and the deploy step, GitHub, Caligrafy Cloud from the dashboard, `php caligrafer.php cloud` with a sign-in approved in the browser, `/caligrafy-quill:deploy` and `/caligrafy-quill:ship` |
-| | **Appendix - Under the hood (optional)** | |
-| A | [Routes and controllers by hand](https://github.com/caligrafy/caligrafy-quill-course/wiki/A-Routes-and-Controllers) | `Route::get`, route variables, controllers, models, `api()` |
-| B | [Classic forms and controller APIs](https://github.com/caligrafy/caligrafy-quill-course/wiki/B-Classic-Forms) | `csrf()`, validation in a controller, and turning it into a capability |
+| | **Start** | |
+| 0 | [Get ready](https://github.com/caligrafy/caligrafy-quill-course/wiki/Lesson-0-Get-Ready) | the four tools, and three rules for working with Claude |
+| 1 | [Your first app in one conversation](https://github.com/caligrafy/caligrafy-quill-course/wiki/Lesson-1-Your-First-App) | the three steps once, quickly, on a tiny app |
+| | **Describe it** | |
+| 2 | [Describe it](https://github.com/caligrafy/caligrafy-quill-course/wiki/Lesson-2-Describe-It) | what a good description says; starting from a proven prompt |
+| | **Approve it** | |
+| 3 | [Approve the plan](https://github.com/caligrafy/caligrafy-quill-course/wiki/Lesson-3-Approve-The-Plan) | reading the plan: tables, capabilities, who may do what |
+| 4 | [Review what Claude built](https://github.com/caligrafy/caligrafy-quill-course/wiki/Lesson-4-Review-It) | every experience, where the code lives, a review |
+| | **Ship it** | |
+| 5 | [Ship it](https://github.com/caligrafy/caligrafy-quill-course/wiki/Lesson-5-Ship-It) | online, with your own GitHub repository, and kept online |
+| 6 | [Change it, ship it again](https://github.com/caligrafy/caligrafy-quill-course/wiki/Lesson-6-Change-It) | a new feature with the same three steps; another look |
+| 7 | [Sell it](https://github.com/caligrafy/caligrafy-quill-course/wiki/Lesson-7-Sell-It) | your app as a proven prompt on the marketplace, and your 25% |
+| | **Your turn** | |
+| 8 | [Your own idea](https://github.com/caligrafy/caligrafy-quill-course/wiki/Lesson-8-Your-Own-Idea) | your app, described, approved and shipped |
 
-## Checkpoint code
+## By hand
+
+Everything Claude does is plain Caligrafy you can write yourself. The **By hand** track builds Bookshelf again, every
+file typed by you, so that you understand every line Claude writes. Take it after the main lessons, or whenever a
+lesson's **By hand** link makes you curious. It uses Caligrafy Quill 2.13.1, and needs a little HTML, CSS, JavaScript,
+PHP and SQL.
+
+**Start:** [00 Your tools](https://github.com/caligrafy/caligrafy-quill-course/wiki/00-Introduction-and-Tools) · [01 Your project in one command](https://github.com/caligrafy/caligrafy-quill-course/wiki/01-Your-Project-in-One-Command) · [02 Build once, seen three ways](https://github.com/caligrafy/caligrafy-quill-course/wiki/02-Build-Once-Seen-Three-Ways)  
+**Build once:** [03 Your data](https://github.com/caligrafy/caligrafy-quill-course/wiki/03-Your-Data) · [04 Your first capabilities](https://github.com/caligrafy/caligrafy-quill-course/wiki/04-Your-First-Capabilities) · [05 Rules and changes](https://github.com/caligrafy/caligrafy-quill-course/wiki/05-Rules-and-Changes)  
+**Experience everywhere:** [06 Web pages](https://github.com/caligrafy/caligrafy-quill-course/wiki/06-Web-Pages) · [07 The REST API](https://github.com/caligrafy/caligrafy-quill-course/wiki/07-The-REST-API) · [08 AI agents](https://github.com/caligrafy/caligrafy-quill-course/wiki/08-AI-Agents) · [09 A Vue app](https://github.com/caligrafy/caligrafy-quill-course/wiki/09-A-Vue-App) · [10 Phones and tablets](https://github.com/caligrafy/caligrafy-quill-course/wiki/10-Phones-and-Tablets)  
+**People and trust:** [11 People and permissions](https://github.com/caligrafy/caligrafy-quill-course/wiki/11-People-and-Permissions)  
+**Ship it:** [12 Tests, review, doctor](https://github.com/caligrafy/caligrafy-quill-course/wiki/12-Ship-It) · [13 Capstone: Loans](https://github.com/caligrafy/caligrafy-quill-course/wiki/13-Capstone-Loans) · [14 Put it online](https://github.com/caligrafy/caligrafy-quill-course/wiki/14-Put-It-Online)  
+**Under the hood:** [A Routes and controllers](https://github.com/caligrafy/caligrafy-quill-course/wiki/A-Routes-and-Controllers) · [B Classic forms](https://github.com/caligrafy/caligrafy-quill-course/wiki/B-Classic-Forms)
+
+## Checkpoint code (By hand)
 
 The [`checkpoints/`](checkpoints) folder holds the finished code of every lesson, as an **overlay**: only the files
 you write or change in your project, at their real paths. Each folder contains everything up to that lesson

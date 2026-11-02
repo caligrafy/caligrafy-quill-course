@@ -1,94 +1,50 @@
-# Caligrafy Quill Course
+# Caligrafy Course
 
 ![Caligrafy: Describe it. Approve it. Ship it.](https://github.com/caligrafy/caligrafy-quill/blob/master/public/images/resources/describe-approve-ship-banner.png)
 
-**Describe it. Approve it. Ship it.** With Caligrafy, you describe an idea to Claude, approve the plan, and ship a
-complete app. This course teaches you what happens in each of those three steps, from zero, so that you know what
-you approve. You build **Bookshelf**, a small catalog of books
-and authors, the Caligrafy way: every feature is written **once**, as a **capability**, and every experience of the
-application uses it: web pages, a REST API for other programs, AI agents such as Claude, a Vue app, and an app for
-phones and tablets. The same rules, the same permissions and the same audit log everywhere. And it ends on the
-internet: the last lesson puts Bookshelf online, so you go from an idea to an application anyone can open.
+**Describe it. Approve it. Ship it.** With Caligrafy, Claude turns your idea into a complete app online. This course
+teaches you to do it well: describe what you want clearly, approve with confidence, and ship. You build **Bookshelf**,
+a catalog of books for a book club, then an app of your own.
 
-> **In a hurry?** The [Quickstart with Claude](https://github.com/caligrafy/caligrafy-quill/wiki/Quickstart-with-Claude)
-> describes, approves and ships an idea of yours in one conversation (`/caligrafy-quill:idea`). This course is the
-> same three steps, one lesson at a time, so that you understand and can change everything Claude does.
+Nine short lessons. No code to write: Claude writes it, and you learn what to look for before you say OK.
 
-| | With Claude, after the course | What the course teaches you |
-|---|---|---|
-| **1. Describe it** | your idea, in a sentence: `/caligrafy-quill:idea` | what a description becomes: the tables and the capabilities (Part 1) |
-| **2. Approve it** | read Claude's plan, say OK | what you approve: every experience and every permission, checked (Parts 2 and 3) |
-| **3. Ship it** | approve the sign-ins in your browser | tests, review, and Bookshelf online (Part 4) |
+## What you need
 
-
-You need a little HTML, CSS, JavaScript, PHP and SQL. Everything else (Docker, Caligrafy, Pug, Vue, Vite, MCP) is
-explained when it first appears. You do not install PHP or MySQL: they run in Docker.
-
-## What you will have at the end
-
-| Experience | What it does | Lesson |
-|---|---|---|
-| A catalog page and a page per book | browse, filter by author, add, edit, delete | 06 |
-| A REST API | `GET /api/books`, `POST /api/books`... for other programs | 07 |
-| AI agent tools | Claude or Cursor search the catalog, add books, lend them | 08, 13 |
-| A Vue "finder" app | search as you type | 09 |
-| A phone and tablet app | installable, a list, a form and a page per book in one Vue app | 10 |
-| People and permissions | sign in, administrators, scoped tokens for agents | 11 |
-| Loans | one more feature, built once, in every experience at once | 13 |
-| Online | Bookshelf on the internet at `https://bookshelf-<you>.caligrafy.com`, deployed from GitHub | 14 |
-
-All of it on **ten capabilities** of a few dozen lines of PHP each.
-
-## How to use this course
-
-Every lesson has the same structure:
-1. **New concepts**: what you are about to use, and why.
-2. **Manual track**: numbered steps. Each step says what to type or which file to write (complete, no `...`),
-   what you should see, and how to check it. **Do this track first**: it is how you learn, and what you approve when Claude does it.
-3. **If it doesn't work**: the real errors of that step and their fix.
-4. **With Claude**: the exact prompt or plugin command for [Claude Code](https://claude.com/claude-code) (the
-   `caligrafy-quill` plugin ships inside every project), what Claude should do, and a **Check** list to review it.
-   Use it on a second pass, or for a lesson you already understand.
-5. **Checkpoint**: a commit and a git tag (`lesson-05`...). The finished code of every lesson is in the
-   [`checkpoints/`](https://github.com/caligrafy/caligrafy-quill-course/tree/main/checkpoints) folder of the course
-   repository.
-6. A short **quiz or exercise**, with its solution under "Show the solution".
+[Git](https://git-scm.com/), [Docker Desktop](https://www.docker.com/products/docker-desktop/),
+[Claude Code](https://claude.com/claude-code) and a [GitHub](https://github.com/) account.
+[Lesson 0](Lesson-0-Get-Ready) checks each one.
 
 ## Lessons
 
-**Part 0 - Start**
-- [Lesson 00 - What you will build, and your tools](00-Introduction-and-Tools)
-- [Lesson 01 - Your project in one command](01-Your-Project-in-One-Command)
-- [Lesson 02 - Build once, seen three ways](02-Build-Once-Seen-Three-Ways)
+| # | Lesson | You learn |
+|---|---|---|
+| | **Start** | |
+| 0 | [Get ready](Lesson-0-Get-Ready) | the four tools, and three rules for working with Claude |
+| 1 | [Your first app in one conversation](Lesson-1-Your-First-App) | the three steps once, quickly, on a tiny app |
+| | **Describe it** | |
+| 2 | [Describe it](Lesson-2-Describe-It) | what a good description says; starting from a proven prompt |
+| | **Approve it** | |
+| 3 | [Approve the plan](Lesson-3-Approve-The-Plan) | reading the plan: tables, capabilities, who may do what |
+| 4 | [Review what Claude built](Lesson-4-Review-It) | every experience, where the code lives, a review |
+| | **Ship it** | |
+| 5 | [Ship it](Lesson-5-Ship-It) | online, with your own GitHub repository, and kept online |
+| 6 | [Change it, ship it again](Lesson-6-Change-It) | a new feature with the same three steps; another look |
+| 7 | [Sell it](Lesson-7-Sell-It) | your app as a proven prompt on the marketplace, and your 25% |
+| | **Your turn** | |
+| 8 | [Your own idea](Lesson-8-Your-Own-Idea) | your app, described, approved and shipped |
 
-**Part 1 - Describe it: build once**
-- [Lesson 03 - Your data: tables and models](03-Your-Data)
-- [Lesson 04 - Your first capabilities](04-Your-First-Capabilities)
-- [Lesson 05 - Rules: adding, changing and deleting books](05-Rules-and-Changes)
+Every lesson ends with a **Check** list: go through it before you accept what Claude did.
 
-**Part 2 - Approve it: experience everywhere**
-- [Lesson 06 - Web pages](06-Web-Pages)
-- [Lesson 07 - The REST API](07-The-REST-API)
-- [Lesson 08 - AI agents](08-AI-Agents)
-- [Lesson 09 - A Vue app](09-A-Vue-App)
-- [Lesson 10 - Phones and tablets](10-Phones-and-Tablets)
+## By hand
 
-**Part 3 - Approve it: people and trust**
-- [Lesson 11 - People and permissions](11-People-and-Permissions)
+Everything Claude does is plain Caligrafy you can write yourself. The **By hand** track builds Bookshelf again, every
+file typed by you, so that you understand every line Claude writes. Take it after the main lessons, or whenever a
+lesson's **By hand** link makes you curious. It uses Caligrafy Quill 2.13.1, and needs a little HTML, CSS, JavaScript,
+PHP and SQL.
 
-**Part 4 - Ship it**
-- [Lesson 12 - Ship it: tests, review, doctor](12-Ship-It)
-- [Lesson 13 - Capstone: one more feature, everywhere](13-Capstone-Loans)
-- [Lesson 14 - Put it online](14-Put-It-Online)
-
-**Appendix - Under the hood (optional, any time after lesson 06; the exercise of B after lesson 13)**
-- [Appendix A - Routes and controllers by hand](A-Routes-and-Controllers)
-- [Appendix B - Classic forms and controller APIs](B-Classic-Forms)
-
-The course uses **Caligrafy Quill 2.13.1**: `Route::page` and Caligrafy's look (the master `site.pug`, `layout.css`
-and `look.css`, 2.11.0 and later) for the pages of lesson 06, the list and its detail side by side (`.cq-split`,
-2.12.0 and later) for the apps of lessons 09 and 10, and the production image and the deploy step of lesson
-14 (2.4.0 and later). The full framework documentation is the
-[Caligrafy Quill wiki](https://github.com/caligrafy/caligrafy-quill/wiki). This course replaces the older
-[caligrafy-course](https://github.com/caligrafy/caligrafy-course) and
-[caligrafy-vue-course](https://github.com/caligrafy/caligrafy-vue-course).
+**Start:** [00 Your tools](00-Introduction-and-Tools) · [01 Your project in one command](01-Your-Project-in-One-Command) · [02 Build once, seen three ways](02-Build-Once-Seen-Three-Ways)  
+**Build once:** [03 Your data](03-Your-Data) · [04 Your first capabilities](04-Your-First-Capabilities) · [05 Rules and changes](05-Rules-and-Changes)  
+**Experience everywhere:** [06 Web pages](06-Web-Pages) · [07 The REST API](07-The-REST-API) · [08 AI agents](08-AI-Agents) · [09 A Vue app](09-A-Vue-App) · [10 Phones and tablets](10-Phones-and-Tablets)  
+**People and trust:** [11 People and permissions](11-People-and-Permissions)  
+**Ship it:** [12 Tests, review, doctor](12-Ship-It) · [13 Capstone: Loans](13-Capstone-Loans) · [14 Put it online](14-Put-It-Online)  
+**Under the hood:** [A Routes and controllers](A-Routes-and-Controllers) · [B Classic forms](B-Classic-Forms)
