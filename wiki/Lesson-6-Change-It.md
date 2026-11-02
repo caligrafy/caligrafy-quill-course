@@ -28,7 +28,8 @@ OK. Build it and check it here.
 ```
 Claude writes the new feature **once**, as capabilities, and every experience gets it at once: the page, REST and AI
 agents. Review it as in [Lesson 4](Lesson-4-Review-It): lend a book on the page, see it as on loan over REST, and ask
-your AI agent "Which books are on loan?". Try to lend the same book twice: every experience refuses it with the same
+your AI agent "Which books are on loan?". Create a **new token** for the agent first: a token keeps the permissions it
+was created with, so an older one cannot lend. Try to lend the same book twice: every experience refuses it with the same
 message.
 
 ## Ship it again

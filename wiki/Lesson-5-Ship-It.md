@@ -29,8 +29,8 @@ Claude asks you one question only: before spending credits. Every new app is fre
 
 Do the checks of [Lesson 4](Lesson-4-Review-It) again, on the real address:
 
-- **The page**: `https://bookshelf-<you>.caligrafy.com`. Sign up again: the online app has its own database, with the
-  sample data but none of your local accounts.
+- **The page**: `https://bookshelf-<you>.caligrafy.com`. Sign up again, then sign in: the online app has its own
+  database, with the sample data but none of your local accounts.
 - **The phone**: open the address on your phone, then *Add to Home Screen*. It opens like an app.
 - **REST**: `curl -s -H "Accept: application/json" https://bookshelf-<you>.caligrafy.com/api/books`
 - **An AI agent**: create a token on the online page and run the `claude mcp add ...` line it shows.

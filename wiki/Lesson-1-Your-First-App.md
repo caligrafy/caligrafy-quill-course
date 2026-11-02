@@ -48,8 +48,8 @@ browser:
 - **GitHub**, only if your computer has no GitHub access yet: approve the code GitHub shows.
 
 At the end, Claude gives you your addresses. Open `https://quotes-<you>.caligrafy.com`: sign up (a username of letters
-and digits), add a quote, change it, delete it. On your phone, open the same address and choose *Add to Home Screen*:
-it opens like an app.
+and digits), sign in, then add a quote, change it, delete it. On your phone, open the same address and choose
+*Add to Home Screen*: it opens like an app.
 
 Every new app is free for its first 30 minutes online, then it pauses. That is fine for this one: it was for practice.
 
@@ -67,7 +67,7 @@ what to look for at each step, so that your OK means something.
 
 - [ ] The plan had a name, tables, capabilities, who may do what, pages and sample data.
 - [ ] Claude never asked you for a password, a token or a key.
-- [ ] Your app opened at `https://quotes-<you>.caligrafy.com`, and you could add a quote after signing up.
+- [ ] Your app opened at `https://quotes-<you>.caligrafy.com`, and you could add a quote after signing in.
 
 > **If it doesn't work**
 >

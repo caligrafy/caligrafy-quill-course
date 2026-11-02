@@ -53,8 +53,13 @@ This time, keep the app on your computer so that you can review it first. Answer
 ```
 OK. Build it and check it here, then stop before putting it online: I'll review it first.
 ```
-Claude sets up the project, builds every feature once and checks each of them. It ends with your local addresses:
-the page at `http://localhost:8080/books`, a `curl` line for the REST API, and the line to connect an AI agent.
+Claude sets up the project, builds every feature once and checks each of them. It ends with a report: your local
+addresses (the page at `http://localhost:8080/books`, or another port if 8080 is taken), a `curl` line for the REST
+API, the line to connect an AI agent, what its checks showed, and **what it changed since the plan**.
+
+Read that last part as carefully as the plan. Claude sometimes adds what the app needs to be safe (for example a way
+for members to see and revoke their own tokens) and fixes what its review found. It says why; if you do not want
+something, say so. It may also leave you a decision, such as who may delete: answer it before you ship.
 
 ---
 
@@ -63,6 +68,7 @@ the page at `http://localhost:8080/books`, a `curl` line for the REST API, and t
 - [ ] Every fact of your description is a column of a table, and `books` links to `authors`.
 - [ ] Every action of your description is a capability, and nothing you did not ask for is.
 - [ ] Changes are for members only (or administrators, where you said so).
+- [ ] You read what Claude changed since the plan, and agree with it.
 - [ ] You told Claude to stop before putting it online, and it did.
 
 > **If it doesn't work**

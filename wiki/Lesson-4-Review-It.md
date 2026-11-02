@@ -9,9 +9,9 @@ before you ship it. **Time:** 45 minutes.
 
 Claude built each feature **once**, as a capability, and every experience calls it. Try them; they should agree.
 
-**The web page.** Open `http://localhost:8080/books` (Claude gives the port if it used another one). As a visitor you
-can browse and filter. Sign up (a username of letters and digits), then add an author and a book, edit it, delete it.
-Leave the title empty: the page shows a message next to the field.
+**The web page.** Open `http://localhost:8080/books` (or the port Claude gave you). As a visitor you can browse and
+filter. Sign up (a username of letters and digits), sign in, then add an author and a book, edit it, delete it.
+Leave the title empty and add it: the page tells you what is missing.
 
 **The phone.** In your browser, open the developer tools and switch to a phone size (375 px wide): the page fits.
 Online, in [Lesson 5](Lesson-5-Ship-It), you will install it on a real phone.
@@ -23,8 +23,8 @@ curl -s -X POST -H "Accept: application/json" -d "title=Test" http://localhost:8
 ```
 The first lists the books. The second is refused (401): a visitor may not add one, exactly as on the page.
 
-**An AI agent.** Signed in on the page, use the **AI agents** card: give the token a name, create it, and copy the
-`claude mcp add ...` line it shows. Run that line in a terminal, start a new `claude` session, and ask:
+**An AI agent.** Signed in on the page, use the **AI agents** card, at the bottom: give the token a name, create it,
+and copy the `claude mcp add ...` line it shows. Run that line in a terminal, start a new `claude` session, and ask:
 ```
 Which books do we have, and who wrote them?
 ```
