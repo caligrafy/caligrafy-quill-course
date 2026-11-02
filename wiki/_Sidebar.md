@@ -5,19 +5,19 @@
 - [01 Your project in one command](01-Your-Project-in-One-Command)
 - [02 Build once, seen three ways](02-Build-Once-Seen-Three-Ways)
 
-**Part 1 - Build once**
+**Part 1 - Describe it: build once**
 - [03 Your data](03-Your-Data)
 - [04 Your first capabilities](04-Your-First-Capabilities)
 - [05 Rules and changes](05-Rules-and-Changes)
 
-**Part 2 - Experience everywhere**
+**Part 2 - Approve it: experience everywhere**
 - [06 Web pages](06-Web-Pages)
 - [07 The REST API](07-The-REST-API)
 - [08 AI agents](08-AI-Agents)
 - [09 A Vue app](09-A-Vue-App)
 - [10 Phones and tablets](10-Phones-and-Tablets)
 
-**Part 3 - People and trust**
+**Part 3 - Approve it: people and trust**
 - [11 People and permissions](11-People-and-Permissions)
 
 **Part 4 - Ship it**

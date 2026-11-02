@@ -1,6 +1,7 @@
 # Lesson 00 - What you will build, and your tools
 
-**In this lesson** you learn the one idea of the course (build once, experience everywhere), see what Bookshelf
+**In this lesson** you learn the three steps of Caligrafy (describe it, approve it, ship it) and the one idea that
+makes the result complete (build once, experience everywhere), see what Bookshelf
 will be at the end (online, used everywhere), learn how the lessons work, and install every tool the course uses. You do not write code yet.
 
 **Before you start:** a computer with macOS, Windows 10/11 or Linux, and an internet connection.
@@ -16,6 +17,16 @@ will be at the end (online, used everywhere), learn how the lessons work, and in
 Caligrafy Quill is a **PHP framework**: a set of PHP files that already solve what every web application needs
 (reading the address, talking to a database, showing pages, checking forms, signing people in), so that you only
 write what is specific to your application. The course uses the release **Caligrafy Quill 2.13.1**.
+
+### Describe it. Approve it. Ship it.
+
+With Caligrafy and [Claude Code](https://claude.com/claude-code), an application takes three steps: you **describe**
+your idea in a sentence, you **approve** the plan Claude makes (the tables, the features, who may do what), and Claude
+**ships** a complete app: built, checked and online. You stay in charge: nothing is built before your OK.
+
+This course teaches what happens in each step, by hand first: Part 1 is what a description becomes (tables and
+capabilities), Parts 2 and 3 are what you approve (every experience, every permission), Part 4 is shipping it. At
+the end you can let Claude do all three, and know what you approve.
 
 ### Build once, experience everywhere
 
@@ -60,9 +71,9 @@ message everywhere.
 | Part | Lessons | What you do |
 |---|---|---|
 | Part 0 - Start | 00 to 02 | Install the tools, create the project in one command, see build once on a ready example |
-| Part 1 - Build once | 03 to 05 | The tables, then the Bookshelf capabilities and their rules |
-| Part 2 - Experience everywhere | 06 to 10 | Web pages, the REST API, AI agents, a Vue app, phones and tablets |
-| Part 3 - People and trust | 11 | Sign-in, permission levels, tokens with limited scopes |
+| Part 1 - Describe it: build once | 03 to 05 | The tables, then the Bookshelf capabilities and their rules |
+| Part 2 - Approve it: experience everywhere | 06 to 10 | Web pages, the REST API, AI agents, a Vue app, phones and tablets |
+| Part 3 - Approve it: people and trust | 11 | Sign-in, permission levels, tokens with limited scopes |
 | Part 4 - Ship it | 12 to 14 | Tests, review, `doctor`; a last feature (loans) built everywhere on your own; Bookshelf online |
 | Appendix (optional) | A, B | Under the hood: routes, controllers and classic forms by hand (any time after lesson 06; the exercise of B after lesson 13) |
 
@@ -239,7 +250,7 @@ folder.
 | Command | `/caligrafy-quill:ship [app-name] [--public]`: commits, creates the GitHub repository and pushes, signs in to Caligrafy Cloud, adds the deploy key, deploys and checks; you only approve in the browser | 14 |
 | Command | `/caligrafy-quill:update [version]`: updates the project to a newer Caligrafy release (`php caligrafer.php update`) and merges the `.caligrafy-new` files with you | 14 |
 | Command | `/caligrafy-quill:design [style\|off]`: restyles every page to match a design style (`php caligrafer.php design list`), or brings the Caligrafy look back | after the course |
-| Command | `/caligrafy-quill:idea <your idea>`: from an idea to an application online; it asks you once (the plan), then ships with `ship` | after the course |
+| Command | `/caligrafy-quill:idea <your idea>`: describe it, approve it, ship it; it asks you once (the plan), then ships with `ship` | after the course |
 | Agent | `caligrafy-reviewer`: reviews your Caligrafy code | 12 |
 
 **How to work with Claude in this course**

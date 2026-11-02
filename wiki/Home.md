@@ -1,16 +1,25 @@
 # Caligrafy Quill Course
 
-![Caligrafy: Build Once, Experience Everywhere](https://github.com/caligrafy/caligrafy-quill/blob/master/public/images/resources/build-once-banner.png)
+![Caligrafy: Describe it. Approve it. Ship it.](https://github.com/caligrafy/caligrafy-quill/blob/master/public/images/resources/describe-approve-ship-banner.png)
 
-**Build once, experience everywhere, from zero.** In this course you build **Bookshelf**, a small catalog of books
+**Describe it. Approve it. Ship it.** With Caligrafy, you describe an idea to Claude, approve the plan, and ship a
+complete app. This course teaches you what happens in each of those three steps, from zero, so that you know what
+you approve. You build **Bookshelf**, a small catalog of books
 and authors, the Caligrafy way: every feature is written **once**, as a **capability**, and every experience of the
 application uses it: web pages, a REST API for other programs, AI agents such as Claude, a Vue app, and an app for
 phones and tablets. The same rules, the same permissions and the same audit log everywhere. And it ends on the
 internet: the last lesson puts Bookshelf online, so you go from an idea to an application anyone can open.
 
 > **In a hurry?** The [Quickstart with Claude](https://github.com/caligrafy/caligrafy-quill/wiki/Quickstart-with-Claude)
-> takes an idea of yours to an application online in one conversation (`/caligrafy-quill:idea`). This course is the
-> same journey, one step at a time, so that you understand and can change everything Claude does.
+> describes, approves and ships an idea of yours in one conversation (`/caligrafy-quill:idea`). This course is the
+> same three steps, one lesson at a time, so that you understand and can change everything Claude does.
+
+| | With Claude, after the course | What the course teaches you |
+|---|---|---|
+| **1. Describe it** | your idea, in a sentence: `/caligrafy-quill:idea` | what a description becomes: the tables and the capabilities (Part 1) |
+| **2. Approve it** | read Claude's plan, say OK | what you approve: every experience and every permission, checked (Parts 2 and 3) |
+| **3. Ship it** | approve the sign-ins in your browser | tests, review, and Bookshelf online (Part 4) |
+
 
 You need a little HTML, CSS, JavaScript, PHP and SQL. Everything else (Docker, Caligrafy, Pug, Vue, Vite, MCP) is
 explained when it first appears. You do not install PHP or MySQL: they run in Docker.
@@ -35,7 +44,7 @@ All of it on **ten capabilities** of a few dozen lines of PHP each.
 Every lesson has the same structure:
 1. **New concepts**: what you are about to use, and why.
 2. **Manual track**: numbered steps. Each step says what to type or which file to write (complete, no `...`),
-   what you should see, and how to check it. **Do this track first**: it is how you learn.
+   what you should see, and how to check it. **Do this track first**: it is how you learn, and what you approve when Claude does it.
 3. **If it doesn't work**: the real errors of that step and their fix.
 4. **With Claude**: the exact prompt or plugin command for [Claude Code](https://claude.com/claude-code) (the
    `caligrafy-quill` plugin ships inside every project), what Claude should do, and a **Check** list to review it.
@@ -52,19 +61,19 @@ Every lesson has the same structure:
 - [Lesson 01 - Your project in one command](01-Your-Project-in-One-Command)
 - [Lesson 02 - Build once, seen three ways](02-Build-Once-Seen-Three-Ways)
 
-**Part 1 - Build once**
+**Part 1 - Describe it: build once**
 - [Lesson 03 - Your data: tables and models](03-Your-Data)
 - [Lesson 04 - Your first capabilities](04-Your-First-Capabilities)
 - [Lesson 05 - Rules: adding, changing and deleting books](05-Rules-and-Changes)
 
-**Part 2 - Experience everywhere**
+**Part 2 - Approve it: experience everywhere**
 - [Lesson 06 - Web pages](06-Web-Pages)
 - [Lesson 07 - The REST API](07-The-REST-API)
 - [Lesson 08 - AI agents](08-AI-Agents)
 - [Lesson 09 - A Vue app](09-A-Vue-App)
 - [Lesson 10 - Phones and tablets](10-Phones-and-Tablets)
 
-**Part 3 - People and trust**
+**Part 3 - Approve it: people and trust**
 - [Lesson 11 - People and permissions](11-People-and-Permissions)
 
 **Part 4 - Ship it**
