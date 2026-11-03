@@ -40,7 +40,7 @@ the [`wiki/`](wiki) folder of this repository).
 
 Everything Claude does is plain Caligrafy you can write yourself. The **By hand** track builds Bookshelf again, every
 file typed by you, so that you understand every line Claude writes. Take it after the main lessons, or whenever a
-lesson's **By hand** link makes you curious. It uses Caligrafy Quill 2.14.1, and needs a little HTML, CSS, JavaScript,
+lesson's **By hand** link makes you curious. It uses Caligrafy Quill 2.15.0, and needs a little HTML, CSS, JavaScript,
 PHP and SQL.
 
 **Start:** [00 Your tools](https://github.com/caligrafy/caligrafy-quill-course/wiki/00-Introduction-and-Tools) · [01 Your project in one command](https://github.com/caligrafy/caligrafy-quill-course/wiki/01-Your-Project-in-One-Command) · [02 Build once, seen three ways](https://github.com/caligrafy/caligrafy-quill-course/wiki/02-Build-Once-Seen-Three-Ways)  
