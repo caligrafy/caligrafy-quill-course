@@ -81,13 +81,13 @@ free on Caligrafy Cloud.
 
 ### Step 1 - Check that the project is on Caligrafy Quill 2.4.0 or later
 
-The production image and the deploy step come with Caligrafy Quill 2.4.0; the release of lesson 01, 2.13.4, has them. Check it:
+The production image and the deploy step come with Caligrafy Quill 2.4.0; the release of lesson 01, 2.13.5, has them. Check it:
 ```bash
 docker compose exec dev-box php caligrafer.php version
 ```
-Expected: `Caligrafy Quill 2.13.4`. Then `ls Dockerfile` shows the file, and you can go to step 2.
+Expected: `Caligrafy Quill 2.13.5`. Then `ls Dockerfile` shows the file, and you can go to step 2.
 
-**Only if it says an older version** (you started the course before 2.13.4 was released): 2.4.0 has the image and the
+**Only if it says an older version** (you started the course before 2.13.5 was released): 2.4.0 has the image and the
 deploy step, and 2.7.0 adds the browser sign-in of step 7 and the `ship` skill. (2.11.0 also brings Caligrafy's look
 of lesson 06, and 2.12.0 the side by side of lessons 09 and 10: the pages you wrote on `layoutblocks.pug` keep
 working as they are.) Update the project to the course's
@@ -100,11 +100,11 @@ curl -fsSL https://raw.githubusercontent.com/caligrafy/caligrafy-quill/master/fr
 ```
 Then, with 2.9.0 or later:
 ```bash
-docker compose exec dev-box php caligrafer.php update 2.13.4
+docker compose exec dev-box php caligrafer.php update 2.13.5
 ```
 or, before 2.9.0:
 ```bash
-docker compose exec dev-box php -r "require 'framework/core/Updater.php'; exit((new Caligrafy\Updater('.'))->run('2.13.4'));"
+docker compose exec dev-box php -r "require 'framework/core/Updater.php'; exit((new Caligrafy\Updater('.'))->run('2.13.5'));"
 ```
 - `framework/` and `claude-plugin/` belong to the framework: the new ones replace them. `claude-plugin/` brings the
   `/caligrafy-quill:deploy` and `/caligrafy-quill:ship` skills.
@@ -115,14 +115,14 @@ docker compose exec dev-box php -r "require 'framework/core/Updater.php'; exit((
   delete it. Everything replaced is copied first to `backups/`.
 - It ends with `upgrade --apply` for `application/` (lesson 12, step 5). `web.php` is yours: never replaced.
 
-With Claude Code, `/caligrafy-quill:update 2.13.4` does the same and merges the `.caligrafy-new` files with you.
+With Claude Code, `/caligrafy-quill:update 2.13.5` does the same and merges the `.caligrafy-new` files with you.
 
 Check the version and the new command:
 ```bash
 docker compose exec dev-box php caligrafer.php doctor
 docker compose exec dev-box php caligrafer.php help
 ```
-Expected: the first line of `doctor` is `Caligrafy doctor (read-only): Caligrafy Quill 2.13.4`, and `help` lists
+Expected: the first line of `doctor` is `Caligrafy doctor (read-only): Caligrafy Quill 2.13.5`, and `help` lists
 `deploy` and `cloud`. Run the unit tests and the smoke test of lesson 12: they still pass. Commit the update.
 
 > **If it doesn't work**
@@ -437,8 +437,8 @@ would happen.
 
 ## With Claude
 
-Start Claude Code in the `bookshelf` folder (`claude`). The update of step 1 brought the plugin's skills (plugin 1.25.4
-with Caligrafy Quill 2.13.4).
+Start Claude Code in the `bookshelf` folder (`claude`). The update of step 1 brought the plugin's skills (plugin 1.25.5
+with Caligrafy Quill 2.13.5).
 
 ### Ship with the plugin
 
@@ -552,9 +552,9 @@ the hood: routes, controllers and forms written by hand.
 1. No. The online database is another database, filled by the deploy step. Your computer and the server share the
    code (through git and a deploy), not the data.
 2. The script changed, so `deploy` runs it again. It must be safe to run on a database that already has the tables:
-   `CREATE TABLE IF NOT EXISTS` is, and an `ALTER TABLE ... ADD COLUMN` fails the second time (the column exists). In
-   that case the deploy step stops with a `FAIL` line in the logs. Write changes that can run again, or put them in a
-   new folder of their own. A script that drops or deletes is never run again at all.
+   `CREATE TABLE IF NOT EXISTS` is, and so is `ALTER TABLE ... ADD COLUMN`: since 2.13.5 the deploy step skips a
+   column, an index or a foreign key that is already there, so the line can stay in the script. A script that drops or
+   deletes is never run again at all.
 3. Sample data is not production data: running a seed on every deploy could bring back rows that people deleted. The
    catalog came from `application/models/Online/create_db.sql`, a script made for the online database, with
    `INSERT IGNORE` so it can run again safely.
