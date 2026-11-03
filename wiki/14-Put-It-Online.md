@@ -81,13 +81,13 @@ free on Caligrafy Cloud.
 
 ### Step 1 - Check that the project is on Caligrafy Quill 2.4.0 or later
 
-The production image and the deploy step come with Caligrafy Quill 2.4.0; the release of lesson 01, 2.15.0, has them. Check it:
+The production image and the deploy step come with Caligrafy Quill 2.4.0; the release of lesson 01, 2.16.0, has them. Check it:
 ```bash
 docker compose exec dev-box php caligrafer.php version
 ```
-Expected: `Caligrafy Quill 2.15.0`. Then `ls Dockerfile` shows the file, and you can go to step 2.
+Expected: `Caligrafy Quill 2.16.0`. Then `ls Dockerfile` shows the file, and you can go to step 2.
 
-**Only if it says an older version** (you started the course before 2.15.0 was released): 2.4.0 has the image and the
+**Only if it says an older version** (you started the course before 2.16.0 was released): 2.4.0 has the image and the
 deploy step, and 2.7.0 adds the browser sign-in of step 7 and the `ship` skill. (2.11.0 also brings Caligrafy's look
 of lesson 06, and 2.12.0 the side by side of lessons 09 and 10: the pages you wrote on `layoutblocks.pug` keep
 working as they are.) Update the project to the course's
@@ -100,11 +100,11 @@ curl -fsSL https://raw.githubusercontent.com/caligrafy/caligrafy-quill/master/fr
 ```
 Then, with 2.9.0 or later:
 ```bash
-docker compose exec dev-box php caligrafer.php update 2.15.0
+docker compose exec dev-box php caligrafer.php update 2.16.0
 ```
 or, before 2.9.0:
 ```bash
-docker compose exec dev-box php -r "require 'framework/core/Updater.php'; exit((new Caligrafy\Updater('.'))->run('2.15.0'));"
+docker compose exec dev-box php -r "require 'framework/core/Updater.php'; exit((new Caligrafy\Updater('.'))->run('2.16.0'));"
 ```
 - `framework/` and `claude-plugin/` belong to the framework: the new ones replace them. `claude-plugin/` brings the
   `/caligrafy-quill:deploy` and `/caligrafy-quill:ship` skills.
@@ -115,14 +115,14 @@ docker compose exec dev-box php -r "require 'framework/core/Updater.php'; exit((
   delete it. Everything replaced is copied first to `backups/`.
 - It ends with `upgrade --apply` for `application/` (lesson 12, step 5). `web.php` is yours: never replaced.
 
-With Claude Code, `/caligrafy-quill:update 2.15.0` does the same and merges the `.caligrafy-new` files with you.
+With Claude Code, `/caligrafy-quill:update 2.16.0` does the same and merges the `.caligrafy-new` files with you.
 
 Check the version and the new command:
 ```bash
 docker compose exec dev-box php caligrafer.php doctor
 docker compose exec dev-box php caligrafer.php help
 ```
-Expected: the first line of `doctor` is `Caligrafy doctor (read-only): Caligrafy Quill 2.15.0`, and `help` lists
+Expected: the first line of `doctor` is `Caligrafy doctor (read-only): Caligrafy Quill 2.16.0`, and `help` lists
 `deploy` and `cloud`. Run the unit tests and the smoke test of lesson 12: they still pass. Commit the update.
 
 > **If it doesn't work**
@@ -437,8 +437,8 @@ would happen.
 
 ## With Claude
 
-Start Claude Code in the `bookshelf` folder (`claude`). The update of step 1 brought the plugin's skills (plugin 1.27.0
-with Caligrafy Quill 2.15.0).
+Start Claude Code in the `bookshelf` folder (`claude`). The update of step 1 brought the plugin's skills (plugin 1.28.0
+with Caligrafy Quill 2.16.0).
 
 ### Ship with the plugin
 
