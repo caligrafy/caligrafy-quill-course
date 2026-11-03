@@ -1,0 +1,51 @@
+extends ../default/master/site
+
+//- One book, rendered on the server by Route::page with the data of get_book; the form (signed in only) calls update_book
+
+block title
+    = $found['book']['title'] . ' · Bookshelf'
+
+block content
+    //- $found: what get_book returned (Route::page data). After a refused save, the controller also gives $form and $errors
+    - $book = $found['book'];
+    - $author = $found['author'];
+    - $form = isset($form) ? $form : $book;
+    - $errors = isset($errors) ? $errors : array();
+    section.cq-hero.cq-hero--page
+        h1.cq-display= $book['title']
+        p.cq-lead
+            | by #{$author['name']}, #{$book['published_year']}
+
+    section.cq-band.cq-band--tight
+        .cq-inner.cq-inner--narrow
+            p= $book['summary'] ?: 'No summary yet.'
+
+            if $authorized
+                form(method='POST', action="{$home}books/{$book['id']}", novalidate)
+                    =csrf()
+                    =methodField('PUT')
+                    .cq-form-grid.cq-form-grid--2
+                        .cq-field
+                            label(for='title') * Title
+                            input#title.form-control(type='text', name='title', value=$form['title'], maxlength='200')
+                        .cq-field
+                            label(for='author_id') * Author
+                            select#author_id.form-select(name='author_id')
+                                each $a in $authors
+                                    option(value=$a['id'], selected=$a['id'] == $form['author_id'])= $a['name']
+                        .cq-field
+                            label(for='published_year') * Year
+                            input#published_year.form-control(type='number', name='published_year', value=$form['published_year'])
+                        .cq-field
+                            label(for='summary') Summary
+                            input#summary.form-control(type='text', name='summary', value=$form['summary'], maxlength='2000')
+                    button.btn.btn-primary(type='submit') Save changes
+            else
+                p
+                    a.btn.btn-secondary(href="{$home}login") Sign in to edit this book
+
+            if $errors
+                p.cq-field-error(role='alert')= implode(' ', $errors)
+
+            p.cq-auth-note
+                a(href="{$home}books") All books

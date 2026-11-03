@@ -1,0 +1,40 @@
+extends ../default/master/site
+
+//- The catalog: every action calls a capability through the JS client (public/js/books.js)
+
+block title
+    | Bookshelf
+
+block content
+    section.cq-hero.cq-hero--page
+        h1.cq-display Bookshelf
+        p.cq-lead The books we love. The same catalog that the REST API and AI agents use.
+
+    section.cq-band.cq-band--tight
+        .cq-inner.cq-inner--narrow
+            //- shown by books.js when the visitor may call create_book
+            form#new-book(method='POST', novalidate, hidden)
+                .cq-form-grid.cq-form-grid--2
+                    .cq-field
+                        label(for='book-title') * Title
+                        input#book-title.form-control(type='text', name='title', maxlength='200', autocomplete='off')
+                    .cq-field
+                        label(for='book-author') * Author
+                        select#book-author.form-select(name='author_id')
+                    .cq-field
+                        label(for='book-year') * Year
+                        input#book-year.form-control(type='number', name='published_year', placeholder='1969')
+                    .cq-field
+                        label(for='book-summary') Summary
+                        input#book-summary.form-control(type='text', name='summary', placeholder='Optional', maxlength='2000', autocomplete='off')
+                button.btn.btn-primary(type='submit') Add book
+            p#sign-in(hidden)
+                a.btn.btn-secondary(href="{$home}login") Sign in to add books
+            p#error.cq-field-error(role='alert')
+
+            .cq-segments#authors(role='tablist')
+            ul#books.cq-rows
+            p#empty.cq-empty-state(hidden) No books here yet: add the first one above.
+
+block additional_scripts
+    script(type='module', src="{$home}public/js/books.js")

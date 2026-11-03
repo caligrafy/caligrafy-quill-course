@@ -24,7 +24,7 @@
 - [03 Your data](03-Your-Data) · [04](04-Your-First-Capabilities) · [05](05-Rules-and-Changes)
 - [06 Web pages](06-Web-Pages) · [07](07-The-REST-API) · [08](08-AI-Agents) · [09](09-A-Vue-App) · [10](10-Phones-and-Tablets)
 - [11 People and permissions](11-People-and-Permissions)
-- [12 Tests](12-Ship-It) · [13 Loans](13-Capstone-Loans) · [14 Online](14-Put-It-Online)
+- [12 Tests](12-Ship-It) · [13 Loans](13-Capstone-Loans) · [14 Online](14-Put-It-Online) · [15 Reminders](15-Reminders)
 - [A Routes](A-Routes-and-Controllers) · [B Forms](B-Classic-Forms)
 
 [Course repository](https://github.com/caligrafy/caligrafy-quill-course) · [Framework docs](https://github.com/caligrafy/caligrafy-quill/wiki)
