@@ -285,7 +285,7 @@ The first command prints the start of `{"data":[...` with the five books: the RE
 test of lesson 12 runs against the server: the same 8 checks pass, including `.env is never served`. And the card of
 step 3:
 ```bash
-curl -s https://bookshelf-sam.caligrafy.com/books | grep -o 'og:[a-z]*" content="[^"]*'
+curl -s https://bookshelf-sam.caligrafy.com/books | grep -o 'og:[a-z_]*" content="[^"]*'
 ```
 Expected: `og:type" content="website`, `og:site_name" content="Bookshelf`, `og:title" content="Bookshelf: the books of
 the club`, its description, and `og:url" content="https://bookshelf-sam.caligrafy.com/books`.
