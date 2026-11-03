@@ -81,13 +81,13 @@ free on Caligrafy Cloud.
 
 ### Step 1 - Check that the project is on Caligrafy Quill 2.4.0 or later
 
-The production image and the deploy step come with Caligrafy Quill 2.4.0; the release of lesson 01, 2.16.1, has them. Check it:
+The production image and the deploy step come with Caligrafy Quill 2.4.0; the release of lesson 01, 2.16.2, has them. Check it:
 ```bash
 docker compose exec dev-box php caligrafer.php version
 ```
-Expected: `Caligrafy Quill 2.16.1`. Then `ls Dockerfile` shows the file, and you can go to step 2.
+Expected: `Caligrafy Quill 2.16.2`. Then `ls Dockerfile` shows the file, and you can go to step 2.
 
-**Only if it says an older version** (you started the course before 2.16.1 was released): 2.4.0 has the image and the
+**Only if it says an older version** (you started the course before 2.16.2 was released): 2.4.0 has the image and the
 deploy step, and 2.7.0 adds the browser sign-in of step 7 and the `ship` skill. (2.11.0 also brings Caligrafy's look
 of lesson 06, and 2.12.0 the side by side of lessons 09 and 10: the pages you wrote on `layoutblocks.pug` keep
 working as they are.) Update the project to the course's
@@ -100,11 +100,11 @@ curl -fsSL https://raw.githubusercontent.com/caligrafy/caligrafy-quill/master/fr
 ```
 Then, with 2.9.0 or later:
 ```bash
-docker compose exec dev-box php caligrafer.php update 2.16.1
+docker compose exec dev-box php caligrafer.php update 2.16.2
 ```
 or, before 2.9.0:
 ```bash
-docker compose exec dev-box php -r "require 'framework/core/Updater.php'; exit((new Caligrafy\Updater('.'))->run('2.16.1'));"
+docker compose exec dev-box php -r "require 'framework/core/Updater.php'; exit((new Caligrafy\Updater('.'))->run('2.16.2'));"
 ```
 - `framework/` and `claude-plugin/` belong to the framework: the new ones replace them. `claude-plugin/` brings the
   `/caligrafy-quill:deploy` and `/caligrafy-quill:ship` skills.
@@ -115,14 +115,14 @@ docker compose exec dev-box php -r "require 'framework/core/Updater.php'; exit((
   delete it. Everything replaced is copied first to `backups/`.
 - It ends with `upgrade --apply` for `application/` (lesson 12, step 5). `web.php` is yours: never replaced.
 
-With Claude Code, `/caligrafy-quill:update 2.16.1` does the same and merges the `.caligrafy-new` files with you.
+With Claude Code, `/caligrafy-quill:update 2.16.2` does the same and merges the `.caligrafy-new` files with you.
 
 Check the version and the new command:
 ```bash
 docker compose exec dev-box php caligrafer.php doctor
 docker compose exec dev-box php caligrafer.php help
 ```
-Expected: the first line of `doctor` is `Caligrafy doctor (read-only): Caligrafy Quill 2.16.1`, and `help` lists
+Expected: the first line of `doctor` is `Caligrafy doctor (read-only): Caligrafy Quill 2.16.2`, and `help` lists
 `deploy` and `cloud`. Run the unit tests and the smoke test of lesson 12: they still pass. Commit the update.
 
 > **If it doesn't work**
@@ -181,6 +181,18 @@ Expected: `Caligrafy deploy`, then `OK` lines for the framework tables and each 
 > | `Table '...authors' doesn't exist` | The folder name sorts before `Bookshelf` | Name it `Online` |
 
 ### Step 3 - Put the code on GitHub
+
+First, the card a shared link shows (on Facebook, LinkedIn, X, Slack, iMessage). Every page prints it from
+`metadata()`; add it at the end of **`application/config/config.php`**:
+```php
+metadata(array(
+    'site_name' => 'Bookshelf',
+    'title' => 'Bookshelf: the books of the club',
+    'description' => 'The catalog of the club, its loans and who has which book.',
+));
+```
+Its address is the app's own (`APP_URL`, which Caligrafy Cloud sets). An `image` of 1200x630 makes the card large:
+see [Metadata and social cards](https://github.com/caligrafy/caligrafy-quill/wiki/9.3-Metadata-&-Social-Rich-Cards).
 
 Caligrafy Cloud builds from GitHub. Commit first:
 ```bash
@@ -270,7 +282,13 @@ curl -s https://bookshelf-sam.caligrafy.com/api/books | head -c 300
 bash qa/bookshelf/smoke.sh https://bookshelf-sam.caligrafy.com
 ```
 The first command prints the start of `{"data":[...` with the five books: the REST API of lesson 07, online. The smoke
-test of lesson 12 runs against the server: the same 8 checks pass, including `.env is never served`.
+test of lesson 12 runs against the server: the same 8 checks pass, including `.env is never served`. And the card of
+step 3:
+```bash
+curl -s https://bookshelf-sam.caligrafy.com/books | grep -o 'og:[a-z]*" content="[^"]*'
+```
+Expected: `og:type" content="website`, `og:site_name" content="Bookshelf`, `og:title" content="Bookshelf: the books of
+the club`, its description, and `og:url" content="https://bookshelf-sam.caligrafy.com/books`.
 
 Now people. Click **Sign in**, then the link to register, and create the account `reader1` with a password of your
 choice: it is a new database, so the accounts of your computer do not exist online. Signed in, add a book: it works.
@@ -438,7 +456,7 @@ would happen.
 ## With Claude
 
 Start Claude Code in the `bookshelf` folder (`claude`). The update of step 1 brought the plugin's skills (plugin 1.28.1
-with Caligrafy Quill 2.16.1).
+with Caligrafy Quill 2.16.2).
 
 ### Ship with the plugin
 
