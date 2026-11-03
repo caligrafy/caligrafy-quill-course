@@ -249,7 +249,8 @@ lines, run `doctor`, and report `14 OK, 0 WARN, 0 FAIL, 6 SKIP`.
 
 **Check** before you accept:
 - [ ] Claude **asked you** before running `quickstart` with `--yes` (it deletes the framework's `.git`).
-- [ ] `docker compose ps` shows the three containers `Up`.
+- [ ] `docker compose ps` shows the three containers `Up`. (Later, `php caligrafer.php server start` starts a fourth,
+  `scheduler`, which runs scheduled jobs; this course has none, so it has nothing to do.)
 - [ ] http://localhost:8080/tasks shows the Tasks page.
 - [ ] `doctor` ends with `0 FAIL`.
 - [ ] Claude never printed the contents of `.env` (keys, passwords).

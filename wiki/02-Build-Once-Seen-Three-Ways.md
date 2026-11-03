@@ -272,8 +272,8 @@ Expected:
 ```
  public/js/capabilities.js written: 0 capabilities, calls /capabilities (Route::capabilities('/capabilities') in web.php)
 ```
-Check: http://localhost:8080/tasks now shows the Caligrafy home page (an address that matches no route shows the
-first route, `/`). The agent connection stays: it has no tools for now, and lesson 04 gives it the Bookshelf ones.
+Check: http://localhost:8080/tasks now answers `[ERROR 1005] Page Not Found` (404): no route declares that address
+any more. The agent connection stays: it has no tools for now, and lesson 04 gives it the Bookshelf ones.
 
 > **If it doesn't work**
 >

@@ -158,7 +158,8 @@ books. You changed the catalog through REST; the page and the agent read it thro
 > | What you see | Cause | Fix |
 > |---|---|---|
 > | `[ERROR 3000] Security Error - Cross Site Forgery` (403) on POST, PUT or DELETE | `-H "Accept: application/json"` is missing, so Caligrafy treats the call as a browser form without its CSRF token | Add the header |
-> | An HTML page (the catalog) instead of JSON | The URL matches no route (a typo, or step 1 is missing): an unknown address shows the first route, `/` | Check the URL and the six lines of step 1 |
+> | `{"error":{"code":1005,"message":"Page Not Found"}}` (404) | The URL matches no route (a typo, or step 1 is missing) | Check the URL and the six lines of step 1 |
+> | `{"error":{"code":1000,"message":"Invalid Http Request Method: this address answers GET, POST"}}` (405) | The address exists, but not with this method (a `PUT` on `/api/books`) | Check the method against the table of step 1 |
 > | `zsh: no matches found: http://localhost:8080/api/books?author_id=3` | zsh reads the `?` | Put the URL in double quotes |
 > | `curl` waits with `dquote>` or `>` | A quote of the `-d` part is missing | Press Ctrl+C and copy the command again |
 > | Every field reported missing on a JSON POST | `-H "Content-Type: application/json"` is missing, so the JSON is not read | Add the header |
