@@ -240,13 +240,14 @@ class ListAuthors extends Service
 ```bash
 docker compose exec dev-box php caligrafer.php capabilities
 ```
-Expected (name, who may call it, what kind, description):
+Expected: 16 lines (name, who may call it, what kind, description), sorted by name: the 13 capabilities of the
+framework (lesson 02) and, among them, your three:
 ```
  get_book                     public         read      Returns one book of the catalog (id, title, year, summary) and its author (id, name, bio), by the id of the book.
  list_authors                 public         read      Lists the authors of the Bookshelf catalog, sorted by name: id, name and bio.
  list_books                   public         read      Lists the books of the Bookshelf catalog, sorted by title: id, title, year, author id and author name. Give author_id to list only the books of one author.
 ```
-You wrote no route. The command found the three capabilities in `application/services/`.
+You wrote no route. The command found the three capabilities in `application/services/Bookshelf`.
 
 Try one right away with `call`: it runs a capability and prints its answer in JSON, the way every experience gets it.
 ```bash
@@ -356,7 +357,9 @@ echo ${#TOKEN}
 ```bash
 curl -s -X POST -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $TOKEN" -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' http://localhost:8080/mcp | grep -o '"name":"[a-z_]*"'
 ```
-Expected: `"name":"get_book"`, `"name":"list_authors"`, `"name":"list_books"`: the three capabilities, as tools.
+Expected: 8 lines, `"name":"delete_user"`, `"name":"get_book"`, `"name":"get_user"`, `"name":"list_authors"`,
+`"name":"list_books"`, `"name":"list_users"`, `"name":"register_user"`, `"name":"update_user"`: your three
+capabilities, as tools, next to the user tools of the framework (lesson 02).
 
 Now in **Claude Code** (connected to `bookshelf` in lesson 02), start a new session in the `bookshelf` folder (the
 `claude mcp add` of lesson 02 registers the server for that folder only) and ask:

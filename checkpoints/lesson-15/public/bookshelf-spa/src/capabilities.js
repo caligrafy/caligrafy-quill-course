@@ -63,11 +63,25 @@ export const createBook = (input = {}) => call('create_book', input)
 export const deleteBook = (input = {}) => call('delete_book', input)
 
 /**
+ * Deletes a person who can sign in, for good. An administrator cannot delete their own account.
+ * Capability delete_user (destructive, users:write)
+ * @param {{id: number}} [input]
+ */
+export const deleteUser = (input = {}) => call('delete_user', input)
+
+/**
  * Returns one book of the catalog (id, title, year, summary) and its author (id, name, bio), by the id of the book.
  * Capability get_book (read-only, public)
  * @param {{id: number}} [input]
  */
 export const getBook = (input = {}) => call('get_book', input)
+
+/**
+ * Gets one person who can sign in: id, username, permissions, created_at and modified_at. Never the password.
+ * Capability get_user (read-only, users:read)
+ * @param {{id: number}} [input]
+ */
+export const getUser = (input = {}) => call('get_user', input)
 
 /**
  * Lends a book of the catalog to someone for a number of days (14 by default) and returns the loan. Refused when the book is already lent.
@@ -98,6 +112,83 @@ export const listBooks = (input = {}) => call('list_books', input)
 export const listLoans = (input = {}) => call('list_loans', input)
 
 /**
+ * Lists the people who can sign in, newest change first: id, username, permissions (0 for everyone, 1 or more for administrators), created_at and modified_at. Never their passwords.
+ * Capability list_users (read-only, users:read)
+ * @param {{}} [input]
+ */
+export const listUsers = (input = {}) => call('list_users', input)
+
+/**
+ * Confirms a notification email address from the link sent to it.
+ * Capability notify_email_confirm (writes, public)
+ * @param {{token: string}} [input]
+ */
+export const notifyEmailConfirm = (input = {}) => call('notify_email_confirm', input)
+
+/**
+ * Sets the address your notification emails go to and emails you a link to confirm it (valid 24 hours): nothing is sent there before.
+ * Capability notify_email_set (writes, signed in)
+ * @param {{email: string}} [input]
+ */
+export const notifyEmailSet = (input = {}) => call('notify_email_set', input)
+
+/**
+ * Turns one of your notification channels (push or email) on or off.
+ * Capability notify_preferences (writes, signed in)
+ * @param {{channel: string, enabled: boolean}} [input]
+ */
+export const notifyPreferences = (input = {}) => call('notify_preferences', input)
+
+/**
+ * Your notifications: the channels this app offers (push, email), the browsers you turned push on in, your email address and whether it is confirmed, and what is on.
+ * Capability notify_status (read-only, signed in)
+ * @param {{}} [input]
+ */
+export const notifyStatus = (input = {}) => call('notify_status', input)
+
+/**
+ * Turns push notifications on in this browser: saves its PushSubscription (endpoint and keys) for you.
+ * Capability notify_subscribe (writes, signed in)
+ * @param {{endpoint: string, keys: string}} [input]
+ */
+export const notifySubscribe = (input = {}) => call('notify_subscribe', input)
+
+/**
+ * Sends you a test notification on every channel you turned on.
+ * Capability notify_test (writes, signed in)
+ * @param {{}} [input]
+ */
+export const notifyTest = (input = {}) => call('notify_test', input)
+
+/**
+ * Turns push notifications off in one browser (its endpoint): your other browsers keep them.
+ * Capability notify_unsubscribe (writes, signed in)
+ * @param {{endpoint: string}} [input]
+ */
+export const notifyUnsubscribe = (input = {}) => call('notify_unsubscribe', input)
+
+/**
+ * Runs the background jobs that are due (Caligrafy\Queue) for up to 50 seconds. For the scheduler (application/config/schedule.php).
+ * Capability queue_work (writes, caligrafy:queue)
+ * @param {{queue?: string, seconds?: number}} [input]
+ */
+export const queueWork = (input = {}) => call('queue_work', input)
+
+/**
+ * Creates an account that can sign in, with permissions 0. Used by the sign-up page.
+ * Capability register_user (writes, public)
+ * @param {{username: string, passcode: string}} [input]
+ */
+export const registerUser = (input = {}) => call('register_user', input)
+
+/**
+ * Notifies every administrator of the loans due today or late, by push and email. Returns how many loans are due today, how many are late, and how many administrators got the message.
+ * Capability remind_loans (writes, loans:write)
+ * @param {{}} [input]
+ */
+export const remindLoans = (input = {}) => call('remind_loans', input)
+
+/**
  * Records that a lent book came back, by the id of the book. Returns the closed loan.
  * Capability return_book (writes, loans:write)
  * @param {{book_id: number}} [input]
@@ -117,3 +208,10 @@ export const searchBooks = (input = {}) => call('search_books', input)
  * @param {{id: number, title?: string, published_year?: number, summary?: string, author_id?: number}} [input]
  */
 export const updateBook = (input = {}) => call('update_book', input)
+
+/**
+ * Changes the username, the password or the permissions of a person who can sign in (0 for everyone, 1 or more for administrators). Only the inputs given change. Returns the user, never the password.
+ * Capability update_user (writes, users:write)
+ * @param {{id: number, username?: string, passcode?: string, permissions?: number}} [input]
+ */
+export const updateUser = (input = {}) => call('update_user', input)

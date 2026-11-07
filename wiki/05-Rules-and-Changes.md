@@ -5,7 +5,8 @@
 you see the same refusal, with the same message, from `curl` and from an AI agent.
 
 **Before you start:** lesson 04 is done (tag `lesson-04`): `docker compose exec dev-box php caligrafer.php capabilities`
-lists `get_book`, `list_authors` and `list_books`, and `docker compose ps` shows the 3 containers running.
+lists `get_book`, `list_authors` and `list_books` among the framework's own, and `docker compose ps` shows the 3
+containers running.
 
 **Time:** 45 minutes.
 
@@ -233,7 +234,8 @@ Check:
 ```bash
 docker compose exec dev-box php caligrafer.php capabilities
 ```
-Expected (the third column is the kind: `read`, `writes` or `destroys`):
+Expected: 19 lines (the third column is the kind: `read`, `writes` or `destroys`); among the framework's own, your
+six:
 ```
  create_book                  public         writes    Adds a book to the Bookshelf catalog and returns it with its id. The author must already exist: use list_authors to find author_id.
  delete_book                  public         destroys  Deletes a book of the catalog, by its id. This cannot be undone.

@@ -32,13 +32,19 @@ A **foreign key** links two tables: instead of copying the author's name into ev
 its author. The **constraint** `FOREIGN KEY (author_id) REFERENCES authors (id)` makes MySQL refuse a book whose
 author does not exist, and refuse to delete an author who still has books.
 
-### SQL scripts, not migrations
+### SQL scripts, then migrations
 
-Some frameworks create tables from PHP code ("migrations"). Caligrafy uses plain **SQL scripts** next to the models,
-by convention `application/models/<Folder>/create_db.sql`, that you run with
-`docker compose exec dev-box php caligrafer.php sql <file>`. Two habits make a script safe to run again:
-`CREATE TABLE IF NOT EXISTS` (never `DROP TABLE` in it), and `INSERT IGNORE` for sample data (skip a row whose `id`
-already exists).
+Caligrafy uses plain **SQL**, in two kinds of files:
+- a **script** next to the models, by convention `application/models/<Folder>/create_db.sql`, creates the tables of a
+  new database. You run it with `docker compose exec dev-box php caligrafer.php sql <file>`. This lesson writes one.
+- a **migration** is one later change to a table that already has data (a new column, an index, rows to fix): a
+  numbered file `application/migrations/<number>_<name>.sql`. `php caligrafer.php migrate make <name>` writes an
+  empty one, `php caligrafer.php migrate` runs the ones that never ran, and `php caligrafer.php migrate status` shows
+  each one. A migration runs once, in order, on every computer and every server; the deploy step runs the pending
+  ones for you (lesson 14).
+
+Two habits make a script safe to run again: `CREATE TABLE IF NOT EXISTS` (never `DROP TABLE` in it), and
+`INSERT IGNORE` for sample data (skip a row whose `id` already exists).
 
 ### Models
 
@@ -180,10 +186,11 @@ Expected: the password warning (harmless), then 5 rows (MySQL draws them in a ta
 
 Or look in **phpMyAdmin**: open http://localhost:8077, sign in with user `root` and password `root`, click the
 database `caligrafy` in the left column, then `books`: the 5 rows. The tab **Structure** shows the columns and their
-types. phpMyAdmin is handy to look; change the structure only through the SQL scripts, so that they stay the truth
-about your database.
+types. phpMyAdmin is handy to look; change the structure only through the SQL scripts and migrations, so that they stay
+the truth about your database.
 
-You also see `caligrafy_tokens` and `caligrafy_audit` (the framework tables of lesson 02): leave them alone.
+You also see the `caligrafy_*` tables (`caligrafy_tokens`, `caligrafy_audit`...: the framework tables of lesson 02):
+leave them alone.
 
 ### Step 5 - See the foreign key protect your data
 
@@ -305,7 +312,7 @@ or run the scripts yourself through the plugin:
 ```
 
 **What Claude should do:** write the four files, run `create_db.sql` then `seed.sql` in the `mysql` container, and
-list the tables `authors` (3 rows) and `books` (5 rows), next to `caligrafy_tokens` and `caligrafy_audit`.
+list the tables `authors` (3 rows) and `books` (5 rows), next to the `caligrafy_*` framework tables.
 
 **Check** before you accept:
 - [ ] Primary keys are `id`; the foreign key column is `author_id` (not `authors_id` or `writer`).

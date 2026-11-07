@@ -395,7 +395,7 @@ From the `bookshelf` folder:
 ```bash
 docker compose exec dev-box php caligrafer.php client public/bookshelf-spa/src/capabilities.js
 ```
-Expected: ` public/bookshelf-spa/src/capabilities.js written: 7 capabilities, calls /capabilities (Route::capabilities('/capabilities') in web.php)`.
+Expected: ` public/bookshelf-spa/src/capabilities.js written: 20 capabilities, calls /capabilities (Route::capabilities('/capabilities') in web.php)`.
 
 ### Step 8 - Run it in development
 

@@ -5,8 +5,8 @@ delete) and a page per book (read and edit). Both use the capabilities of lesson
 can: the catalog from the browser with the **JS client**, the book page from the server with **`Route::page`**, and
 its edit form with a small **controller**.
 
-**Before you start:** lesson 05 is done (tag `lesson-05`): `capabilities` lists 6 capabilities, and
-`docker compose ps` shows the 3 containers running.
+**Before you start:** lesson 05 is done (tag `lesson-05`): `capabilities` lists 19 capabilities (your 6 and the
+framework's 13), and `docker compose ps` shows the 3 containers running.
 
 **Time:** 60 to 75 minutes.
 
@@ -104,7 +104,7 @@ Run every command from the `bookshelf` folder.
 ```bash
 docker compose exec dev-box php caligrafer.php client public/js/capabilities.js
 ```
-Expected: ` public/js/capabilities.js written: 6 capabilities, calls /capabilities (...)`. Open the file: near the
+Expected: ` public/js/capabilities.js written: 19 capabilities, calls /capabilities (...)`. Open the file: near the
 end there is one function per capability, with its description, for example:
 ```js
 export const listBooks = (input = {}) => call('list_books', input)
@@ -523,7 +523,7 @@ Then check both pages at desktop width and at 375 px.
 **What Claude should do:** generate the client and write the five files and the routes of steps 1 to 6.
 
 **Check** before you accept:
-- [ ] `capabilities.js` was regenerated (6 capabilities), not edited by hand.
+- [ ] `capabilities.js` was regenerated (19 capabilities), not edited by hand.
 - [ ] Every page extends `default/master/site` and uses a title band, bands and the classes of Caligrafy's look (`cq-rows`, `cq-segments`, `cq-field-error`...); no cards, no Bootstrap color classes (`btn-danger`...), no `style` block.
 - [ ] `books.js` calls only the generated functions (no `fetch` of its own) and shows errors in `#error`, never `alert()`.
 - [ ] The pages are declared with `Route::page`; `/books/{id}` gets its data from `get_book` and `list_authors`.

@@ -32,15 +32,17 @@ runs something else: a **production image**, a frozen copy of your project with 
 **The production image** (`Dockerfile`, new in 2.4.0). PHP 8.5 with Apache and the extensions Caligrafy needs, the PHP
 libraries of `composer.json` without the development ones (`composer install --no-dev`), and your project.
 `Dockerfile.dockerignore` keeps out what must never be in it: `.env`, `.git`, `vendor/` (installed fresh), the tests
-(`qa/`), backups, `node_modules`. People's sessions are kept in `/var/lib/php/sessions`, a folder the host keeps
-between deploys, so a new version does not sign everybody out.
+(`qa/` and `tests/`), backups, `node_modules`. People's sessions are kept in `/var/lib/php/sessions`, a folder the
+host keeps between deploys, so a new version does not sign everybody out.
 
 **The deploy step** (`php caligrafer.php deploy`, new in 2.4.0) runs each time the image starts, before the web
 server:
 1. it waits for the database (a new server starts its database at the same time as the app);
-2. it creates the framework tables (tokens, audit log);
+2. it creates the framework tables (tokens, audit log, job runs, jobs, cache, migrations, scripts);
 3. it runs every `application/models/<folder>/create_db.sql` that is **new or changed** since its last run, in the
-   order of the folder names, and records each one in a table named `caligrafy_scripts`.
+   order of the folder names, and records each one in a table named `caligrafy_scripts`;
+4. it runs the migrations of `application/migrations` that never ran on this database, in the order of their numbers,
+   and records each one in `caligrafy_migrations` (lesson 03).
 
 A script that drops, deletes or truncates is never run a second time, even if it changed: that would destroy data. And
 `seed.sql` is never run: sample data is not production data. So the database online starts with your tables and no
@@ -81,13 +83,13 @@ free on Caligrafy Cloud.
 
 ### Step 1 - Check that the project is on Caligrafy Quill 2.4.0 or later
 
-The production image and the deploy step come with Caligrafy Quill 2.4.0; the release of lesson 01, 2.18.1, has them. Check it:
+The production image and the deploy step come with Caligrafy Quill 2.4.0; the release of lesson 01, 2.18.2, has them. Check it:
 ```bash
 docker compose exec dev-box php caligrafer.php version
 ```
-Expected: `Caligrafy Quill 2.18.1`. Then `ls Dockerfile` shows the file, and you can go to step 2.
+Expected: `Caligrafy Quill 2.18.2`. Then `ls Dockerfile` shows the file, and you can go to step 2.
 
-**Only if it says an older version** (you started the course before 2.18.1 was released): 2.4.0 has the image and the
+**Only if it says an older version** (you started the course before 2.18.2 was released): 2.4.0 has the image and the
 deploy step, and 2.7.0 adds the browser sign-in of step 7 and the `ship` skill. (2.11.0 also brings Caligrafy's look
 of lesson 06, and 2.12.0 the side by side of lessons 09 and 10: the pages you wrote on `layoutblocks.pug` keep
 working as they are.) Update the project to the course's
@@ -100,11 +102,11 @@ curl -fsSL https://raw.githubusercontent.com/caligrafy/caligrafy-quill/master/fr
 ```
 Then, with 2.9.0 or later:
 ```bash
-docker compose exec dev-box php caligrafer.php update 2.18.1
+docker compose exec dev-box php caligrafer.php update 2.18.2
 ```
 or, before 2.9.0:
 ```bash
-docker compose exec dev-box php -r "require 'framework/core/Updater.php'; exit((new Caligrafy\Updater('.'))->run('2.18.1'));"
+docker compose exec dev-box php -r "require 'framework/core/Updater.php'; exit((new Caligrafy\Updater('.'))->run('2.18.2'));"
 ```
 - `framework/` and `claude-plugin/` belong to the framework: the new ones replace them. `claude-plugin/` brings the
   `/caligrafy-quill:deploy` and `/caligrafy-quill:ship` skills.
@@ -115,15 +117,16 @@ docker compose exec dev-box php -r "require 'framework/core/Updater.php'; exit((
   delete it. Everything replaced is copied first to `backups/`.
 - It ends with `upgrade --apply` for `application/` (lesson 12, step 5). `web.php` is yours: never replaced.
 
-With Claude Code, `/caligrafy-quill:update 2.18.1` does the same and merges the `.caligrafy-new` files with you.
+With Claude Code, `/caligrafy-quill:update 2.18.2` does the same and merges the `.caligrafy-new` files with you.
 
 Check the version and the new command:
 ```bash
 docker compose exec dev-box php caligrafer.php doctor
 docker compose exec dev-box php caligrafer.php help
 ```
-Expected: the first line of `doctor` is `Caligrafy doctor (read-only): Caligrafy Quill 2.18.1`, and `help` lists
-`deploy` and `cloud`. Run the unit tests and the smoke test of lesson 12: they still pass. Commit the update.
+Expected: the first line of `doctor` is `Caligrafy doctor (read-only): Caligrafy Quill 2.18.2`, and `help` lists
+`deploy` and `cloud`. Run the tests (`php caligrafer.php test`) and the smoke test of lesson 12: they still pass.
+Commit the update.
 
 > **If it doesn't work**
 >
@@ -362,17 +365,23 @@ In the container, `create` needs `--repo`: the container has no git to read the 
 
 ### Step 8 - Make reader1 an administrator online
 
-On your computer you did it in MySQL (lesson 11, step 8). Online there is no console: a script does it, the same way as
-the catalog.
+On your computer you did it in MySQL (lesson 11, step 8). Online there is no console. The `users` table already has
+data there (reader1 registered on the site), so the change is a **migration**: it runs once, on every database.
 
-**File `application/models/Team/create_db.sql`** (the administrators of the online Bookshelf):
+```bash
+docker compose exec dev-box php caligrafer.php migrate make make_reader1_admin
+```
+Expected: ` application/migrations/20261107174816_make_reader1_admin.sql written: add its SQL, then php caligrafer.php migrate`
+(your number is the date and time you ran it). Add the change under its first two lines:
+
+**File `application/migrations/20261107174816_make_reader1_admin.sql`** (the first administrator of the online Bookshelf; use the name of your file):
 
 ```sql
-/* The administrators of Bookshelf online: php caligrafer.php deploy runs it when it is new or changed. The account
- * must exist first (register it on the site), then add its username here, commit, push and deploy.
- * It only gives permissions: it never creates an account and never contains a password.
- */
+-- make_reader1_admin
+-- Runs once (php caligrafer.php migrate, and at every deploy). Never edit it after it ran: write a new one.
 
+-- The first administrator of Bookshelf online. The account must exist first (register it on the site), then commit,
+-- push and deploy. It only gives permissions: it never creates an account and never contains a password.
 UPDATE users SET permissions = 1 WHERE username = 'reader1';
 ```
 
@@ -388,15 +397,19 @@ Expected: `Deploying https://bookshelf-sam.caligrafy.com (a few minutes)...`, th
 ```bash
 docker compose exec dev-box php caligrafer.php cloud logs bookshelf-sam
 ```
-Among the first lines: `application/models/Online/create_db.sql: up to date` and
-`application/models/Team/create_db.sql: run`. The scripts that did not change are not run again; the new one is.
+Among the first lines: `application/models/Online/create_db.sql: up to date`, then
+`Migrations: 1 run: 20261107174816_make_reader1_admin.sql` (with your number). The scripts that did not change are not
+run again; the new migration runs once. At the next deploy the line is `Migrations: up to date`.
 Sign out and in again as `reader1`: **Delete** is there.
 
-This script is for the **first** administrator. After it, an administrator manages the others without a deploy:
+On your computer, `docker compose exec dev-box php caligrafer.php migrate` would run it on your database too (reader1
+is already an administrator there: nothing changes), and `migrate status` shows `ran` or `pending` for each file.
+
+This migration is for the **first** administrator. After it, an administrator manages the others without a deploy:
 the user capabilities (`list_users`, `update_user`, lesson 11) work online too. Uncomment the
-`// User Administration Routes` of `web.php`, deploy, and an administrator changes permissions on `/users`. Adding
-usernames to the script
-(`WHERE username IN ('reader1', 'sam')`) also works: it changed, so the next deploy runs it again.
+`// User Administration Routes` of `web.php`, deploy, and an administrator changes permissions on `/users`. More
+administrators by SQL later means a **new** migration (`migrate make make_sam_admin`), never an edit of this one: it
+ran, so it never runs again.
 
 > **If it doesn't work**
 >
@@ -406,7 +419,8 @@ usernames to the script
 > | `Sign in, or use a token of your account` | The token was revoked on the dashboard, or deleted | `cloud login` again and approve the code in the browser |
 > | `cloud login` ends without `Signed in` | The code was denied, or not approved in time | Run `cloud login` again and approve the new code |
 > | The deploy shows the old code | The commit was not pushed | `git push`, then `cloud deploy` again |
-> | Still no **Delete** | You did not sign in again, or `reader1` was registered after the deploy | Sign out and in. If the account is newer than the deploy, change the script (add a comment line) and deploy again |
+> | Still no **Delete** | You did not sign in again, or `reader1` was registered after the deploy | Sign out and in. If the account is newer than the deploy, the migration ran when there was nobody to change: write a new one with the same `UPDATE` (`migrate make make_reader1_admin_again`) and deploy again |
+> | `Migrations: 1 run: ...` is not in the logs | The migration was not committed, or its name is not `<number>_<name>.sql` | `git status`, `ls application/migrations` |
 > | `Caligrafy Cloud could not be reached` | No internet in the container, or a company proxy | Run the same command outside Docker: `php caligrafer.php cloud ...` needs only PHP |
 
 ### Step 9 - Time, settings and the end of the trial
@@ -455,8 +469,8 @@ would happen.
 
 ## With Claude
 
-Start Claude Code in the `bookshelf` folder (`claude`). The update of step 1 brought the plugin's skills (plugin 1.28.1
-with Caligrafy Quill 2.18.1).
+Start Claude Code in the `bookshelf` folder (`claude`). The update of step 1 brought the plugin's skills (plugin 1.30.2
+with Caligrafy Quill 2.18.2).
 
 ### Ship with the plugin
 
@@ -483,7 +497,8 @@ check the address. You approve the sign-ins in the browser; it asks you before i
 ```
 
 **What Claude should do:** check that the project is ready before it deploys: Caligrafy Quill 2.4.0 or later with a `Dockerfile`
-at the root, everything committed and pushed to GitHub, a `create_db.sql` for every table, no `.env` or token in git,
+at the root, everything committed and pushed to GitHub, a `create_db.sql` for every table and a migration for every
+later change, no `.env` or token in git,
 and data the online database needs (step 2). Then drive `php caligrafer.php cloud ...`: `account`, `create` (with
 `--repo`), the deploy key to add for a private repository, `deploy`, `status`. To sign in, it runs `cloud login`, and
 **you** approve the code in the browser: a token never goes in the chat.
@@ -498,15 +513,15 @@ and data the online database needs (step 2). Then drive `php caligrafer.php clou
 ### Make reader1 an administrator
 
 ```
-Online, reader1 must be an administrator. Caligrafy Cloud has no database console: add a create_db.sql in a new
-folder application/models/Team that gives reader1 permissions 1, check that the folder sorts after Auth, commit,
-push and deploy with php caligrafer.php cloud deploy bookshelf-sam. Then show me the deploy lines of the logs.
+Online, reader1 must be an administrator. Caligrafy Cloud has no database console: write a migration with
+php caligrafer.php migrate make make_reader1_admin that gives reader1 permissions 1, commit, push and deploy with
+php caligrafer.php cloud deploy bookshelf-sam. Then show me the deploy lines of the logs.
 ```
 
 **Check:**
-- [ ] The script only has an `UPDATE users SET permissions = 1 WHERE username = 'reader1'`: no account created, no password.
-- [ ] No `DELETE`, `DROP` or `TRUNCATE`: those would run once and never again.
-- [ ] The logs show `application/models/Team/create_db.sql: run`.
+- [ ] The migration is in `application/migrations/<number>_make_reader1_admin.sql` and only has an `UPDATE users SET permissions = 1 WHERE username = 'reader1'`: no account created, no password.
+- [ ] Claude did not change a `create_db.sql` and did not edit a migration that already ran.
+- [ ] The logs show `Migrations: 1 run: <number>_make_reader1_admin.sql`.
 
 ### Agents and Caligrafy Cloud
 
@@ -560,8 +575,8 @@ the hood: routes, controllers and forms written by hand.
 ## Quiz
 
 1. You change the title of a book on your computer. Does it change online? Why?
-2. You add a column to `books` in `application/models/Bookshelf/create_db.sql` with `ALTER TABLE`, push and deploy.
-   What does the deploy step do with that script?
+2. Online, `books` has data, and you need a new column `isbn`. Where does the change go, and what happens when the
+   migration that added it already ran and you then fix a typo in it?
 3. Why is `seed.sql` never run online, and how did the catalog get there?
 4. A friend sees your app page and the deploy key on it. What can they do with it?
 
@@ -569,10 +584,10 @@ the hood: routes, controllers and forms written by hand.
 
 1. No. The online database is another database, filled by the deploy step. Your computer and the server share the
    code (through git and a deploy), not the data.
-2. The script changed, so `deploy` runs it again. It must be safe to run on a database that already has the tables:
-   `CREATE TABLE IF NOT EXISTS` is, and so is `ALTER TABLE ... ADD COLUMN`: since 2.13.5 the deploy step skips a
-   column, an index or a foreign key that is already there, so the line can stay in the script. A script that drops or
-   deletes is never run again at all.
+2. In a migration: `docker compose exec dev-box php caligrafer.php migrate make add_books_isbn`, then
+   `ALTER TABLE books ADD COLUMN isbn VARCHAR(20) NULL;` in the file it wrote. `migrate` runs it on your computer, and
+   the next deploy runs it online, once. Never edit a migration that ran: it does not run again (`migrate status`
+   shows it as `changed`, and `doctor` warns about it). Put the fix in a new migration.
 3. Sample data is not production data: running a seed on every deploy could bring back rows that people deleted. The
    catalog came from `application/models/Online/create_db.sql`, a script made for the online database, with
    `INSERT IGNORE` so it can run again safely.

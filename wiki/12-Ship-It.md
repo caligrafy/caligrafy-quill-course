@@ -1,7 +1,7 @@
 # Lesson 12 - Ship it: tests, review, doctor
 
-**In this lesson** you make Bookshelf safe to put online: unit tests that check the rules of your capabilities
-without a database, a smoke test that calls the running application the way every experience does, the `doctor`
+**In this lesson** you make Bookshelf safe to put online: tests that check the rules and permissions of your
+capabilities, a smoke test that calls the running application the way every experience does, the `doctor`
 health check, the end of the legacy API key, a code review by the `caligrafy-reviewer` agent, an `upgrade` preview,
 and a go-live checklist.
 
@@ -19,22 +19,30 @@ clicking through every page. You write two kinds:
 
 | Kind | What it checks | Needs | Here |
 |---|---|---|---|
-| **Unit test** | one piece of code alone: the rules of a capability | PHP only: no web server, no database | `qa/bookshelf/BookRulesTest.php` |
+| **Capability test** | one capability, called the way every experience calls it: who may call it, its rules, its answer | PHP and the database: no web server | `tests/BookRulesTest.php` |
 | **Smoke test** | the running application answers each experience with the expected HTTP status | the containers running | `qa/bookshelf/smoke.sh` |
 
 **PHPUnit** is the test tool of PHP. It is already in `vendor/` (quickstart installed it). A test class extends
-`PHPUnit\Framework\TestCase`; each public method whose name starts with `test` is one test; an **assertion** such as
-`$this->assertSame($expected, $actual)` fails the test when the two values differ.
+`Caligrafy\Testing\TestCase` (itself a PHPUnit test case); each public method whose name starts with `test` is one
+test; an **assertion** such as `$this->assertSame($expected, $actual)` fails the test when the two values differ.
 
-**Why test the rules, and why without a database?** The `$rules` of a capability are the same for the pages, REST,
-the Vue apps and AI agents: test them once and you have tested them for every experience. Every service has a
-`validate($input)` method (from `Caligrafy\Service`) that applies `$filters` and `$rules` and returns what `handle()`
-would receive, or throws a `ServiceError` of kind `invalid` with one message per field (`$e->fields`). It does not
-run `handle()`, so it needs no database: the tests run in a fraction of a second.
+**Why test the capabilities?** The `$rules` and the permissions of a capability are the same for the pages, REST,
+the Vue apps and AI agents: test them once and you have tested them for every experience. In a test,
+`$this->call('create_book', [...], $this->user(1))` calls the capability as signed-in user 1 (`'guest'` instead of a
+user: a visitor), with the same checks of the caller, the same `$filters` and `$rules`, then `handle()`, and returns
+its answer. `$this->assertCapabilityFails('invalid', 'create_book', [...], $this->user(1))` checks that it refuses
+with that kind of error (`invalid`, `unauthenticated`, `forbidden`, `not_found` or `conflict`) and returns the
+`ServiceError`, whose `$e->fields` has one message per refused input.
 
-**Where tests live.** Not in `application/`: Caligrafy loads every PHP file of `application/` on every request, so a
-test file there would run inside your website. We put them in `qa/bookshelf/`. The `.htaccess` of Caligrafy
-refuses to serve the `qa` folder.
+**The database is left as it was.** Each test runs in a database transaction that is rolled back at its end: a book a
+test adds is gone afterwards, and tests do not see each other's rows. The tests use the database of `.env`;
+`DB_TEST_DATABASE=<name>` in `.env` gives them a database of their own (create it, then run `platform install` and
+your scripts on it).
+
+**Where tests live.** In `tests/`, at the top of the project, one class per file named `<Name>Test.php`:
+`php caligrafer.php test make <Name>` writes one, and `php caligrafer.php test` runs them all. The framework never
+loads `tests/` on a page, the `.htaccess` of Caligrafy refuses to serve it, and the production image leaves it out.
+The smoke test is not PHP: it stays in `qa/bookshelf/`, which the `.htaccess` refuses to serve too.
 
 **A smoke test checks the refusals too.** A site that is safe to put online must say **no** correctly: 401 when a
 visitor writes, 403 when a read-only token writes, 403 for `.env`. The smoke test checks both the yes and the no.
@@ -63,131 +71,94 @@ compares with the templates of the release you have, and nothing else.
 
 ## Manual track
 
-### Step 1 - The test settings
+### Step 1 - The test file
 
-Create the folder `qa/bookshelf` and two files in it.
-
-**File `qa/bookshelf/phpunit.xml`** (the settings of PHPUnit for these tests):
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<!-- The Bookshelf unit tests. Run: docker compose exec dev-box vendor/bin/phpunit -c qa/bookshelf/phpunit.xml -->
-<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:noNamespaceSchemaLocation="../../vendor/phpunit/phpunit/phpunit.xsd"
-         bootstrap="bootstrap.php"
-         colors="true"
-         cacheDirectory="../../.phpunit.cache">
-    <testsuites>
-        <testsuite name="bookshelf">
-            <directory>.</directory>
-        </testsuite>
-    </testsuites>
-</phpunit>
+From the `bookshelf` folder:
+```bash
+docker compose exec dev-box php caligrafer.php test make BookRules
 ```
+Expected: ` tests/BookRulesTest.php written: php caligrafer.php test BookRules`. The file has one example test.
+Replace its content.
 
-**File `qa/bookshelf/bootstrap.php`** (runs before the tests: loads the Caligrafy classes a service needs, then every
-Bookshelf service):
-
-```php
-<?php
-// Loads what the Bookshelf unit tests need, without starting the framework: no web server, no database, no .env
-$root = dirname(__DIR__, 2);
-require $root . '/vendor/autoload.php';
-foreach (array('Validator', 'Context', 'ServiceError', 'Capability', 'Service') as $class) {
-    require_once $root . "/framework/core/$class.php";
-}
-foreach (glob($root . '/application/services/Bookshelf/*.php') as $service) {
-    require_once $service;
-}
-```
-
-- `dirname(__DIR__, 2)` is the project folder (two levels above `qa/bookshelf`).
-- `vendor/autoload.php` loads PHPUnit and the libraries, including GUMP, the validation library behind `$rules`.
-- The five framework classes are the ones a service uses: the validator, the context, the errors, the
-  `#[Capability]` attribute and the `Service` base class. Nothing starts the framework, reads `.env` or connects
-  to MySQL.
-
-### Step 2 - The unit tests
-
-**File `qa/bookshelf/BookRulesTest.php`** (five tests of the rules of `create_book`, `update_book` and `search_books`):
+**File `tests/BookRulesTest.php`** (six tests of the rules and permissions of `create_book`, `update_book` and `search_books`):
 
 ```php
 <?php
 
-use Caligrafy\ServiceError;
-use PHPUnit\Framework\TestCase;
+use Caligrafy\Testing\TestCase;
 
 // The rules of the Bookshelf capabilities: the same for the pages, the REST API, the Vue apps and AI agents.
-// validate() checks the inputs against $rules, without the database: what handle() would receive, or a refusal
-class BookRulesTest extends TestCase
+// call() goes through the capability as every experience does: who calls, the rules, then handle().
+// Each test runs in a transaction that is rolled back at its end: the books it adds are gone afterwards
+final class BookRulesTest extends TestCase
 {
-    private function refusal($service, array $input)
+    public function testABookNeedsATitleAYearAndAnAuthor(): void
     {
-        try {
-            $service->validate($input);
-        } catch (ServiceError $e) {
-            return $e;
-        }
-        $this->fail('The input was accepted');
+        $e = $this->assertCapabilityFails('invalid', 'create_book', [], $this->user(1));
+        $this->assertSame(['title', 'published_year', 'author_id'], array_keys($e->fields));
     }
 
-    public function testABookNeedsATitleAYearAndAnAuthor()
+    public function testTheYearMustBeAWholeNumber(): void
     {
-        $e = $this->refusal(new CreateBook(), array());
-        $this->assertSame('invalid', $e->kind);
-        $this->assertSame(array('title', 'published_year', 'author_id'), array_keys($e->fields));
-    }
-
-    public function testTheYearMustBeAWholeNumber()
-    {
-        $e = $this->refusal(new CreateBook(), array('title' => 'Kindred', 'published_year' => 'soon', 'author_id' => 2));
+        $e = $this->assertCapabilityFails('invalid', 'create_book', ['title' => 'Kindred', 'published_year' => 'soon', 'author_id' => 2], $this->user(1));
         $this->assertArrayHasKey('published_year', $e->fields);
     }
 
-    public function testAValidBookIsTrimmedAndKeepsOnlyItsInputs()
+    public function testAValidBookIsTrimmedAndKeepsOnlyItsInputs(): void
     {
-        $input = (new CreateBook())->validate(array('title' => '  Kindred ', 'published_year' => 1979, 'author_id' => 2, 'price' => 9));
-        $this->assertSame('Kindred', $input['title']);
-        $this->assertArrayNotHasKey('price', $input);   // only the inputs of $rules reach handle()
+        // an author of its own: the test does not depend on the sample data (the transaction removes it afterwards)
+        Caligrafy\Database::execute('INSERT INTO authors (name) VALUES (?)', ['Octavia E. Butler']);
+        $author = (int) Caligrafy\Database::lastInsertId();
+        $book = $this->call('create_book', ['title' => '  Kindred ', 'published_year' => 1979, 'author_id' => $author, 'price' => 9], $this->user(1));
+        $this->assertSame('Kindred', $book['title']);
+        $this->assertArrayNotHasKey('price', $book);   // only the inputs of $rules reach handle()
     }
 
-    public function testUpdatingNeedsTheIdOfTheBook()
+    public function testAVisitorCannotAddABook(): void
     {
-        $e = $this->refusal(new UpdateBook(), array('title' => 'Kindred'));
+        $this->assertCapabilityFails('unauthenticated', 'create_book', ['title' => 'Kindred', 'published_year' => 1979, 'author_id' => 2], 'guest');
+    }
+
+    public function testUpdatingNeedsTheIdOfTheBook(): void
+    {
+        $e = $this->assertCapabilityFails('invalid', 'update_book', ['title' => 'Kindred'], $this->user(1));
         $this->assertArrayHasKey('id', $e->fields);
     }
 
-    public function testASearchNeedsAtLeastTwoCharacters()
+    public function testASearchNeedsAtLeastTwoCharacters(): void
     {
-        $e = $this->refusal(new SearchBooks(), array('query' => 'a'));
+        $e = $this->assertCapabilityFails('invalid', 'search_books', ['query' => 'a'], 'guest');
         $this->assertArrayHasKey('query', $e->fields);
     }
 }
 ```
 
-- `refusal()` is a helper (its name does not start with `test`, so it is not a test): it calls `validate()`, returns
-  the `ServiceError`, and fails the test if the input was accepted.
+- `$this->user(1)` is a signed-in person with the id 1 and permissions 0, like reader1: enough for `create_book` and
+  `update_book`, which need someone signed in since lesson 11. `'guest'` is a visitor.
 - The first test checks that an empty book is refused for its three required inputs, in the order of `$rules`.
-- The third test checks two promises of lesson 05: the `trim` filter removed the spaces, and an input that is not in
-  `$rules` (`price`) never reaches `handle()`.
+- The third test really adds a book, and checks two promises of lesson 05: the `trim` filter removed the spaces, and
+  an input that is not in `$rules` (`price`) never reaches `handle()`. The book is gone when the test ends: the
+  catalog still has its books, no more.
+- The fourth test checks the promise of lesson 11: a visitor cannot write. The caller is checked before the inputs.
 
-Run the tests from the `bookshelf` folder:
+### Step 2 - Run the tests
+
 ```bash
-docker compose exec dev-box vendor/bin/phpunit -c qa/bookshelf/phpunit.xml
+docker compose exec dev-box php caligrafer.php test
 ```
 Expected (among lines that show the PHPUnit and PHP versions and the time):
 ```
-.....                                                               5 / 5 (100%)
+......                                                              6 / 6 (100%)
 
-OK (5 tests, 7 assertions)
+OK (6 tests, 11 assertions)
 ```
-Each `.` is a test that passed.
+Each `.` is a test that passed. `php caligrafer.php test Search` runs only the tests whose name matches.
 
 Now see a test catch a bug. In `application/services/Bookshelf/CreateBook.php`, change
-`'title' => 'required|max_len,200'` into `'title' => 'max_len,200'`, save, wait 2 seconds and run the tests again.
+`'title' => 'required|max_len,200'` into `'title' => 'max_len,200'`, save and run the tests again.
 The line of dots now starts with an `F` (a failure):
 ```
-F....                                                               5 / 5 (100%)
+F.....                                                              6 / 6 (100%)
 
 There was 1 failure:
 
@@ -204,24 +175,24 @@ Failed asserting that two arrays are identical.
 +    1 => 'author_id',
  ]
 
-/var/www/html/qa/bookshelf/BookRulesTest.php:24
+/var/www/html/tests/BookRulesTest.php:13
 
 FAILURES!
-Tests: 5, Assertions: 7, Failures: 1.
+Tests: 6, Assertions: 11, Failures: 1.
 ```
 The test expected three refused fields and got two: `title` is no longer required, on every experience at once.
-Put `required|` back and check that you get `OK (5 tests, 7 assertions)` again.
+Put `required|` back and check that you get `OK (6 tests, 11 assertions)` again.
 
 > **If it doesn't work**
 >
 > | What you see | Cause | Fix |
 > |---|---|---|
-> | `Cannot open file "qa/bookshelf/phpunit.xml"` | The command was not run from the `bookshelf` folder | `cd` to the `bookshelf` folder |
-> | `vendor/bin/phpunit: No such file or directory` | The PHP libraries are not installed | Run `.bin/caligrafer quickstart` again: it installs what is missing |
-> | `Class "CreateBook" not found` | `bootstrap.php` was not loaded (a typo in `bootstrap="bootstrap.php"`) or the services folder is not `application/services/Bookshelf` | Compare both files with step 1 |
-> | `Failed opening required '.../framework/core/...'` | A class name in the list of `bootstrap.php` is misspelled | Compare with step 1 |
+> | `No tests yet: php caligrafer.php test make <Name> writes tests/<Name>Test.php` | The file is not in `tests/`, or its name does not end with `Test.php` | `ls tests`: exactly `BookRulesTest.php` |
+> | `PHPUnit is not installed: composer install (with the development packages), then php caligrafer.php test` | The PHP libraries are not installed | Run `.bin/caligrafer quickstart` again: it installs what is missing |
+> | `create_book failed with 'unauthenticated' (...), not 'invalid'` | The test calls it without `$this->user(1)`: as nobody | Compare the test with step 1 |
+> | `create_book did not fail (expected 'unauthenticated')` | `create_book` is still `public: true`: a visitor can write | Remove `public: true` from `CreateBook.php` (lesson 11) |
+> | `There is no capability ...` | A typo in the name of the capability | Use the `name` of its attribute: `create_book` |
 > | A test fails although you changed nothing | A rule in a service differs from the checkpoint | Compare the service with [`checkpoints/lesson-12`](https://github.com/caligrafy/caligrafy-quill-course/tree/main/checkpoints/lesson-12) |
-> | Your change does not show | PHP caches compiled files and checks for changes every 2 seconds | Wait 2 seconds and run again |
 
 ### Step 3 - The smoke test
 
@@ -368,7 +339,7 @@ compares only the apps made from `framework/plugins` (`app`, `bot`, `facedetect`
 When a later release comes out, `upgrade` (without `--local`) shows the plan to move to it, and
 `docker compose exec dev-box php caligrafer.php upgrade --apply` applies it: files you never changed are updated (with
 a backup in `backups/`), files you changed get the new version next to them as `<file>.caligrafy-new` for you to
-merge. Run the unit tests, the smoke test and `doctor` afterwards.
+merge. Run the tests (`php caligrafer.php test`), the smoke test and `doctor` afterwards.
 
 ### Step 6 - Before going live
 
@@ -376,7 +347,7 @@ Go through this list before you put Bookshelf online ([lesson 14](14-Put-It-Onli
 lesson already did the first ones; on Caligrafy Cloud, HTTPS, `APP_ENV=production`, `APP_DEBUG=false` and
 `LEGACY_API_KEY=false` are set for you.
 
-- [ ] Nothing that writes is `public: true` (lesson 11): `docker compose exec dev-box php caligrafer.php capabilities` shows `public` only on the read capabilities.
+- [ ] Nothing that writes is `public: true` (lesson 11): `docker compose exec dev-box php caligrafer.php capabilities` shows `public` only on the read capabilities of Bookshelf (and on the framework's `register_user`, the sign-up, and `notify_email_confirm`).
 - [ ] `LEGACY_API_KEY=false` in the `.env` of the server (step 4), and no `WARN  Pages and the API key` in `doctor`: pages call their routes with `apiHeaders()` or the JS client, never with the key.
 - [ ] Tokens: `token list`, then `token revoke <id>` for every token you no longer use. Each program or agent has its own token with the smallest scopes, and `--expires <days>` when it is temporary.
 - [ ] HTTPS on the server (it is also what lets phones install the app, lesson 10).
@@ -405,21 +376,21 @@ order, unsafe uploads, exposed secrets... Each finding names a file and a line, 
 
 **How to review the review:** for each finding, open the file at that line and decide: is it a real bug in **your**
 code, a limit you accept, or a mistake of the reviewer? Ask Claude "show me the request that would fail" when a
-finding is not clear. Fix the real bugs, run the unit tests and the smoke test, then commit. Do not apply every
+finding is not clear. Fix the real bugs, run the tests and the smoke test, then commit. Do not apply every
 suggestion blindly.
 
 ### Add a test
 
 ```
-Add a test to qa/bookshelf/BookRulesTest.php that checks that create_book refuses a published_year above 2100.
-Use the refusal() helper. Do not change the services. Then run
-docker compose exec dev-box vendor/bin/phpunit -c qa/bookshelf/phpunit.xml and show me the result.
+Add a test to tests/BookRulesTest.php that checks that create_book refuses a published_year above 2100.
+Use assertCapabilityFails() as signed-in user 1. Do not change the services. Then run
+docker compose exec dev-box php caligrafer.php test and show me the result.
 ```
 
 **Check** before you accept:
 - [ ] The new method is public and its name starts with `test`.
-- [ ] It calls `refusal(new CreateBook(), ...)` with a complete book whose year is above 2100 (for example 2200) and checks `published_year` is in `$e->fields`.
-- [ ] Claude ran PHPUnit and the result is `OK (6 tests, ...)`.
+- [ ] It calls `assertCapabilityFails('invalid', 'create_book', ..., $this->user(1))` with a complete book whose year is above 2100 (for example 2200) and checks `published_year` is in `$e->fields`.
+- [ ] Claude ran the tests and the result is `OK (7 tests, 13 assertions)`.
 - [ ] No file in `application/services/` changed: a test must not change the rules to pass.
 
 ### Doctor, upgrade, legacy key
@@ -445,16 +416,16 @@ ask for the request that shows it; keep the code if there is none.
 
 ```bash
 git add -A
-git commit -m "Lesson 12: unit tests and smoke test"
+git commit -m "Lesson 12: tests and smoke test"
 git tag lesson-12
 ```
-`.env` is not committed (`.gitignore`), so `LEGACY_API_KEY=false` stays on your computer. The PHPUnit cache
-(`.phpunit.cache/`) is ignored too.
+`.env` is not committed (`.gitignore`), so `LEGACY_API_KEY=false` stays on your computer. `tests/` is committed: its
+`.gitignore` only holds a comment.
 Reference: [`checkpoints/lesson-12`](https://github.com/caligrafy/caligrafy-quill-course/tree/main/checkpoints/lesson-12).
 
 ## Quiz
 
-1. The unit tests check the rules of `create_book` without a database. Which experiences does that protect?
+1. The tests call `create_book` with `$this->call()`, from PHP. Which experiences does that protect?
 2. Why does the smoke test expect `401` for `POST /api/books`, and what would `422` mean there?
 3. After `LEGACY_API_KEY=false`, does the Vue finder app still work? Why?
 4. A "smoke test" token was printed in a shared terminal recording. What do you do?

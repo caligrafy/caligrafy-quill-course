@@ -73,6 +73,7 @@ try {
     // BUILD ONCE: every capability, for the JS client and AI agents
     Route::capabilities('/capabilities');   // the capabilities for the JS client of the Vue apps
     Route::mcp('/mcp');                     // the capabilities as tools for AI agents (personal access tokens)
+    Route::notifications();                 // the pages notification emails link to (confirm, unsubscribe)
 
     // MUST NOT BE REMOVED - Routes need to be run after being defined 
     Route::run(); 

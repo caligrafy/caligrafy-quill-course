@@ -119,10 +119,11 @@ docker compose exec dev-box php caligrafer.php platform install
 docker compose exec dev-box php caligrafer.php notify keys --subject http://localhost:8080
 ```
 
-In `application/config/routing/web.php`, under `Route::mcp('/mcp');`, add the pages the emails link to:
+The pages the emails link to (confirm the address, unsubscribe) are already there: quickstart added them in lesson 01,
+under `Route::mcp('/mcp');` in `application/config/routing/web.php`. Check that the line is still in your file:
 
 ```php
-    Route::notifications();                 // the pages the reminder emails link to (confirm the address, unsubscribe)
+    Route::notifications();                 // the pages notification emails link to (confirm, unsubscribe)
 ```
 
 ### Step 4 - The button

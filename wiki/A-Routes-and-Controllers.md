@@ -48,9 +48,10 @@ answers a route is an **action**. The route names both: `'Bookshelf\\AuthorContr
 `AuthorController` reads the models itself, the classic way. Never name an action like a method of `Controller` (`find`, `save`, `delete`, `all`,
 `search`, `check`, `validate`, `filter`, `view`, `api`, `associate`, `table`).
 
-**Namespace.** Caligrafy loads every PHP file of `application/`, so two classes with the same name would crash every
-page. `namespace Bookshelf;` makes the full name `Bookshelf\AuthorController`. In a single-quoted PHP string the
-backslash is written twice: `'Bookshelf\\AuthorController'`.
+**Namespace.** Caligrafy finds each class of `application/` by its name (a map of the classes, built once), so two
+classes with the same name clash: only one of them is ever used. `namespace Bookshelf;` makes the full name
+`Bookshelf\AuthorController`. In a single-quoted PHP string the backslash is written twice:
+`'Bookshelf\\AuthorController'`.
 
 **The controller's database helpers.** `$this->associate('Author', 'authors')` says which model and table the next
 calls work on. Then `$this->find()` returns the row whose id is the `{id}` of the route (or nothing),
@@ -226,7 +227,7 @@ A `*` token may call **everything**, capabilities included. Revoke it now: `toke
 > |---|---|---|
 > | The catalog instead of your page | The route did not match: a typo in the path, another number of segments, or the route is below `Route::run();` | Compare with steps 1 and 2 |
 > | `[ERROR 1001] Invalid Controller or Action` (404) | The route names a class or action that does not exist: missing `Bookshelf\\`, a typo, wrong case, or the `namespace` line is missing | Compare the route and the file with step 2 |
-> | `Cannot redeclare class Bookshelf\AuthorController` | A copy of the file is somewhere in `application/` (every PHP file there is loaded) | Delete the copy or move it out of `application/` |
+> | `Cannot redeclare class Bookshelf\AuthorController`, or your changes to the controller seem ignored | A copy of the file is somewhere in `application/`: each class is found by its name, so the two files clash | Delete the copy or move it out of `application/` |
 > | `[ERROR 500] syntax error, ...` | A PHP syntax error | `docker compose exec dev-box php -l application/controllers/Bookshelf/AuthorController.php` names the line |
 > | `/v1/authors` with the `*` token still answers 401 | The token was not copied whole, or it was revoked | `token list`; create a new one |
 > | Your change does not show | PHP caches compiled files and checks for changes every 2 seconds | Wait 2 seconds and reload |

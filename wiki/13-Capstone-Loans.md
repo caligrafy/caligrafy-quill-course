@@ -71,6 +71,8 @@ CREATE TABLE IF NOT EXISTS loans (
 
 - `book_id` is a foreign key to `books` (lesson 03). `ON DELETE CASCADE`: deleting a book deletes its loans.
 - `due_on` is a `DATE` (no time); `returned_at` is a `DATETIME` that is `NULL` until the book comes back.
+- This script creates the table. Once `loans` has data, every later change to it (a column, an index) goes in a
+  migration (`php caligrafer.php migrate make <name>`, lesson 03), not in this file.
 
 Run it:
 ```bash
@@ -436,7 +438,7 @@ Regenerate both clients (rule of lesson 06: after every change to a capability):
 docker compose exec dev-box php caligrafer.php client public/js/capabilities.js
 docker compose exec dev-box php caligrafer.php client public/bookshelf-spa/src/capabilities.js
 ```
-Expected for the first: ` public/js/capabilities.js written: 10 capabilities, calls /capabilities (...)`. The client
+Expected for the first: ` public/js/capabilities.js written: 23 capabilities, calls /capabilities (...)`. The client
 now has `lendBook`, `listLoans` and `returnBook`.
 
 Open http://localhost:8080/loans:
@@ -555,7 +557,7 @@ then `LOANS_TOKEN=cq_...`. Never let a secret go into the chat.
 2. REST: every curl command of step 5 (401 for a visitor, 403 for the books token, 201, 409, 422, the list, 200 and 404 on return).
 3. The agent: step 7 with the loans desk token you created.
 4. The audit: `audit --limit 5` shows `mcp token <id> lend_book ok`.
-5. The tests of lesson 12: the unit tests and the smoke test still pass.
+5. The tests of lesson 12: `docker compose exec dev-box php caligrafer.php test` and the smoke test still pass.
 
 **If Claude's result differs:** names, scopes and messages are what other experiences rely on: ask Claude to fix
 any that differ from your request. If it puts the rules in a controller or writes a separate API controller, ask
@@ -635,7 +637,7 @@ In `web.php`, in the `// LOANS` block:
 ```php
     Route::capability('GET', '/api/loans/overdue', 'overdue_loans');
 ```
-Then regenerate both clients (11 capabilities). No loan is late yet, so the answer is `{"data":[]}`. To see one, make
+Then regenerate both clients (24 capabilities). No loan is late yet, so the answer is `{"data":[]}`. To see one, make
 a loan late in MySQL:
 ```bash
 docker compose exec mysql mysql -uroot -proot caligrafy -e "UPDATE loans SET due_on = '2026-10-01' WHERE book_id = 5 AND returned_at IS NULL"

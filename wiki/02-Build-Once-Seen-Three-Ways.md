@@ -193,8 +193,9 @@ close it):
 TOKEN=cq_...
 curl -s -X POST -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $TOKEN" -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' http://localhost:8080/mcp
 ```
-Expected: JSON that lists five tools, `create_task`, `delete_task`, `get_task`, `list_tasks`, `update_task`, each with
-its description and input schema. Call `create_task` with an empty title:
+Expected: JSON that lists ten tools, each with its description and input schema: the five of Tasks, `create_task`,
+`delete_task`, `get_task`, `list_tasks`, `update_task`, and the five of the framework's user accounts, `delete_user`,
+`get_user`, `list_users`, `register_user`, `update_user` (only an administrator may use them: lesson 11). Call `create_task` with an empty title:
 ```bash
 curl -s -X POST -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $TOKEN" -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"create_task","arguments":{"title":""}}}' http://localhost:8080/mcp
 ```
@@ -251,11 +252,12 @@ The end of the routes now reads:
     // BUILD ONCE: every capability, for the JS client and AI agents
     Route::capabilities('/capabilities');   // the capabilities for the JS client of the Vue apps
     Route::mcp('/mcp');                     // the capabilities as tools for AI agents (personal access tokens)
+    Route::notifications();                 // the pages notification emails link to (confirm, unsubscribe)
 
     // MUST NOT BE REMOVED - Routes need to be run after being defined 
     Route::run(); 
 ```
-Keep `Route::capabilities` and `Route::mcp`: Bookshelf uses them. The full file is in the checkpoint.
+Keep `Route::capabilities`, `Route::mcp` and `Route::notifications`: Bookshelf uses them (the last one in lesson 15). The full file is in the checkpoint.
 
 Drop the `tasks` table:
 ```bash
@@ -270,10 +272,13 @@ docker compose exec dev-box php caligrafer.php client public/js/capabilities.js
 ```
 Expected:
 ```
- public/js/capabilities.js written: 0 capabilities, calls /capabilities (Route::capabilities('/capabilities') in web.php)
+ public/js/capabilities.js written: 13 capabilities, calls /capabilities (Route::capabilities('/capabilities') in web.php)
 ```
+The 13 are the framework's own capabilities, there in every project: the user accounts (`application/services/Users`),
+the notifications (`notify_*`) and the background jobs (`queue_work`). None of them is about tasks.
 Check: http://localhost:8080/tasks now answers `[ERROR 1005] Page Not Found` (404): no route declares that address
-any more. The agent connection stays: it has no tools for now, and lesson 04 gives it the Bookshelf ones.
+any more. The agent connection stays: it only has the user tools of the framework for now, and lesson 04 gives it the
+Bookshelf ones.
 
 > **If it doesn't work**
 >
@@ -282,7 +287,7 @@ any more. The agent connection stays: it has no tools for now, and lesson 04 giv
 > | `/tasks` still shows the Tasks page, or a change to a PHP file seems ignored | The server checks PHP files for changes every 2 seconds | Wait 2 seconds and reload |
 > | A PHP error on every page after editing `web.php` | A line too many or too few was deleted (a missing `;` or `}`) | Compare with the end of the file above, or copy `web.php` from the checkpoint |
 > | `ERROR 1051 (42S02): Unknown table 'caligrafy.tasks'` | The table was already dropped | Nothing to do |
-> | `0 capabilities` but `public/js/capabilities.js` still has `createTask` | You ran the command in another project | Run it in the `bookshelf` folder |
+> | `13 capabilities` but `public/js/capabilities.js` still has `createTask` | You ran the command in another project | Run it in the `bookshelf` folder |
 > | `/tasks` still shows the Tasks page | The routes were not deleted, or the file was not saved | Save `web.php` and reload |
 
 ---
@@ -310,13 +315,13 @@ Do steps 1 to 6 yourself: they are the point of the lesson. Claude helps to unde
 
 **What Claude should do:** explain without editing (1); then (2) list what it will delete, wait for your OK, delete
 the 9 files and the 8 lines (the comment, the 6 routes and the empty line after them), drop the table in the `mysql`
-container, and show `public/js/capabilities.js written: 0 capabilities, ...`.
+container, and show `public/js/capabilities.js written: 13 capabilities, ...`.
 
 **Check** before you accept:
-- [ ] `web.php` still has `Route::capabilities('/capabilities');`, `Route::mcp('/mcp');`, `// MUST NOT BE REMOVED`
+- [ ] `web.php` still has `Route::capabilities('/capabilities');`, `Route::mcp('/mcp');`, `Route::notifications();`, `// MUST NOT BE REMOVED`
       and `Route::run();`, and no line that mentions `tasks`.
-- [ ] `application/services/` is empty, and `ls public/js` has no `tasks.js`.
-- [ ] Claude dropped only `tasks`: not `caligrafy_tokens` or `caligrafy_audit` (your token lives there).
+- [ ] `application/services/` has only `Users` (the framework's own), and `ls public/js` has no `tasks.js`.
+- [ ] Claude dropped only `tasks`: no `caligrafy_*` framework table (your token lives in `caligrafy_tokens`).
 - [ ] http://localhost:8080/tasks shows the home page.
 - [ ] Claude did not print your token or the contents of `.env`.
 

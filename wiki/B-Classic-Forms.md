@@ -354,7 +354,7 @@ docker compose exec dev-box php caligrafer.php client public/js/capabilities.js
 docker compose exec dev-box php caligrafer.php client public/bookshelf-spa/src/capabilities.js
 docker compose exec dev-box php caligrafer.php capabilities
 ```
-The client now has `createAuthor()` (11 capabilities), and `capabilities` lists `create_author  books:write  writes`.
+The client now has `createAuthor()` (24 capabilities), and `capabilities` lists `create_author  books:write  writes`.
 The form works as before (an empty name: "The Name field is required", 422). `POST /api/authors` answers `401` to
 a visitor, `422` with `"fields":{"name":"The Name field is required"}` for `{"name": ""}`, and `201` with the new
 author for the "Claude Code" token. Reconnect Claude Code with that token if needed and ask "Add the author Ted

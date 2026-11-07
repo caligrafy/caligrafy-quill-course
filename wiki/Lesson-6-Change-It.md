@@ -18,7 +18,8 @@ A book that is on loan shows it, on its page and in the list. Show me the plan f
 
 Read the plan with the questions of [Lesson 3](Lesson-3-Approve-The-Plan):
 
-- **Tables**: a `loans` table linked to `books`, with the borrower, the date lent and the date returned.
+- **Tables**: a `loans` table linked to `books`, with the borrower, the date lent and the date returned. A change to a
+  table that already has data (a new column on `books`, for example) comes as a migration, in `application/migrations/`.
 - **Capabilities**: lend a book, return it, list the loans; lending a book that is already on loan is refused.
 - **Who may do what**: members lend and return; visitors only see that a book is on loan.
 

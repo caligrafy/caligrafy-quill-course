@@ -18,7 +18,7 @@ your connection. Later starts take seconds.
 the framework into a new folder, and that folder becomes your project. Your code goes in `application/` and
 `public/`; the framework stays in `framework/`.
 
-**A release.** `--branch v2.18.1` gets exactly the version 2.18.1 of the framework, the one this course was written
+**A release.** `--branch v2.18.2` gets exactly the version 2.18.2 of the framework, the one this course was written
 and checked with, even after newer versions come out.
 
 **Caligrafer.** The command line tool of Caligrafy. It has two doors:
@@ -35,7 +35,8 @@ never need PHP on your computer.
 1. creates `application/` (your code) and `.env`, and generates your secret keys;
 2. installs the PHP libraries (with **Composer**, the PHP package tool, in Docker) into `vendor/`;
 3. starts the three containers (`dev-box`, `mysql`, `phpmyadmin`);
-4. creates the database `caligrafy` and the framework tables (tokens for AI agents, the audit log);
+4. creates the database `caligrafy` and the framework tables (tokens for AI agents, the audit log, jobs, the cache,
+   migrations);
 5. adds the routes `/capabilities` (for JavaScript) and `/mcp` (for AI agents);
 6. with `--example`, adds a small **Tasks** feature that you use in lesson 02.
 
@@ -57,15 +58,15 @@ Choose the folder where you keep your projects (here `~/code`) and clone the rel
 ```bash
 mkdir -p ~/code
 cd ~/code
-git clone --branch v2.18.1 https://github.com/caligrafy/caligrafy-quill.git bookshelf
+git clone --branch v2.18.2 https://github.com/caligrafy/caligrafy-quill.git bookshelf
 cd bookshelf
 ```
-Expected: `Cloning into 'bookshelf'...`, then a line `warning: refs/tags/v2.18.1 ... is not a commit!` (with the id
+Expected: `Cloning into 'bookshelf'...`, then a line `warning: refs/tags/v2.18.2 ... is not a commit!` (with the id
 of the tag in place of `...`) and a note that you are in `'detached HEAD' state`. Both are **harmless**: a release tag
 points to a fixed version, not to a branch.
 
 > **Already have PHP, Composer and MAMP, XAMPP or LAMP?** You can start without Git or Docker: in your server's web
-> folder, `composer create-project caligrafy/caligrafy-quill:2.18.1 bookshelf`, then `cd bookshelf` and
+> folder, `composer create-project caligrafy/caligrafy-quill:2.18.2 bookshelf`, then `cd bookshelf` and
 > `.bin/caligrafer quickstart --example --local`. It asks for your MySQL settings and prints the address of the project
 > (see [Quickstart with Composer](https://github.com/caligrafy/caligrafy-quill/wiki/Quickstart#composer)). The course
 > is written for the Docker server: on your own server, type `php caligrafer.php ...` where a lesson says
@@ -93,8 +94,8 @@ Caligrafy quickstart (Docker server)
   OK    Project: application/ and .env created, keys generated
   OK    .env: the database of the Docker server (caligrafy)
   OK    Database: caligrafy ready on mysql
-  OK    Framework tables: personal access tokens and the audit log
-  OK    Routes: /capabilities (JS client) and /mcp (AI agents)
+  OK    Framework tables: tokens, audit log, job runs, jobs, cache, migrations
+  OK    Routes: /capabilities (JS client), /mcp (AI agents), /notify (notification emails)
   OK    Example: 9 file(s) added (application/services/Tasks, models/Tasks, views/Tasks, public/js/tasks.js)
   OK    Example table: tasks
   OK    Example client: public/js/capabilities.js generated
@@ -147,7 +148,7 @@ Expected: `{"data":[]}` (or your tasks, if you left some on the page).
 ```bash
 docker compose exec dev-box php caligrafer.php doctor
 ```
-Expected: the first line `Caligrafy doctor (read-only): Caligrafy Quill 2.18.1`, then one line per check, and the
+Expected: the first line `Caligrafy doctor (read-only): Caligrafy Quill 2.18.2`, then one line per check, and the
 last line:
 ```
  14 OK, 0 WARN, 0 FAIL, 6 SKIP
@@ -171,11 +172,12 @@ Open the `bookshelf` folder in your editor (in VS Code: *File > Open Folder*).
 | Path | What it is | Do you edit it? |
 |---|---|---|
 | `application/config/routing/web.php` | the **routes**: which address shows which page, which capability answers which API call | yes |
-| `application/services/` | your **capabilities** (Tasks for now; Bookshelf from lesson 04) | yes |
+| `application/services/` | your **capabilities** (Tasks for now; Bookshelf from lesson 04), next to the framework's `Users` | yes |
 | `application/models/` | your **models** (one PHP class per table) and their SQL scripts | yes |
 | `application/views/` | your web pages, written in **Pug** (lesson 06) | yes |
 | `application/controllers/` | the logic of a page that has its own (a form that saves, lesson 06); most pages need none | yes |
 | `public/` | files served as they are: `css/`, `js/` (`capabilities.js`), and your client apps (lessons 09, 10) | yes |
+| `tests/` | your automated tests (lesson 12) | yes |
 | `framework/` | the framework itself | no |
 | `vendor/` | the PHP libraries installed by Composer | no |
 | `.env` | settings and secrets of this installation | rarely; never commit or share it |
@@ -194,7 +196,7 @@ git commit -m "Lesson 01: my Bookshelf project"
 git tag lesson-01
 ```
 Expected: `Initialized empty Git repository in .../bookshelf/.git/`, then `no .env and no vendor: good` (`.env` and
-`vendor/` are excluded by `.gitignore`), then the commit summary with `401 files changed`. Check the tag:
+`vendor/` are excluded by `.gitignore`), then the commit summary with several hundred files changed. Check the tag:
 ```bash
 git tag
 ```
@@ -222,8 +224,8 @@ Two ways, both reach the same project.
 
 **A. Let Claude create the project.** In the folder where you keep your projects (`~/code`), start `claude` and ask:
 ```
-Clone the Caligrafy Quill release v2.18.1 into a new folder named bookshelf:
-git clone --branch v2.18.1 https://github.com/caligrafy/caligrafy-quill.git bookshelf
+Clone the Caligrafy Quill release v2.18.2 into a new folder named bookshelf:
+git clone --branch v2.18.2 https://github.com/caligrafy/caligrafy-quill.git bookshelf
 Then, inside bookshelf, set it up with quickstart. It deletes the .git folder of the framework: ask me first,
 and once I agree, run .bin/caligrafer quickstart --example --yes. Then run docker compose exec dev-box php caligrafer.php doctor and show me
 the summary line. Do not print the contents of .env.

@@ -6,7 +6,7 @@ is a new experience of the same catalog, built with zero new server code: it cal
 `get_book` through the JS client.
 
 **Before you start:** lesson 08 is done (tag `lesson-08`), the containers run (`docker compose ps`), and
-`public/js/capabilities.js` has 7 capabilities (`grep -c "export const" public/js/capabilities.js` prints `7`).
+`public/js/capabilities.js` has 20 capabilities (`grep -c "export const" public/js/capabilities.js` prints `20`).
 
 **Time:** 40 minutes.
 

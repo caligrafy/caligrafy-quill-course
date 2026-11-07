@@ -112,7 +112,7 @@ Check that the framework found it:
 ```bash
 docker compose exec dev-box php caligrafer.php capabilities
 ```
-Expected: seven capabilities, among them ` search_books   public   read   Finds the books of the catalog whose title or summary ...`.
+Expected: 20 capabilities (your 7 and the framework's 13), among them ` search_books   public   read   Finds the books of the catalog whose title or summary ...`.
 
 ### Step 2 - Call it over HTTP
 
@@ -138,7 +138,7 @@ Rule from [Lesson 06](06-Web-Pages): run it after every change to a capability.
 ```bash
 docker compose exec dev-box php caligrafer.php client public/js/capabilities.js
 ```
-Expected: ` public/js/capabilities.js written: 7 capabilities, calls /capabilities (Route::capabilities('/capabilities') in web.php)`.
+Expected: ` public/js/capabilities.js written: 20 capabilities, calls /capabilities (Route::capabilities('/capabilities') in web.php)`.
 Check: `grep -n "searchBooks" public/js/capabilities.js` prints the line
 `export const searchBooks = (input = {}) => call('search_books', input)`.
 
@@ -152,9 +152,9 @@ Ask `/mcp` for its tools, exactly as an agent does:
 ```bash
 curl -s -X POST -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $TOKEN" -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' http://localhost:8080/mcp
 ```
-Expected: one long line of JSON with 7 tools: `create_book`, `delete_book`, `get_book`, `list_authors`,
-`list_books`, `search_books`, `update_book`. Find in it:
-- the four read tools have `"readOnlyHint":true`;
+Expected: one long line of JSON with 12 tools: your 7, `create_book`, `delete_book`, `get_book`, `list_authors`,
+`list_books`, `search_books`, `update_book`, and the 5 user tools of the framework (lesson 02). Find in it:
+- your four read tools have `"readOnlyHint":true`;
 - `delete_book` has `"destructiveHint":true`; `create_book` and `update_book` have both hints `false`;
 - every tool has `"openWorldHint":false`;
 - `create_book` has the properties `title`, `published_year`, `summary`, `author_id`, and `"required"` lists
@@ -258,7 +258,7 @@ fill the file, run `capabilities` and `client`, and test with curl.
 - [ ] `handle()` only returns data: no `echo`, no `view()`, no `redirect()`, and it reads only `$input['query']`.
 - [ ] `web.php` did not change (`git diff application/config/routing/web.php` prints nothing).
 - [ ] The three curl calls of step 2 give 1 book, `{"data":[]}` and 422.
-- [ ] `public/js/capabilities.js` has `searchBooks` (7 capabilities).
+- [ ] `public/js/capabilities.js` has `searchBooks` (20 capabilities).
 - [ ] No token was created or written in a file.
 
 **If Claude's result differs:** if Claude adds a route such as `Route::capability('GET', '/api/books/search', ...)`,

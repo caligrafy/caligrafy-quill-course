@@ -45,6 +45,8 @@ Show me where each part of Bookshelf lives, in one short table.
 | The capabilities, one file each | `application/services/<Folder>/` |
 | The addresses: pages, REST, MCP | `application/config/routing/web.php` |
 | The page | `application/views/<Folder>/index.pug` and `public/js/` |
+| The tests | `tests/<Folder>Test.php` |
+| The later changes to the tables | `application/migrations/` |
 
 Open one capability, for example the one that creates a book. Find its **description** (what an AI agent reads), its
 **rules** (`$rules`: what a valid input is) and its **scope** (who may call it). Ask Claude to explain any line you do
@@ -69,6 +71,7 @@ to fix what they find, then to check every experience again.
 - [ ] An invalid input gives the same message on the page and over REST.
 - [ ] You opened one capability and understood its description, rules and scope.
 - [ ] `doctor` and the reviewer found nothing left to fix.
+- [ ] `php caligrafer.php test` passes.
 
 When every box is ticked, you approve what Claude built, not just what it planned.
 

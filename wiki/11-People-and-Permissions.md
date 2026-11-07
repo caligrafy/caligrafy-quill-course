@@ -258,7 +258,7 @@ The full files are in the checkpoint.
 docker compose exec dev-box php caligrafer.php client public/js/capabilities.js
 docker compose exec dev-box php caligrafer.php client public/bookshelf-spa/src/capabilities.js
 ```
-Expected: `... written: 7 capabilities ...` twice. In the comments, `create_book (writes, public)` became
+Expected: `... written: 20 capabilities ...` twice. In the comments, `create_book (writes, public)` became
 `create_book (writes, books:write)`.
 
 ### Step 6 - Try it as a visitor, then as a reader
@@ -302,8 +302,8 @@ docker compose exec dev-box php caligrafer.php token create "catalog reader" --s
 READER=cq_2_paste-the-token-it-printed
 curl -s -X POST -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $READER" -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' http://localhost:8080/mcp | grep -o '"name":"[a-z_]*"'
 ```
-Expected: `get_book`, `list_authors`, `list_books`, `search_books`: an agent with this token does not even see the
-write tools. A write with it:
+Expected: `get_book`, `list_authors`, `list_books`, `register_user`, `search_books` (the public ones; `register_user`
+is the framework's sign-up): an agent with this token does not even see the write tools. A write with it:
 ```bash
 curl -s -X POST -H "Accept: application/json" -H "Content-Type: application/json" -H "Authorization: Bearer $READER" -d '{"title": "x", "published_year": 2000, "author_id": 1}' -w " [%{http_code}]\n" http://localhost:8080/api/books
 ```
@@ -320,7 +320,7 @@ Expected: `[201]` and the new book. Keep its `id` in a variable (paste the id it
 BOOK_ID=12
 ```
 With the reader's tools/list command above and `$WRITER`, you see
-all 7 tools.
+your 7 tools, and `register_user`.
 
 A token that acts for reader1 (`--user 1`: 1 = reader1, the first account):
 ```bash
