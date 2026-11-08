@@ -725,7 +725,7 @@ http://localhost:5173 too (the cookie belongs to `localhost`, and the proxy forw
 > | What you see | Cause | Fix |
 > |---|---|---|
 > | An error that ends with `Table 'caligrafy.users' doesn't exist` | Step 1 was skipped | Run the users script |
-> | `Invalid credentials` on the sign-in page | A wrong username or password | Usernames are case sensitive; after 5 failures wait 15 minutes |
+> | *We couldn't sign you in with those details* on the sign-in page | A wrong username or password | Usernames are case sensitive; after 5 failures wait 15 minutes |
 > | Signed in, but no **Sign out** and no form | The view reads another variable than `$authorized` | Compare the views with step 4 |
 > | The form still shows to visitors | `if $authorized` is missing, or its indentation is wrong (Pug nests by indentation) | Compare with step 4 |
 > | No **Delete** for the administrator | You did not sign in again after the `UPDATE` | Sign out, sign in |
