@@ -6,13 +6,15 @@ const app = Vue.createApp({
       books: [],
       selected: null,   // the book of get_book, with its author
       error: '',
-      timer: null
+      timer: null,
+      loaded: false     // true once the first list has arrived
     }
   },
   async mounted () {
     // the generated JS client: one function per capability (php caligrafer.php client)
     this.api = await import(env.home + 'public/js/capabilities.js')
-    this.run(async () => { this.books = (await this.api.listBooks()).data })
+    await this.run(async () => { this.books = (await this.api.listBooks()).data })
+    this.loaded = true
   },
   methods: {
     // called on every key: wait until the typing pauses, then ask search_books

@@ -51,8 +51,8 @@
                             </div>
                         </li>
                     </ul>
-                    <p class="cq-empty-state" v-if="!books.length">No book matches "{{ query }}".</p>
-                    <p class="cq-auth-note">{{ books.length }} book(s)</p>
+                    <p class="cq-empty-state" v-if="loaded && !books.length && !error">{{ query ? 'No book matches "' + query + '".' : 'No book yet.' }}</p>
+                    <p class="cq-auth-note" v-if="loaded">{{ books.length }} book(s)</p>
                 </section>
 
                 <aside class="cq-split-detail" aria-live="polite">

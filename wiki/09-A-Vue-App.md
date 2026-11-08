@@ -293,8 +293,8 @@ Open http://localhost:8080/apps/finder: the template already uses the client and
                             </div>
                         </li>
                     </ul>
-                    <p class="cq-empty-state" v-if="!books.length">No book matches "{{ query }}".</p>
-                    <p class="cq-auth-note">{{ books.length }} book(s)</p>
+                    <p class="cq-empty-state" v-if="loaded && !books.length && !error">{{ query ? 'No book matches "' + query + '".' : 'No book yet.' }}</p>
+                    <p class="cq-auth-note" v-if="loaded">{{ books.length }} book(s)</p>
                 </section>
 
                 <aside class="cq-split-detail" aria-live="polite">
@@ -346,13 +346,15 @@ const app = Vue.createApp({
       books: [],
       selected: null,   // the book of get_book, with its author
       error: '',
-      timer: null
+      timer: null,
+      loaded: false     // true once the first list has arrived
     }
   },
   async mounted () {
     // the generated JS client: one function per capability (php caligrafer.php client)
     this.api = await import(env.home + 'public/js/capabilities.js')
-    this.run(async () => { this.books = (await this.api.listBooks()).data })
+    await this.run(async () => { this.books = (await this.api.listBooks()).data })
+    this.loaded = true
   },
   methods: {
     // called on every key: wait until the typing pauses, then ask search_books
@@ -385,6 +387,8 @@ app.mount('#app')
 What to notice:
 - `mounted()` loads the client, then shows the first page of `listBooks()`: the books are in `.data`.
   `searchBooks()` returns a plain list, so it needs no `.data`.
+- `loaded` turns true once the first list has arrived. Until then the page shows no count and no "no book" message:
+  nothing has been searched yet.
 - `search()` waits until the typing pauses for 250 ms before it calls the server: one call per pause, not per key.
   Under 2 characters it lists the books instead of calling `search_books`, whose rule asks for 2 or more.
 - `run()` wraps every call: a refusal is a `CapabilityError` with the messages of the capability's rules, the same that
@@ -468,7 +472,7 @@ under 2 characters). Each row shows the title and "<book.author.name>, <year>" a
 getBook({ id }) and shows, in a panel beside the list, the title, "by <author>, <year>", the summary (or "No summary
 yet.") and the author's bio. Show a CapabilityError's field messages (or its message) in p.cq-field-error. Use
 Caligrafy's look like the template: body.cq-site, nav.cq-nav, section.cq-hero.cq-hero--page "Find a book", then
-.cq-split with section.cq-split-main (the search .cq-field, ul.cq-rows, p.cq-empty-state "No book matches "<query>".", p.cq-auth-note "N book(s)")
+.cq-split with section.cq-split-main (the search .cq-field, ul.cq-rows, p.cq-empty-state "No book matches "<query>"." and p.cq-auth-note "N book(s)", both shown only once the first list has arrived)
 and aside.cq-split-detail. Keep the script lines of the template as they are: app.js with its ?v= and loadVue. In web.php replace the Route::get('/apps/{appName}', ...ClientController) line with
 Route::page('/apps/{appName}', 'Client/app', ['query' => ['app' => 'index']]); add no other route or server code.
 ```
