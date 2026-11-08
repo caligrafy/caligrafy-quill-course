@@ -25,7 +25,8 @@ Read the plan with the questions of [Lesson 3](Lesson-3-Approve-The-Plan):
 - **How the tables change**: the new `loans` table has no data yet, so it can come in its own script
   (`application/models/Loans/create_db.sql`) or in a migration. But Bookshelf is online and `books` holds data: a
   change to it (a new column, for example) comes as a **migration**, a numbered file in `application/migrations/`
-  that runs once, on your computer and at the next deploy. Claude never edits a `create_db.sql` that already ran.
+  that runs once, on your computer and at the next deploy. Claude never edits a `create_db.sql` that already ran
+  online. (Built locally and not shipped yet? It may add the table to the existing script, and the plan says so.)
 - **Capabilities**: lend a book, return it, list the loans; lending a book that is already on loan is refused (a
   *conflict*).
 - **Who may do what**: members lend and return; visitors only see that a book is on loan.

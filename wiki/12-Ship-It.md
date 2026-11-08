@@ -316,7 +316,7 @@ docker compose exec dev-box php caligrafer.php doctor
 ```
 Expected (the key endings, the plugin name and the versions are yours):
 ```text
-Caligrafy doctor (read-only): Caligrafy Quill 2.21.7
+Caligrafy doctor (read-only): Caligrafy Quill 2.21.8
 
  Project
   OK    PHP: 8.5.12

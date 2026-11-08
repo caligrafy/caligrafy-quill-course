@@ -8,7 +8,7 @@ use Caligrafy\Controller;
 // It holds no rule and reads no model: it calls a capability, with the visitor's rights, and only shapes the answer
 class FeedController extends Controller
 {
-    // GET /feed: the first page of the catalog, for feed readers
+    // GET /classic/feed: the first page of the catalog, for feed readers
     public function books()
     {
         $page = $this->call('list_books', array('page' => 1));   // the same capability as the pages, REST and agents

@@ -1034,14 +1034,14 @@ Expected (your times differ):
  2026-11-07 23:49:23  rest  token  3            delete_book                  ok
  2026-11-07 23:49:23  rest  token  4            delete_book                  forbidden  This needs the scope books:write and permission level 1
  2026-11-07 23:49:23  rest  token  3            create_book                  ok
- 2026-11-07 23:49:06  rest  token  2            delete_book                  forbidden  This needs the scope books:write and permission level 1
  2026-11-07 23:49:06  rest  token  2            create_book                  forbidden  This needs the scope books:write
- 2026-11-07 23:48:56  web   user   1            delete_book                  forbidden  This needs the scope books:write and permission level 1
+ 2026-11-07 23:49:05  cli   guest  -            create_book                  unauthenticated  Sign in or send a personal access token
+ 2026-11-07 23:49:04  rest  guest  -            create_book                  unauthenticated  Sign in or send a personal access token
  2026-11-07 23:48:56  web   user   1            create_book                  ok
  2026-11-07 23:48:48  web   guest  -            register_user                ok
 ```
-(The line `web user 1 delete_book forbidden` is there if you tried to delete as reader1 before step 8.) And the
-tokens:
+(If you tried something else on the way, such as a delete as reader1 before step 8, it has its own line: the last 8
+are then not these.) And the tokens:
 ```bash
 docker compose exec dev-box php caligrafer.php token list
 ```

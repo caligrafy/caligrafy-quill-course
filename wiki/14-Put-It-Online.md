@@ -75,7 +75,7 @@ lowercase letters, digits or single dashes, starting with a letter, and must be 
 docker compose exec dev-box php caligrafer.php version
 docker compose exec dev-box php caligrafer.php deploy
 ```
-Expected: `Caligrafy Quill 2.21.7`, then (the first time):
+Expected: `Caligrafy Quill 2.21.8`, then (the first time):
 ```text
  Caligrafy deploy
  caligrafy-schedule {"version":1,"jobs":[]}

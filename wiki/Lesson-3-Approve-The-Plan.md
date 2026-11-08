@@ -51,7 +51,8 @@ If something is wrong or missing, say it in plain words, for example:
 ```text
 Books also have a number of pages. Only administrators may delete an author.
 ```
-Claude shows the plan again. Repeat until it is what you want.
+Claude shows the plan again. Repeat until it is what you want. When you name administrators, the plan also says how the
+first one is chosen, for example the first account that signs up: check that it suits you.
 
 ## Approve it
 

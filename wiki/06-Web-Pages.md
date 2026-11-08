@@ -36,7 +36,8 @@ Indent with **spaces only**, 4 per level: a tab or one space too many breaks the
 **Master.** Every page starts with `extends ../default/master/site`: the master of Caligrafy's own pages. It holds the
 head, the stylesheets, the light **top bar** (the Caligrafy mark, *Sign in* and *Create account*; under a **Menu**
 button on phones) and the footer. The page fills **blocks**: `title` (the name in the browser tab) and `content`. The
-master gives each view `$home`, the address of the site (`http://localhost:8080/`): build every link from it.
+master gives each view `$home`, the address of the site (`http://localhost:8080/`): build every link from it. *Sign in*
+and *Create account* lead to a Page Not Found until lesson 11 adds those pages.
 
 The top bar stays put from page to page: `layout.css` reserves the room of the scrollbar on every page
 (`html { scrollbar-gutter: stable }`), so a short page and a long one do not shift it sideways. If you add links to it and
@@ -482,7 +483,7 @@ curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8080/books/99
 curl -s -D - -o /dev/null http://localhost:8080/books/1 | grep -i set-cookie
 curl -s "http://localhost:8080/books/3?id=5" | grep -o '<h1[^>]*>[^<]*'
 ```
-Expected: `200`, `404`, `Set-Cookie: PHPSESSID=...; path=/` (your id differs): the page prints a form with
+Expected: `200`, `404`, `Set-Cookie: PHPSESSID=...; path=/; HttpOnly` (your id differs): the page prints a form with
 `=csrf()`, so it starts a session. Then `<h1 class="cq-display">Kindred`: `{id}` of the address wins over `?id=5`.
 
 Last, the phone check. In the browser's developer tools (F12), turn on the device toolbar and choose a width of
@@ -542,11 +543,12 @@ Route::page('/books/{id}', 'Bookshelf/book', ['data' => ['book' => 'get_book', '
 Route::form('/books/{id}', 'update_book', ['method' => 'PUT', 'success' => '/books/{id}', 'flash' => 'Saved']);
 Route::form('/books/{id}', 'delete_book', ['method' => 'DELETE', 'success' => '/books', 'flash' => 'Book deleted']);
 Route::download('/authors.csv', 'list_authors', ['filename' => 'authors.csv']);
-Then the views in application/views/Bookshelf/ (extends ../default/master/site, Caligrafy's look, 4-space indents):
-books.pug (flash('success'), the add form with =csrf(), each field with old() and errors(), flash('error'); the rows of
+Then the views in application/views/Bookshelf/ (extends ../default/master/site, Caligrafy's look, 4-space indents, the
+top bar of the master as it is, no block brand or nav_links):
+books.pug (a title band with h1.cq-display "Bookshelf", flash('success'), the add form with =csrf(), each field with old() and errors(), flash('error'); the rows of
 $books['data'] with the author's name linking to ?author_id=; "Page x of y, n books" with Previous/Next that keep
 $author_id, never $_GET; the Author list starting on old('author_id', $author_id); links to all books and authors.csv), book.pug (the book, an edit form with =csrf() and =methodField('PUT'), a delete form with
-=methodField('DELETE') and a confirm), notfound.pug ($message and an All books button).
+=methodField('DELETE') and onsubmit="return confirm('Delete this book? This cannot be undone.')"), notfound.pug ($message and an All books button).
 ```
 
 **Check** before you accept:

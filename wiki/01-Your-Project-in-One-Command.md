@@ -1,6 +1,6 @@
 # Lesson 01 - Your project in one command
 
-**In this lesson** you create the Bookshelf project from the release Caligrafy Quill 2.21.7 with one command,
+**In this lesson** you create the Bookshelf project from the release Caligrafy Quill 2.21.8 with one command,
 `quickstart`, which starts the Docker dev server, sets up the database and adds a ready example feature (Tasks). You
 open it in the browser, check everything with `doctor`, take a tour of the folders and make the project your own git
 repository.
@@ -19,7 +19,7 @@ your connection. Later starts take seconds.
 framework into a new folder, and that folder becomes your project. Your code goes in `application/` and `public/`; the
 framework stays in `framework/`.
 
-**A release.** `--branch v2.21.7` gets exactly the version 2.21.7 of the framework, the one this course was written and
+**A release.** `--branch v2.21.8` gets exactly the version 2.21.8 of the framework, the one this course was written and
 run with, even after newer versions come out.
 
 **Caligrafer.** The command line tool of Caligrafy. It has two doors:
@@ -61,13 +61,13 @@ Choose the folder where you keep your projects (here `~/code`) and clone the rel
 ```bash
 mkdir -p ~/code
 cd ~/code
-git clone --branch v2.21.7 https://github.com/caligrafy/caligrafy-quill.git bookshelf
+git clone --branch v2.21.8 https://github.com/caligrafy/caligrafy-quill.git bookshelf
 cd bookshelf
 ```
 Expected: `Cloning into 'bookshelf'...`, then
 ```text
-warning: refs/tags/v2.21.7 621b47b29a1e09813610fe4138ab5831a8a9ebfd is not a commit!
-Note: switching to 'a1af1436a7926049ccc3887cf589665d1640f49d'.
+warning: refs/tags/v2.21.8 323e7d892a7ba017251156e87d737c33c54c8fdf is not a commit!
+Note: switching to '8b0d067e3599b9ce833cc5a74da9e9085cbe06db'.
 
 You are in 'detached HEAD' state. You can look around, make experimental
 ...
@@ -148,7 +148,7 @@ Expected: `{"data":[]}` (or your tasks, if you left some on the page).
 ```bash
 docker compose exec dev-box php caligrafer.php doctor
 ```
-Expected: the first line `Caligrafy doctor (read-only): Caligrafy Quill 2.21.7`, one line per check (among them
+Expected: the first line `Caligrafy doctor (read-only): Caligrafy Quill 2.21.8`, one line per check (among them
 `OK    PHP: 8.5.12` and `OK    Database: connected to mysql://mysql:3306/caligrafy (server 8.4.13)`; your patch
 versions may differ), and the last line:
 ```text
@@ -205,7 +205,8 @@ git tag
 Expected: the commit summary ends with about `633 files changed`, and `git tag` prints `lesson-01`.
 
 > **Never run `php caligrafer.php initialize --yes` in this folder again:** it deletes `.git`, which now holds **your**
-> history. Running `quickstart` again is safe: the project is already initialized, so it does not touch `.git`.
+> history. Running `quickstart` again is safe: the project is already initialized, so it does not touch `.git`. Once
+> lesson 02 has removed the Tasks example, leave out `--example`: with it, the example comes back.
 
 ### Every day: start and stop
 
@@ -245,7 +246,7 @@ Claude cannot answer the `y/N` question of quickstart (it has no terminal to typ
 
 **Check** before you accept:
 - [ ] Claude **asked you** before running `quickstart` with `--yes`.
-- [ ] It showed the eight `OK` lines and `15 OK, 0 WARN, 0 FAIL, 6 SKIP`.
+- [ ] It showed the last line of `doctor`: `15 OK, 0 WARN, 0 FAIL, 6 SKIP`.
 - [ ] It never printed the contents of `.env` (keys, passwords).
 - [ ] Then make the git repository yourself (step 6).
 

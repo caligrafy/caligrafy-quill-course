@@ -28,7 +28,7 @@ block content
                             p.cq-field-error= errors('book_id')
                     .cq-field
                         label(for='borrower') * Borrower
-                        input#borrower.form-control(type='text', name='borrower', value=old('borrower'), maxlength='100')
+                        input#borrower.form-control(type='text', name='borrower', value=old('borrower'), maxlength='254')
                         if errors('borrower')
                             p.cq-field-error= errors('borrower')
                     .cq-field

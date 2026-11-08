@@ -382,7 +382,7 @@ block content
                             p.cq-field-error= errors('book_id')
                     .cq-field
                         label(for='borrower') * Borrower
-                        input#borrower.form-control(type='text', name='borrower', value=old('borrower'), maxlength='100')
+                        input#borrower.form-control(type='text', name='borrower', value=old('borrower'), maxlength='254')
                         if errors('borrower')
                             p.cq-field-error= errors('borrower')
                     .cq-field
@@ -668,7 +668,7 @@ OK   401 a JSON call without its token
 /caligrafy-quill:new-capability surprise_me books:read read-only
 Web-only: public: true, readOnly: true, webOnly: true. It calls $this->capability('list_books', [], $context), and
 returns Web::redirect to /books/<id> of one book at random, or Web::view('Bookshelf/notfound', ['message' => 'The shelf
-is empty.'], 404). In web.php: Route::action('/surprise', 'surprise_me').
+is empty.'], 404). In web.php: Route::action('/surprise', 'surprise_me'). No test file, no reviewer.
 ```
 then:
 ```text

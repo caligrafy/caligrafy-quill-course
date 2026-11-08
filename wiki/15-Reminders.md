@@ -349,7 +349,7 @@ block content
                             p.cq-field-error= errors('book_id')
                     .cq-field
                         label(for='borrower') * Borrower
-                        input#borrower.form-control(type='text', name='borrower', value=old('borrower'), maxlength='100')
+                        input#borrower.form-control(type='text', name='borrower', value=old('borrower'), maxlength='254')
                         if errors('borrower')
                             p.cq-field-error= errors('borrower')
                     .cq-field
@@ -520,7 +520,7 @@ string. Add a send_reminders capability (loans:write, level 1) that only Queue::
 job, a Route::form POST /loans/remind for it, and on Loans/index.pug, for administrators only, a "Turn on reminders on
 this device" button with public/js/notify.js (Notify.enable() on click) and a "Send the reminders now" form. Put
 remind_loans and queue_work in application/config/schedule.php. Run platform install and
-notify keys --subject mailto:you@example.com. Do not print .env.
+notify keys --subject mailto:you@example.com. Do not print .env. No test file, no reviewer.
 ```
 
 **Check** before you accept:

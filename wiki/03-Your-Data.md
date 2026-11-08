@@ -270,9 +270,14 @@ Write the Bookshelf data layer in application/models/Bookshelf/, following the C
    title VARCHAR(200) required, published_year SMALLINT UNSIGNED required, summary TEXT optional, author_id INT
    UNSIGNED required with the index idx_books_author_id and the constraint fk_books_author_id to authors(id), ON
    UPDATE CASCADE ON DELETE RESTRICT); both with created_at and modified_at filled by MySQL, InnoDB, utf8mb4. At the
-   end, INSERT IGNORE sample rows with fixed ids: authors 1 Ursula K. Le Guin, 2 Octavia E. Butler, 3 Italo Calvino;
-   books 1 A Wizard of Earthsea (1968, author 1), 2 The Left Hand of Darkness (1969, 1), 3 Kindred (1979, 2),
-   4 Parable of the Sower (1993, 2), 5 Invisible Cities (1972, 3).
+   end, INSERT IGNORE sample rows with fixed ids, with these exact texts. Authors: 1 Ursula K. Le Guin, bio "American
+   author of science fiction and fantasy, known for the Earthsea books."; 2 Octavia E. Butler, bio "American science
+   fiction author, the first to receive a MacArthur fellowship."; 3 Italo Calvino, bio "Italian writer of playful,
+   inventive novels and short stories.". Books: 1 A Wizard of Earthsea (1968, author 1) "A gifted boy learns magic and
+   must face the shadow he set loose."; 2 The Left Hand of Darkness (1969, 1) "An envoy visits a planet whose people
+   have no fixed sex."; 3 Kindred (1979, 2) "A young woman is pulled back in time to a plantation in Maryland.";
+   4 Parable of the Sower (1993, 2) "In a collapsing California, a teenager starts a new belief system.";
+   5 Invisible Cities (1972, 3) "Marco Polo describes imaginary cities to the emperor Kublai Khan".
 2. Author.php and Book.php: global classes (no namespace) extending Caligrafy\Model, one public property per column,
    no other method.
 Then run create_db.sql with /caligrafy-quill:db and list the tables.

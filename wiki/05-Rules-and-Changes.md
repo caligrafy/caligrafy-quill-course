@@ -479,11 +479,13 @@ In application/services/Bookshelf/CreateBook.php, public: true with the comment 
 Rules: title required|max_len,200; published_year required|integer|min_numeric,1450|max_numeric,current_year; summary
 max_len,2000; isbn alpha_numeric_dash|max_len,20|unique,books.isbn; author_id required|integer|exists,authors.id.
 Trim title, summary and isbn. An empty isbn is stored as NULL. Insert with Book::insert($input) and return
-Book::with('author')->find($id). No routes.
+Book::with('author')->find($id). No routes, no tests, no reviewer.
 ```
-Then the same for `update_book` (only `id` required, `unique,books.isbn,id,id`, empty title, year or author refused,
-only the given inputs changed with `Book::where('id', ...)->update(...)`) and `delete_book` (`destructive: true`,
-`Book::where('id', ...)->delete()`, 404 when it deleted nothing).
+Then the same for `update_book` (only `id` required, `unique,books.isbn,id,id`, empty title, year or author refused
+with the message `The Title field is required` (`Published Year`, `Author Id`), only the given inputs changed with
+`Book::where('id', ...)->update(...)`) and `delete_book` (`destructive: true`, `Book::where('id', ...)->delete()`, returns
+`['deleted' => (int) $input['id']]`, 404 `There is no book #<id>` when it deleted nothing), each ending with "No routes, no tests, no
+reviewer."
 
 **Check** before you accept:
 - [ ] The migration file has the course's name and was not edited after it ran; `create_db.sql` is unchanged.

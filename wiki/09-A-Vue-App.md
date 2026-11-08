@@ -438,7 +438,8 @@ The one line of `web.php` is the only change in `application/`.
 > | Changes to `main.js` do not show | The browser kept the old file: the version only changes with `app.js` and at each deploy | Reload with <kbd>Shift</kbd> pressed, or tick *Disable cache* in the Network tab |
 > | After a deploy, some visitors still run the old `main.js` | The `app.js` line of `index.php` has no `?v=` | Compare with step 3 |
 > | `This client app does not exist. ...` on `/apps/finder` | The folder `public/finder` is missing, or `?app=` names a file that is not in it | Run step 2; open the address without `?app=` |
-> | `The project could not be created` | The folder exists, or the name is reserved (`app`, `bot`, `css`, `js`, `ml`...) | Delete the folder first, or choose another name |
+> | `The project could not be created` | The name is reserved (`app`, `bot`, `css`, `js`, `ml`...) | Choose another name |
+> | `public/finder already exists: nothing was created` | You ran `app finder` a second time | Nothing to do: your files are untouched. To start over, delete `public/finder` first |
 
 ---
 
@@ -467,7 +468,7 @@ under 2 characters). Each row shows the title and "<book.author.name>, <year>" a
 getBook({ id }) and shows, in a panel beside the list, the title, "by <author>, <year>", the summary (or "No summary
 yet.") and the author's bio. Show a CapabilityError's field messages (or its message) in p.cq-field-error. Use
 Caligrafy's look like the template: body.cq-site, nav.cq-nav, section.cq-hero.cq-hero--page "Find a book", then
-.cq-split with section.cq-split-main (the search .cq-field, ul.cq-rows, p.cq-empty-state, p.cq-auth-note "N book(s)")
+.cq-split with section.cq-split-main (the search .cq-field, ul.cq-rows, p.cq-empty-state "No book matches "<query>".", p.cq-auth-note "N book(s)")
 and aside.cq-split-detail. Keep the script lines of the template as they are: app.js with its ?v= and loadVue. In web.php replace the Route::get('/apps/{appName}', ...ClientController) line with
 Route::page('/apps/{appName}', 'Client/app', ['query' => ['app' => 'index']]); add no other route or server code.
 ```

@@ -27,9 +27,9 @@ Claude answers with a **plan**, a few short tables. It writes nothing before you
 | Part | What it says |
 |---|---|
 | Name | `quotes-<you>`: 3 to 30 lowercase letters, digits and dashes. Your app's address will be `https://quotes-<you>.caligrafy.com` |
-| Tables | what the app remembers: a `quotes` table with `text`, `author`, `tag` |
-| Capabilities | what the app can do: `list_quotes`, `get_quote`, `create_quote`, `update_quote`, `delete_quote`, each with what it does, whether it only reads or deletes, and its scope (`quotes:read`, `quotes:write`) |
-| Who may do what | anyone reads, people who signed up add and change |
+| Tables | what the app remembers: a `quotes` table with the quote, `author`, `tag` (the names can differ a little) |
+| Capabilities | what the app can do: `list_quotes`, `get_quote`, `create_quote`, `update_quote`, `delete_quote`, each with what it does, whether it only reads or deletes, and its scope (`quotes:read`, `quotes:write`). Claude adds `create_my_token`, for the AI agents card, and sometimes one more read such as `list_tags` |
+| Who may do what | anyone reads, people who signed up add and change. It may add that each person changes only their own quotes: say so if you want it otherwise |
 | Pages | `/quotes`: a form, the list with its actions, and a message when the list is empty; `/` opens it |
 | Sample data | 3 to 6 quotes, so the app is not empty, online too |
 

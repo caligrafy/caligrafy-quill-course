@@ -38,8 +38,11 @@ start a new `claude` session, and ask:
 ```text
 Which books do we have, and who wrote them?
 ```
-Claude answers from your app, through the same capabilities (MCP, the protocol AI agents use to call tools). Ask it to
-add a book without a title: it gets the same message the page showed.
+Claude answers from your app, through the same capabilities (MCP, the protocol AI agents use to call tools). Then ask:
+```text
+Add a book with no title, on purpose: call the tool and show me the refusal it gives.
+```
+It gets the same message the page showed. (Without "on purpose", Claude may decline before calling the tool.)
 
 ---
 

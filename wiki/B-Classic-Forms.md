@@ -332,6 +332,8 @@ name required|max_len,150 and bio max_len,2000 with $this->validator, shows the 
 errors (status 422), else associate('Author', 'authors'), save() and redirect to /authors/<id>. Both send visitors
 to /login. Routes GET /authors/new (above /authors/{id}) and POST /authors.
 ```
+The prompt adds to the `AuthorController` and the `/authors/{id}` page of the steps of Appendix A: do those first, or a good
+save redirects to an address that does not exist.
 
 **Check** before you accept:
 - [ ] `/authors/new` is declared above `/authors/{id}`; the form has `=csrf()`.

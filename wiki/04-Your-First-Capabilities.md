@@ -374,18 +374,21 @@ Run it once per capability, with a precise description:
 In application/services/Bookshelf/ListBooks.php, public: true. It lists the books sorted by title, 20 per page, each
 with its author, with the query builder: Book::with('author')->orderBy('title'), ->where('author_id', ...) when
 author_id is given, and ->paginate(20, $input['page'] ?? 1). Two optional integer inputs, author_id and page, each with a
-description. No SQL string, no loop over the authors, no routes.
+description. No SQL string, no loop over the authors, no routes, no tests, no reviewer.
 ```
 ```text
 /caligrafy-quill:new-capability get_book books:read read-only
 In application/services/Bookshelf/GetBook.php, public: true. Input id (required|integer). Returns
-Book::with('author')->find($input['id']), or throws ServiceError::notFound("There is no book #<id>"). No routes.
+Book::with('author')->find($input['id']), or throws ServiceError::notFound("There is no book #<id>"). No routes, no
+tests, no reviewer.
 ```
 ```text
 /caligrafy-quill:new-capability list_authors books:read read-only
 In application/services/Bookshelf/ListAuthors.php, public: true, no inputs: Author::query()->orderBy('name')->get().
-No routes.
+No routes, no tests, no reviewer.
 ```
+Without "no tests, no reviewer", the skill adds a test file and runs the reviewer for each capability. That is lesson 12's
+work, and its test rows would move the ids this course shows.
 
 **Check** before you accept:
 - [ ] The names, `scope: 'books:read'`, `readOnly: true` and `public: true` are as in the File blocks.

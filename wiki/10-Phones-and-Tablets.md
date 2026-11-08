@@ -564,7 +564,7 @@ Still in `public/bookshelf-spa`:
 ```bash
 npm run build
 ```
-Expected (the names after `index-` vary):
+Expected (the names after `index-` vary, and the sizes by a few bytes):
 ```text
 dist/index.html                   0.77 kB │ gzip:  0.42 kB
 dist/assets/index-V7JhSuPx.css   64.82 kB │ gzip: 12.25 kB
@@ -637,6 +637,7 @@ with book.author), a title band (title, "by <author>, <year>"), the summary, Del
 a full-screen section.cq-hero "Not found" with the error message when getBook fails. No cq-card. Delete
 src/components/pages/HomePage.vue. Do not change any server file.
 ```
+If your project runs on another port than 8080, put that port in the proxy line of the prompt.
 
 **Check** before you accept:
 - [ ] `git diff application` shows only the `'with'` line; no new route, service or controller.

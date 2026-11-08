@@ -18,7 +18,7 @@ be at the end, learn how the lessons work, and install every tool the course use
 
 Caligrafy Quill is a **PHP framework**: a set of PHP files that already solve what every web application needs
 (reading the address, talking to a database, showing pages, checking forms, signing people in), so that you only
-write what is specific to your application. The course uses the release **Caligrafy Quill 2.21.7**, and every output
+write what is specific to your application. The course uses the release **Caligrafy Quill 2.21.8**, and every output
 on these pages was produced with it.
 
 ### Build once, experience everywhere
@@ -132,7 +132,10 @@ git clone https://github.com/caligrafy/caligrafy-quill-course.git
   example (lesson 02, step 7). The `sql` command creates the tables and the sample books (lesson 03), `migrate` runs the
   changes of the later lessons that your database does not have yet (lesson 05 on). Both are safe to run again. From
   lesson 11 on, run the `sql` command for `application/models/Auth/create_db.sql` too, and from lesson 13 on for
-  `application/models/Loans/create_db.sql`.
+  `application/models/Loans/create_db.sql`. A checkpoint holds only the files you write, so to catch up to lesson 10 or
+  later without having made the SPA, first run `docker compose exec dev-box php caligrafer.php create bookshelf-spa` and
+  `npm install` in `public/bookshelf-spa` (lesson 10, step 4), then the `cp`; after it, delete
+  `public/bookshelf-spa/src/components/pages/HomePage.vue` and run `npm run build` in that folder.
 
 ### Conventions used on every page
 

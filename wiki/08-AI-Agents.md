@@ -156,7 +156,7 @@ curl -s -X POST -H "Content-Type: application/json" -H "Accept: application/json
 ```
 Expected:
 ```text
-{"jsonrpc":"2.0","id":1,"result":{"protocolVersion":"2025-06-18","capabilities":{"tools":{"listChanged":false}},"serverInfo":{"name":"caligrafy-app","title":"caligrafy-app","version":"2.21.7"},"instructions":"Tools are the capabilities of this application that your token allows. Tools marked destructive delete or overwrite data: confirm with the user first."}} [200]
+{"jsonrpc":"2.0","id":1,"result":{"protocolVersion":"2025-06-18","capabilities":{"tools":{"listChanged":false}},"serverInfo":{"name":"caligrafy-app","title":"caligrafy-app","version":"2.21.8"},"instructions":"Tools are the capabilities of this application that your token allows. Tools marked destructive delete or overwrite data: confirm with the user first."}} [200]
 ```
 The answer has the same `id` as the question: that is how an agent matches them. `serverInfo.name` is `APP_NAME`, or
 `caligrafy-app` when it is not set. Then the agent says it is ready; a notification gets no answer:
@@ -356,7 +356,7 @@ The agent asks your permission the first time it uses each tool, calls `list_aut
 - [ ] `application/services/Bookshelf/SearchBooks.php` is identical to the File block; no other file changed
       (`git status --short` shows only that file).
 - [ ] `search_books` answers 1 book for `magic`, `{"data":[]}` for `zzzz`, and 422 for `a`.
-- [ ] `initialize` answers `"version":"2.21.7"`; `tools/list` gives 12 tools with token #1 and 8 with token #2.
+- [ ] `initialize` answers `"version":"2.21.8"`; `tools/list` gives 12 tools with token #1 and 8 with token #2.
 - [ ] A refused `tools/call` answers `"isError":true` with the field message; an unknown tool answers `-32602`.
 - [ ] Without a token, `/mcp` answers 401.
 - [ ] Over stdio, `CALIGRAFY_TOKEN` of token #2 hides `list_users`.
@@ -372,7 +372,7 @@ services): public: true, readOnly: true. Input query: required|min_len,2|max_len
 'The words to look for, for example "time travel"'. It returns at most 20 books whose title or summary contains the
 query, sorted by title, each with its author: Book::with('author')->search(['title', 'summary'], $input['query'])
 ->orderBy('title')->limit(20)->get(). Description for agents: what it finds, two examples ("time travel", "magic"),
-what it returns. Do not add routes: /capabilities and /mcp exist. Test it over REST and over /mcp
+what it returns. Do not add routes: /capabilities and /mcp exist. No test file, no reviewer. Test it over REST and over /mcp
 (tools/list, tools/call) with curl, reading my token from the variable $TOKEN that I set: never ask me for it.
 ```
 
