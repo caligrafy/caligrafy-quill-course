@@ -6,30 +6,32 @@
 teaches you to do it well: describe what you want clearly, approve with confidence, and ship. You build **Bookshelf**,
 a catalog of books for a book club, then an app of your own.
 
-Nine short lessons. No code to write: Claude writes it, and you learn what to look for before you say OK.
+Nine short lessons, on Caligrafy Quill 2.19. No code to write: Claude writes it, and you learn what to look for, and
+where, before you say OK.
 
 ## What you need
 
 [Git](https://git-scm.com/), [Docker Desktop](https://www.docker.com/products/docker-desktop/),
 [Claude Code](https://claude.com/claude-code) and a [GitHub](https://github.com/) account.
-[Lesson 0](Lesson-0-Get-Ready) checks each one.
+[Lesson 0](Lesson-0-Get-Ready) checks each one. The framework's own short version of this course is the
+[Quickstart with Claude](https://github.com/caligrafy/caligrafy-quill/wiki/Quickstart-with-Claude).
 
 ## Lessons
 
 | # | Lesson | You learn |
 |---|---|---|
 | | **Start** | |
-| 0 | [Get ready](Lesson-0-Get-Ready) | the four tools, and three rules for working with Claude |
+| 0 | [Get ready](Lesson-0-Get-Ready) | the four tools, the plugin's commands, and three rules for working with Claude |
 | 1 | [Your first app in one conversation](Lesson-1-Your-First-App) | the three steps once, quickly, on a tiny app |
 | | **Describe it** | |
 | 2 | [Describe it](Lesson-2-Describe-It) | what a good description says; starting from a proven prompt |
 | | **Approve it** | |
-| 3 | [Approve the plan](Lesson-3-Approve-The-Plan) | reading the plan: tables, capabilities, who may do what |
-| 4 | [Review what Claude built](Lesson-4-Review-It) | every experience, where the code lives, a review |
+| 3 | [Approve the plan](Lesson-3-Approve-The-Plan) | reading the plan: tables, capabilities, who may do what, pages |
+| 4 | [Review what Claude built](Lesson-4-Review-It) | every experience, each file Claude wrote and what to look for in it, a review |
 | | **Ship it** | |
 | 5 | [Ship it](Lesson-5-Ship-It) | online, with your own GitHub repository, and kept online |
-| 6 | [Change it, ship it again](Lesson-6-Change-It) | a new feature with the same three steps; another look |
-| 7 | [Sell it](Lesson-7-Sell-It) | your app as a proven prompt on the marketplace, and your 25% |
+| 6 | [Change it, ship it again](Lesson-6-Change-It) | a new feature with the same three steps, a migration; another look |
+| 7 | [Sell it](Lesson-7-Sell-It) | your app's prompt on the marketplace of caligrafy.com, and your 25% |
 | | **Your turn** | |
 | 8 | [Your own idea](Lesson-8-Your-Own-Idea) | your app, described, approved and shipped |
 
@@ -39,7 +41,7 @@ Every lesson ends with a **Check** list: go through it before you accept what Cl
 
 Everything Claude does is plain Caligrafy you can write yourself. The **By hand** track builds Bookshelf again, every
 file typed by you, so that you understand every line Claude writes. Take it after the main lessons, or whenever a
-lesson's **By hand** link makes you curious. It uses Caligrafy Quill 2.19.0, and needs a little HTML, CSS, JavaScript,
+lesson's **By hand** link makes you curious. It uses Caligrafy Quill 2.19.1, and needs a little HTML, CSS, JavaScript,
 PHP and SQL.
 
 **Start:** [00 Your tools](00-Introduction-and-Tools) · [01 Your project in one command](01-Your-Project-in-One-Command) · [02 Build once, seen three ways](02-Build-Once-Seen-Three-Ways)  

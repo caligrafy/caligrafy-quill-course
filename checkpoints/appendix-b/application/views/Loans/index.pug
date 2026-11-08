@@ -1,6 +1,8 @@
 extends ../default/master/site
 
-//- Loans: lend a book, see who has what, record returns (public/js/loans.js, the loan capabilities)
+//- Loans: Route::page gives it $loans (list_loans: the books that are out) and $books (list_books: a page of books).
+//- The lend form posts to Route::form('/loans', 'lend_book'), each Returned button to Route::form (return_book).
+//- Administrators get the reminders: on this device (notify.js), and now (send_reminders, in the queue)
 
 block title
     | Loans · Bookshelf
@@ -8,29 +10,87 @@ block title
 block content
     section.cq-hero.cq-hero--page
         h1.cq-display Loans
-        p.cq-lead Who borrowed which book. AI agents with a loans token see the same list.
+        p.cq-lead Who borrowed which book, and until when.
 
     section.cq-band.cq-band--tight
         .cq-inner.cq-inner--narrow
-            p#sign-in(hidden)
-                a.btn.btn-secondary(href="{$home}login") Sign in to manage loans
+            if flash('success')
+                p.cq-alert(role='status')= flash('success')
 
-            form#lend(method='POST', novalidate, hidden)
-                .cq-form-grid
+            form(method='POST', action="{$home}loans", novalidate)
+                =csrf()
+                .cq-form-grid.cq-form-grid--2
                     .cq-field
-                        label(for='loan-book') * Book
-                        select#loan-book.form-select(name='book_id')
+                        label(for='book_id') * Book
+                        select#book_id.form-select(name='book_id')
+                            each $b in $books['data']
+                                option(value=$b['id'], selected=$b['id'] == old('book_id'))= $b['title']
+                        if errors('book_id')
+                            p.cq-field-error= errors('book_id')
                     .cq-field
-                        label(for='loan-borrower') * Borrower
-                        input#loan-borrower.form-control(type='text', name='borrower', maxlength='100', autocomplete='off')
+                        label(for='borrower') * Borrower
+                        input#borrower.form-control(type='text', name='borrower', value=old('borrower'), maxlength='100')
+                        if errors('borrower')
+                            p.cq-field-error= errors('borrower')
                     .cq-field
-                        label(for='loan-days') Days
-                        input#loan-days.form-control(type='number', name='days', placeholder='14')
+                        label(for='days') Days
+                        input#days.form-control(type='number', name='days', value=old('days'), placeholder='14')
+                        if errors('days')
+                            p.cq-field-error= errors('days')
                 button.btn.btn-primary(type='submit') Lend
+            if flash('error')
+                p.cq-field-error(role='alert')= flash('error')
 
-            p#error.cq-field-error(role='alert')
-            ul#loans.cq-rows
-            p#empty.cq-empty-state(hidden) Every book is on the shelf.
+    section.cq-band.cq-band--tight
+        .cq-inner.cq-inner--narrow
+            h2.cq-heading Out now
+            if count($loans) == 0
+                p.cq-empty-state Every book is on the shelf.
+            else
+                ul.cq-rows
+                    each $loan in $loans
+                        li.cq-row
+                            .cq-row-main
+                                p.cq-row-title
+                                    a(href="{$home}books/{$loan['book_id']}")= $loan['book']['title']
+                                p.cq-row-meta
+                                    | #{$loan['borrower']}, due #{$loan['due_on']}
+                                    if $loan['overdue']
+                                        strong  · late
+                            .cq-row-actions
+                                form(method='POST', action="{$home}loans/{$loan['book_id']}/return")
+                                    =csrf()
+                                    button.btn.btn-secondary(type='submit') Returned
+            p.cq-auth-note
+                a(href="{$home}books") All books
+
+    //- remind_loans and send_reminders have level 1: only administrators see their buttons
+    if $user['permissions'] >= 1
+        section.cq-band.cq-band--tight
+            .cq-inner.cq-inner--narrow
+                h2.cq-heading Reminders
+                p Every morning at 8, the administrators hear about the books due today and the late ones.
+                p.cq-auth-note
+                    button#reminders-on.btn.btn-secondary(type='button') Turn on reminders on this device
+                p#reminders-status.cq-auth-note(role='status')
+                form(method='POST', action="{$home}loans/remind")
+                    =csrf()
+                    button.btn.btn-secondary(type='submit') Send the reminders now
 
 block additional_scripts
-    script(type='module', src="{$home}public/js/loans.js")
+    if $user['permissions'] >= 1
+        script(src="{$home}public/js/notify.js")
+        script.
+            // web push on this device: the browser asks its permission, only after a click
+            (function () {
+                var button = document.getElementById('reminders-on'), status = document.getElementById('reminders-status');
+                var say = { on: 'Reminders are on, on this device.', denied: 'Notifications are blocked in the settings of this browser.',
+                    'install-needed': 'On iPhone and iPad, add Bookshelf to the Home Screen first.', unsupported: 'This browser has no notifications.' };
+                Notify.status().then(function (now) { if (now === 'on') { button.hidden = true; status.textContent = say.on; } });
+                button.addEventListener('click', function () {
+                    Notify.enable().then(function (now) {
+                        button.hidden = now === 'on';
+                        status.textContent = say[now] || '';
+                    }).catch(function (e) { status.textContent = e.message; });
+                });
+            })();

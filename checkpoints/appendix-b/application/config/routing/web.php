@@ -23,11 +23,11 @@ try {
     Auth::authentication('User', 'users');
     
     // ROUTE DEFINITION: get, post, put and delete
-    Route::page('/', 'Bookshelf/books', ['with' => ['install' => true]]);
+    Route::redirect('/', '/books');   // the home of Bookshelf is its catalog
     Route::get('/helloworld', function() { echo "Hello World"; });
 	
-    // SIGN IN, SIGN OUT, REGISTER: /login, /logout, /register and /notAuthorized; after signing in, the catalog
-    Route::auth(['home' => '/books']);
+    // SIGN IN, SIGN OUT, SIGN UP: /login, /logout, /register and /notAuthorized; after signing in or up, the catalog
+    Route::auth(['home' => '/books', 'signInAfterRegister' => true]);
 
     // User Administration Routes - Uncomment only if AUTHENTICATION activated above
 	// Route::get('/admin', 'Caligrafy\\Controllers\\AdminController');
@@ -69,10 +69,14 @@ try {
     Route::mcp('/mcp');                     // the capabilities as tools for AI agents (personal access tokens)
     Route::notifications();                 // the pages notification emails link to (confirm, unsubscribe)
 
-    // BOOKSHELF PAGES: the catalog (public/js/books.js), the page of one book (data: get_book and list_authors) and its form
-    Route::page('/books', 'Bookshelf/books', ['with' => ['install' => true]]);
-    Route::page('/books/{id}', 'Bookshelf/book', ['data' => ['found' => 'get_book', 'authors' => ['list_authors', []]], 'notFound' => 'Bookshelf/notfound']);
-    Route::form('/books/{id}', 'update_book', ['method' => 'PUT', 'success' => '/books/{id}', 'flash' => 'Saved']);   // the edit form: no controller
+    // BOOKSHELF PAGES: rendered on the server with the data of the capabilities; each form calls one capability
+    Route::page('/books', 'Bookshelf/books', ['data' => ['books' => 'list_books', 'authors' => 'list_authors'], 'with' => ['install' => true]]);   // install: offer to add it to the home screen
+    Route::form('/books', 'create_book', ['success' => '/books/{id}', 'flash' => 'Book added']);
+    Route::page('/books/{id}', 'Bookshelf/book', ['data' => ['book' => 'get_book', 'authors' => 'list_authors'], 'notFound' => 'Bookshelf/notfound']);
+    Route::form('/books/{id}', 'update_book', ['method' => 'PUT', 'success' => '/books/{id}', 'flash' => 'Saved']);
+    Route::form('/books/{id}', 'delete_book', ['method' => 'DELETE', 'success' => '/books', 'flash' => 'Book deleted']);
+    Route::download('/authors.csv', 'list_authors', ['filename' => 'authors.csv']);   // the same capability, as a file
+    Route::page('/people', 'Bookshelf/people', ['level' => 1, 'data' => ['people' => 'list_users']]);   // administrators only
 
     // BOOKSHELF API: the same capabilities, for other applications (JSON)
     Route::capability('GET', '/api/books', 'list_books');
@@ -81,10 +85,12 @@ try {
     Route::capability('PUT', '/api/books/{id}', 'update_book');
     Route::capability('DELETE', '/api/books/{id}', 'delete_book');
     Route::capability('GET', '/api/authors', 'list_authors');
-    Route::download('/authors.csv', 'list_authors');   // the same capability, as a file for a spreadsheet
 
-    // LOANS: one more feature, every experience: the page, REST, the JS client and AI agents
-    Route::page('/loans', 'Loans/index');
+    // LOANS: one more feature, every experience: a page and its forms, REST, the JS clients and AI agents
+    Route::page('/loans', 'Loans/index', ['signedIn' => true, 'data' => ['loans' => 'list_loans', 'books' => 'list_books']]);
+    Route::form('/loans', 'lend_book', ['success' => '/loans', 'flash' => 'Lent to {borrower} until {due_on}']);
+    Route::form('/loans/{book_id}/return', 'return_book', ['success' => '/loans', 'flash' => 'Returned by {borrower}']);
+    Route::form('/loans/remind', 'send_reminders', ['success' => '/loans', 'flash' => 'The reminders are on their way (job {job})']);   // administrators
     Route::capability('GET', '/api/loans', 'list_loans');
     Route::capability('POST', '/api/loans', 'lend_book');
     Route::capability('POST', '/api/books/{book_id}/return', 'return_book');
@@ -97,9 +103,10 @@ try {
         $name = request()->fetch('name');        // the {name} part of the address
         echo 'Hello ' . sanitize($name) . '!';   // sanitize: never print what a visitor typed as is
     });
+    Route::get('/feed', 'Bookshelf\\FeedController@books');        // custom HTTP: a controller that calls a capability
     Route::get('/authors/new', 'Bookshelf\\AuthorController@createForm');   // before /authors/{id}, or {id} would take "new"
     Route::post('/authors', 'Bookshelf\\AuthorController@create');
-    Route::get('/authors/{id}', 'Bookshelf\\AuthorController@show');
+    Route::get('/authors/{id}', 'Bookshelf\\AuthorController@show');   // under the hood: the classic way
     Route::get('/v1/authors', 'Bookshelf\\AuthorController@index');
 
     // MUST NOT BE REMOVED - Routes need to be run after being defined 

@@ -17,7 +17,7 @@
           <li class="cq-row" v-for="book in books" :key="book.id">
             <div class="cq-row-main">
               <p class="cq-row-title"><router-link :to="{ name: 'book', params: { id: book.id } }">{{ book.title }}</router-link></p>
-              <p class="cq-row-meta">{{ book.published_year }}</p>
+              <p class="cq-row-meta">{{ book.author.name }}, {{ book.published_year }}</p>
             </div>
           </li>
         </ul>

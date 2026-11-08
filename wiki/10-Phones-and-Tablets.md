@@ -1,12 +1,14 @@
 # Lesson 10 - Phones and tablets
 
-**In this lesson** Bookshelf reaches phones and tablets in two ways: the web pages become an app you can install to
-the home screen, and you build **bookshelf-spa**, a Vue single page application made with Vite (a list, a form and a
-page per book). Both use the same capabilities, with zero new server code.
+**In this lesson** Bookshelf reaches phones and tablets in two ways. First the catalog becomes an app people can
+**install to the home screen**: a name in the web app manifest and one option on its `Route::page`. Then you build
+**bookshelf-spa**, a Vue single page application made with Vite (a list, a form and a screen per book) that calls the
+capabilities through its own generated client. Both use the design tokens and the page components of the Pug pages, so
+the three experiences look alike. No capability, controller or rule is written.
 
-**Before you start:** lesson 09 is done (tag `lesson-09`), the containers run (`docker compose ps`), and Node.js is
-installed on your computer: `node --version` prints `v20.19` or newer (or `v22.12` or newer on the 22 line). Chrome
-or Edge makes the install part easier to try.
+**Before you start:** lesson 09 is done (tag `lesson-09`), `docker compose ps` shows the 3 containers running, and
+Node.js is installed on your computer: `node --version` prints `v20.19` or newer (or `v22.12` or newer). Chrome or
+Edge makes the install part easier to try.
 
 **Time:** 60 to 75 minutes.
 
@@ -14,109 +16,240 @@ or Edge makes the install part easier to try.
 
 ## New concepts
 
-**Install to home screen.** A browser can install a web application: it then opens from its own icon, full screen,
-without the address bar, like an app from a store. The browser needs a **web app manifest**,
-`public/manifest.webmanifest`: a small JSON file with the name, the colors and the icons of the app. The Caligrafy
-layout already links it. Installing needs HTTPS, or `localhost` on your own computer.
+**Design tokens and page components.** Every experience of a Caligrafy app shares two stylesheets of `public/css/`:
+- `tokens.css`: the **design tokens**, CSS variables such as `--cq-color-ink`, `--cq-space-4` (24px) or
+  `--cq-touch-target` (44px). On a touch screen (`pointer: coarse`) buttons and fields are at least 44px high; installed
+  to the home screen (`display-mode: standalone`) the page keeps clear of the notch and the rounded corners.
+- `layout.css`: the **page components**, classes you already used: `cq-nav` (top bar), `cq-hero` (title band),
+  `cq-band`, `cq-rows`, `cq-form-grid`, `cq-field`, and `cq-split` (one column on phones, two from 768px up).
 
-**Single page application (SPA).** The browser loads one HTML page and one JavaScript program. After that, clicking a
-link does not ask the server for a new page: JavaScript swaps the screen and calls the capabilities for data. It feels
-like a native app on a phone or a tablet.
+The Pug layout links them, the finder of lesson 09 links them, and the SPA imports them: one look, everywhere.
+
+**Install to home screen.** A browser can install a web application: it opens from its own icon, full screen, without
+the address bar. The browser needs a **web app manifest**, `public/manifest.webmanifest`, a small JSON file with the
+name, colors and icons; the Caligrafy layout already links it. Installing needs HTTPS, or `localhost` on your own
+computer. A page offers the install when its view gets `install` set to true: the layout then adds an **Install**
+button on Chrome, Edge and Android (when the browser says the app can be installed), or a short hint on iPhone and iPad
+(Share, then Add to Home Screen).
+
+**`with`.** `Route::page` gives a view the data of capabilities (`data`) and also fixed values (`with`):
+`'with' => ['install' => true]` sets `$install` in the view.
+
+**Single page application (SPA).** The browser loads one HTML page and one JavaScript program. After that, a link does
+not ask the server for a new page: JavaScript changes the screen and calls the capabilities for the data. On a phone it
+feels like an app.
 
 | Word | What it is |
 |---|---|
 | Node.js, npm | JavaScript outside the browser, and its package installer. `npm install` downloads the libraries listed in `package.json` into `node_modules/` |
 | Vite | the tool that runs and builds the SPA. `npm run dev` serves it on http://localhost:5173 and reloads the browser when you save a file |
-| `.vue` file (single file component) | one piece of the screen in one file: `<template>` (the HTML with the Vue syntax of lesson 09) and `<script>` (its data and methods) |
-| router (Vue Router) | maps an address to a screen: `#/` shows `BooksPage`, `#/books/3` shows `BookPage` with `id` = `3`. `<router-link>` makes a link that changes the screen without reloading; `<router-view>` is where the current screen appears |
-| hash history | addresses written after a `#` (`index.html#/books/3`). The part after `#` never goes to the server, so the app works from any folder with no server setting |
-| proxy | in development the SPA runs on port 5173 and Caligrafy on 8080. Vite **forwards** every call to `/capabilities` to `http://localhost:8080`: the browser only talks to one site |
-| build | `npm run build` turns the app into a few plain files in `dist/` that Caligrafy's Apache serves. No Node.js is needed to use them |
+| `.vue` file | one piece of the screen in one file: `<template>` (the HTML, with the Vue syntax of lesson 09) and `<script>` (its data and methods) |
+| Vue Router | maps an address to a screen: `#/` shows `BooksPage`, `#/books/3` shows `BookPage` with `id` = `3`. `<router-link>` changes the screen without reloading; `<router-view>` is where the screen appears |
+| hash history | addresses after a `#` (`index.html#/books/3`). The part after `#` never goes to the server, so the app works from any folder with no server setting |
+| proxy | in development the SPA runs on port 5173 and Caligrafy on 8080. Vite **forwards** every call to `/capabilities` to `http://localhost:8080`: the browser talks to one site, with its cookies |
+| build | `npm run build` turns the app into a few plain files in `dist/` that Caligrafy serves. No Node.js is needed to use them |
 
-**Why the session still works.** The JS client calls `/capabilities/...` on the address of the page. With the proxy,
-the call leaves for 5173 and Vite passes it, with its cookies, to 8080. Cookies belong to the host name `localhost`,
-whatever the port, so in [Lesson 11](11-People-and-Permissions) a person signed in on 8080 is signed in in the SPA too.
-
-**Build once, in practice.** The SPA gets its own copy of the JS client, generated from the same capabilities:
-`php caligrafer.php client public/bookshelf-spa/src/capabilities.js`. Lists, search, add and delete all come from
-lessons 04, 05 and 08. The only server files you touch are a manifest and two route lines that turn on the install
-offer.
+**The SPA's own client.** In a Vite app a normal `import { listBooks } from '../../capabilities.js'` works, so the SPA
+gets its own copy of the client inside `src/`: `php caligrafer.php client public/bookshelf-spa/src/capabilities.js`.
+Like the finder's, it uses the session and the CSRF token, never a key.
 
 ---
 
-## Manual track
+## Steps
+
+Run every command from the `bookshelf` folder, unless a step says otherwise.
 
 ### Part 1 - Install the web app
 
 ### Step 1 - Name the app
 
-In `public/manifest.webmanifest`, replace the first three values (`Caligrafy`, `Caligrafy`,
-`Caligrafy Quill application`) with:
+Write the manifest. Only the first three values change from the file quickstart copied (`name` is shown when the app
+starts, `short_name` under its icon on a phone):
+
+**File `public/manifest.webmanifest`**:
+
 ```json
+{
     "name": "Bookshelf",
     "short_name": "Bookshelf",
     "description": "The books we love",
+    "id": "../",
+    "start_url": "../",
+    "scope": "../",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#ffffff",
+    "icons": [
+        { "src": "images/resources/icon-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+        { "src": "images/resources/icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+        { "src": "images/resources/icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+        { "src": "images/resources/apple-touch-icon-180x180.png", "sizes": "180x180", "type": "image/png", "purpose": "any" }
+    ]
+}
 ```
-`short_name` is the name under the icon on a phone. Leave the other lines as they are (`start_url` and `scope` point to
-the root of your application; the icons are Caligrafy's). The full file is in the checkpoint.
+
+`id`, `start_url` and `scope` are `../`: relative to the manifest, they are the root of the application, whatever its
+address. The icons are Caligrafy's; replace the files of `public/images/resources/` with your own when you have them.
 
 ### Step 2 - Offer the install on the catalog
 
-In `application/config/routing/web.php`, replace the route of `/`:
+In `application/config/routing/web.php`, the first line of the `// BOOKSHELF PAGES` block gets `'with'`. The file is
+then:
+
+**File `application/config/routing/web.php`** (`'with' => ['install' => true]` on the catalog):
+
 ```php
-    Route::page('/', 'Bookshelf/books', ['with' => ['install' => true]]);
+<?php
+/**
+ * web.php
+ * Web Routes are defined in this file
+ * @author Dory A.Azar
+ * @copyright 2019
+ * @version 1.0
+ *
+*/
+
+use Caligrafy\Auth;
+use Caligrafy\Route;
+use Caligrafy\Errors;
+use \Exception as Exception;
+
+try {
+    
+    // API ACCESS - add comments if you don't want to allow API access on routes
+    Auth::activateAPI();
+    
+    
+    // AUTHENTICATION - Remove comment if you have an authentication implemented
+    // Auth::authentication('User', 'users');
+    
+    // ROUTE DEFINITION: get, post, put and delete
+    Route::redirect('/', '/books');   // the home of Bookshelf is its catalog
+    Route::get('/helloworld', function() { echo "Hello World"; });
+	
+    // Auth Routes - Uncomment only if AUTHENTICATION activated above
+    // Route::get('/home', 'Caligrafy\\Controllers\\AuthController@home');
+    // Route::get('/login', 'Caligrafy\\Controllers\\AuthController');
+    // Route::get('/logout', 'Caligrafy\\Controllers\\AuthController@logout');
+	// Route::get('/notAuthorized', 'Caligrafy\\Controllers\\AuthController@notAuthorized');
+    // Route::get('/register', 'Caligrafy\\Controllers\\AuthController@registerForm');
+    // Route::post('/login', 'Caligrafy\\Controllers\\AuthController@login');
+    // Route::post('/register', 'Caligrafy\\Controllers\\AuthController@register');
+
+    // User Administration Routes - Uncomment only if AUTHENTICATION activated above
+	// Route::get('/admin', 'Caligrafy\\Controllers\\AdminController');
+	// Route::get('/users', 'Caligrafy\\Controllers\\AdminController');
+	// Route::get('/users/{id}/edit', 'Caligrafy\\Controllers\\AdminController@editUserForm');
+	// Route::put('/users/{id}/edit', 'Caligrafy\\Controllers\\AdminController@updateUser');
+	// Route::delete('/users/{id}/edit', 'Caligrafy\\Controllers\\AdminController@deleteUser');
+
+    // GPT AI controller
+    // Route::get('/ai', 'Caligrafy\\Controllers\\AIController');
+    // Route::post('/ai', 'Caligrafy\\Controllers\\AIController@query');
+
+    // ROUTING TO JAVASCRIPT APPS
+    // Make sure you create a JS app or a Vue app in Caligrafer first
+    Route::get('/apps/{appName}', 'Caligrafy\\Controllers\\ClientController'); // you can specify any path as long as it ends with appName
+
+    
+    // BOT PAGE ROUTES
+    Route::get('/bot/{appName}', 'Caligrafy\\Controllers\\ClientController');  // A botSkillId needs to be provided in the URL. For Example: ?botSkillId=62196ce3-0b22-4aea-b2f2-d39730c03797
+    
+    // BOT DATA ROUTES
+    // routes need to start with reserved path __bots__ 
+    Route::post('/__bots__/{appName}/communicate', 'Caligrafy\\Controllers\\WatsonController@communicate');
+    Route::post('/__bots__/{appName}/{appId}', 'Caligrafy\\Controllers\\WatsonController@connect');
+    Route::delete('/__bots__/{appName}', 'Caligrafy\\Controllers\\WatsonController@end');   
+
+    /* ML Routes
+     *
+     * If you don't specify an up, it will go to the face, body detector.
+     * Specify an app as a URI Parameter ?app=<name of app>
+     * 
+     * There are 3 possible apps: featureextractor, neuralnetwork and posedetector
+    */
+    Route::get('/ml/{appName}', 'Caligrafy\\Controllers\\ClientController'); 
+    
+
+    // BUILD ONCE: every capability, for the JS client and AI agents
+    Route::capabilities('/capabilities');   // the capabilities for the JS client of the Vue apps
+    Route::mcp('/mcp');                     // the capabilities as tools for AI agents (personal access tokens)
+    Route::notifications();                 // the pages notification emails link to (confirm, unsubscribe)
+
+    // BOOKSHELF PAGES: rendered on the server with the data of the capabilities; each form calls one capability
+    Route::page('/books', 'Bookshelf/books', ['data' => ['books' => 'list_books', 'authors' => 'list_authors'], 'with' => ['install' => true]]);   // install: offer to add it to the home screen
+    Route::form('/books', 'create_book', ['success' => '/books/{id}', 'flash' => 'Book added']);
+    Route::page('/books/{id}', 'Bookshelf/book', ['data' => ['book' => 'get_book', 'authors' => 'list_authors'], 'notFound' => 'Bookshelf/notfound']);
+    Route::form('/books/{id}', 'update_book', ['method' => 'PUT', 'success' => '/books/{id}', 'flash' => 'Saved']);
+    Route::form('/books/{id}', 'delete_book', ['method' => 'DELETE', 'success' => '/books', 'flash' => 'Book deleted']);
+    Route::download('/authors.csv', 'list_authors', ['filename' => 'authors.csv']);   // the same capability, as a file
+
+    // BOOKSHELF API: the same capabilities, for other applications (JSON)
+    Route::capability('GET', '/api/books', 'list_books');
+    Route::capability('GET', '/api/books/{id}', 'get_book');
+    Route::capability('POST', '/api/books', 'create_book');
+    Route::capability('PUT', '/api/books/{id}', 'update_book');
+    Route::capability('DELETE', '/api/books/{id}', 'delete_book');
+    Route::capability('GET', '/api/authors', 'list_authors');
+
+    // MUST NOT BE REMOVED - Routes need to be run after being defined 
+    Route::run(); 
+}
+catch (Exception $e) {
+    
+    // Error handling: HTTP status code (404, 401, 403, 500...) with the error text, or a JSON error for API calls
+    Errors::handle($e);
+}
 ```
-and the route of `/books` in the `// BOOKSHELF PAGES` block:
-```php
-    Route::page('/books', 'Bookshelf/books', ['with' => ['install' => true]]);   // install: offer to add it to the home screen
+
+Check that the catalog now carries the install module:
+```bash
+curl -s http://localhost:8080/books | grep -o 'id="caligrafy-install"'
+curl -s http://localhost:8080/books/3 | grep -c 'id="caligrafy-install"'
 ```
-`with` gives the view fixed values: `install` tells the layout to add its install module: an **Install** button on Chrome, Edge and Android (when the
-browser says the app can be installed), or a short hint on iPhone and iPad (Share, then Add to Home Screen). The full
-file is in the checkpoint.
+Expected: `id="caligrafy-install"`, then `0`: only the catalog offers the install. The module stays hidden until the
+browser says the app can be installed.
 
 ### Step 3 - Install it
 
-Open http://localhost:8080/books in Chrome or Edge on your computer. Install it with the Install button of the page,
-or with the install icon at the right of the address bar. Bookshelf opens in its own window, without the address bar,
-and its icon is with your other apps.
+Open http://localhost:8080/books in Chrome or Edge on your computer. Install it with the **Install** button at the
+bottom of the page, or with the install icon at the right of the address bar. Bookshelf opens in its own window,
+without the address bar, and its icon is with your other apps. **Not now** hides the button in this browser for good.
 
 A phone on your Wi-Fi cannot install it from your computer: it would open `http://<your computer's address>:8080`,
-which is neither HTTPS nor `localhost`. Try it on a phone once Bookshelf is deployed with HTTPS.
+which is neither HTTPS nor `localhost`. Try it on a phone once Bookshelf is online with HTTPS (lesson 14).
 
 ### Part 2 - The SPA
 
 ### Step 4 - Create the SPA
 
-From the `bookshelf` folder:
 ```bash
 docker compose exec dev-box php caligrafer.php create bookshelf-spa
 ```
-It copies the Vite template to `public/bookshelf-spa`. The container has no Node.js, so it cannot install the
-packages, and says so:
-```
+Expected:
+```text
  Project created in the public folder.
  Type cd public/bookshelf-spa to access it anytime
 
 
  VueJS project created, but its packages are NOT installed: npm is not available here (the Docker dev-box has no Node.js).
  Install them with Node.js 20.19+ or 22.12+ on your computer: cd public/bookshelf-spa && npm install
+
+ - To run the development server: cd public/bookshelf-spa && npm run dev
+ - To build it for production: npm run build (in the same folder)
 ```
-Install them with the Node.js of your computer:
+Install the packages with the Node.js of your computer:
 ```bash
 cd public/bookshelf-spa
 npm install
 cd ../..
 ```
-Expected: `added 274 packages` and `found 0 vulnerabilities` (the numbers can vary), and you are back in `bookshelf`.
-
-If npm reports `10 moderate severity vulnerabilities`, your Vite app was created with Caligrafy Quill 2.2.0 or older:
-they come from ESLint's `minimatch`, not from Vue, and the fix (an `overrides` block in `package.json`) is in
-[Setting up the Vue application](https://github.com/caligrafy/caligrafy-quill/wiki/9.8.1---Setting-up-the-Vue-application).
-**Never run `npm audit fix --force`**: it replaces ESLint 10 with ESLint 4.
+Expected: `added 274 packages, and audited 275 packages` and `found 0 vulnerabilities` (the numbers can vary), and you
+are back in `bookshelf`. Never run `npm audit fix --force`: it replaces ESLint 10 with an old major version.
 
 ### Step 5 - Set up Vite
 
-Every path from here is relative to `public/bookshelf-spa`.
+Every path of the File blocks of steps 5 and 6 is relative to `public/bookshelf-spa`.
 
 **File `vite.config.js`** (`base` for the build, `proxy` for development):
 
@@ -172,10 +305,10 @@ export default defineConfig({
 </html>
 ```
 
-Keep `src/main.js` of the template: it loads Caligrafy's CSS (`tokens.css`, then `layout.css` and `look.css`) and
-adds `cq-site` to the `<body>`, so the screens get the same look as the pages: top bar, title band, bands, rows. Keep
-`src/components/global/ShowNavigation.vue` too: it is the top bar, with the Caligrafy mark linked to the home screen.
-(`main.js` also prepares axios, Pinia and an API key: the course does not use them.)
+Keep the template's `src/main.js`: it imports Caligrafy's CSS (`tokens.css`, `layout.css`, `look.css`) and adds
+`cq-site` to the `<body>`, so the screens get the look of the pages. Keep `src/components/global/ShowNavigation.vue`
+too: it is the top bar. (`main.js` also prepares axios, Pinia and `apiHeaders()` for calling controller routes with
+the session; this SPA uses the generated client instead.)
 
 ### Step 6 - The screens
 
@@ -221,7 +354,7 @@ const router = createRouter({
 export default router
 ```
 
-**File `src/components/pages/BooksPage.vue`** (a title band, then the rows with search and the form side by side):
+**File `src/components/pages/BooksPage.vue`** (a title band, then the rows with search beside the form):
 
 ```html
 <!-- The catalog: the list filtered as you type and the form, side by side from tablets up (one column on phones) -->
@@ -243,7 +376,7 @@ export default router
           <li class="cq-row" v-for="book in books" :key="book.id">
             <div class="cq-row-main">
               <p class="cq-row-title"><router-link :to="{ name: 'book', params: { id: book.id } }">{{ book.title }}</router-link></p>
-              <p class="cq-row-meta">{{ book.published_year }}</p>
+              <p class="cq-row-meta">{{ book.author.name }}, {{ book.published_year }}</p>
             </div>
           </li>
         </ul>
@@ -314,19 +447,19 @@ export default {
 </script>
 ```
 
-**File `src/components/pages/BookPage.vue`** (one book in a title band, and Delete; a full-screen message when it is missing):
+**File `src/components/pages/BookPage.vue`** (one book and Delete; a full-screen message when it is missing):
 
 ```html
 <!-- One book (get_book), and a Delete button (delete_book) -->
 <template>
-  <main v-if="found">
+  <main v-if="book">
     <section class="cq-hero cq-hero--page">
-      <h1 class="cq-display">{{ found.book.title }}</h1>
-      <p class="cq-lead">by {{ found.author.name }}, {{ found.book.published_year }}</p>
+      <h1 class="cq-display">{{ book.title }}</h1>
+      <p class="cq-lead">by {{ book.author.name }}, {{ book.published_year }}</p>
     </section>
     <section class="cq-band cq-band--tight">
       <div class="cq-inner cq-inner--narrow">
-        <p>{{ found.book.summary || 'No summary yet.' }}</p>
+        <p>{{ book.summary || 'No summary yet.' }}</p>
         <div class="cq-buttons">
           <button class="btn btn-secondary" type="button" @click="remove">Delete</button>
         </div>
@@ -351,18 +484,18 @@ export default {
   name: 'BookPage',
   props: ['id'],
   data () {
-    return { found: null, error: '' }
+    return { book: null, error: '' }
   },
   async mounted () {
     try {
-      this.found = await getBook({ id: this.id })
+      this.book = await getBook({ id: this.id })   // the book, its author in book.author
     } catch (e) {
       this.error = e.message   // for example "There is no book #42"
     }
   },
   methods: {
     async remove () {
-      if (!confirm('Delete "' + this.found.book.title + '"?')) return
+      if (!confirm('Delete "' + this.book.title + '"?')) return
       await deleteBook({ id: this.id })
       this.$router.push({ name: 'home' })
     }
@@ -371,59 +504,57 @@ export default {
 </script>
 ```
 
-The screens use the classes of the Pug pages of lesson 06, in Vue templates: `section.cq-hero.cq-hero--page` for the
-title band, `section.cq-band` with a `.cq-inner.cq-inner--narrow` column, `ul.cq-rows`, `.cq-form-grid` of
-`.cq-field`, `p.cq-field-error`. The catalog puts the list and the form side by side with `.cq-split`, like the
-finder of lesson 09: `section.cq-split-main` for the search and the rows, `aside.cq-split-detail` for **Add a book**, a
-grey panel whose form takes one field a line. On a phone the form comes after the list.
-
-Delete the welcome screen of the template, which nothing uses any more:
+Delete the template's welcome screen, which nothing uses any more:
 ```bash
 rm public/bookshelf-spa/src/components/pages/HomePage.vue
 ```
 
 What to notice:
-- `import { listBooks, ... } from '../../capabilities.js'`: in a Vite app, a normal `import` works (no `import()`
-  trick as in lesson 09).
-- `(await listBooks()).data`: list_books returns a page (lesson 04), its books are in `data`.
+- `import { listBooks, ... } from '../../capabilities.js'`: in a Vite app the normal `import` works.
+- `(await listBooks()).data`: `list_books` returns a page; `getBook()` returns the book with `book.author`.
 - `props: true` in the router passes `id` from the address to `BookPage`.
 - `:key="$route.fullPath"` in `App.vue`: without it, going from `#/books/1` to `#/books/3` keeps showing book 1,
-  because Vue reuses the screen that is already there and `mounted()` does not run again.
+  because Vue reuses the screen and `mounted()` does not run again.
+- The classes are those of the Pug pages: `cq-hero`, `cq-split` with `cq-split-main` and `cq-split-detail`,
+  `cq-rows`, `cq-form-grid`, `cq-field-error`.
 
 ### Step 7 - Give the SPA its client
 
-From the `bookshelf` folder:
 ```bash
 docker compose exec dev-box php caligrafer.php client public/bookshelf-spa/src/capabilities.js
 ```
-Expected: ` public/bookshelf-spa/src/capabilities.js written: 20 capabilities, calls /capabilities (Route::capabilities('/capabilities') in web.php)`.
+Expected:
+```text
+ public/bookshelf-spa/src/capabilities.js written: 20 capabilities, calls /capabilities (Route::capabilities('/capabilities') in web.php)
+ import { createBook, CapabilityError } from './capabilities.js'
+```
 
 ### Step 8 - Run it in development
 
-Open a second terminal in the `bookshelf` folder (Vite keeps that terminal busy while it runs):
+Open a second terminal in the `bookshelf` folder (Vite keeps it busy while it runs):
 ```bash
 cd public/bookshelf-spa
 npm run dev
 ```
-Expected:
-```
-  VITE v8.3.5  ready in 895 ms
+Expected (the time varies):
+```text
+  VITE v8.3.5  ready in 724 ms
 
   ➜  Local:   http://localhost:5173/
 ```
 Open http://localhost:5173/:
-1. The top bar, the title **Bookshelf**, the search field and the rows on the left, the grey panel **Add a book** with the
-   form on the right.
-2. Type `magic` in Search: only A Wizard of Earthsea stays.
-3. Type `Ghost` as title, leave Year empty, click **Add book**: `The Published Year field is required`, the message
+1. The top bar, the title **Bookshelf**, the search and the rows (title, then author and year), and the grey panel
+   **Add a book** beside them.
+2. Type `magic` in Search: only *A Wizard of Earthsea* stays.
+3. Type `Ghost` as the title, leave Year empty, click **Add book**: `The Published Year field is required`, the message
    of `create_book`.
-4. Click **A Wizard of Earthsea**: the address becomes `#/books/1` and the book shows in the title band. Click
-   **All books**.
-5. Type `http://localhost:5173/#/books/42` in the address bar: a full-screen **Not found**, `There is no book #42`
-   and an **All books** button.
-6. At phone width (375 px in the device toolbar): the form after the list, its fields one under the other, no horizontal scroll.
+4. Click *A Wizard of Earthsea*: the address becomes `#/books/1` and the screen shows `by Ursula K. Le Guin, 1968`.
+   Change the address to `#/books/3`: Kindred.
+5. Open http://localhost:5173/#/books/42: a full-screen **Not found**, `There is no book #42`, and **All books**.
+6. At phone width (375 px in the device toolbar): the form comes after the list, one field per line, no horizontal
+   scroll.
 
-Stop the server with <kbd>Ctrl</kbd>+<kbd>C</kbd> when you are done.
+Stop the server with <kbd>Ctrl</kbd>+<kbd>C</kbd>.
 
 ### Step 9 - Build it
 
@@ -432,81 +563,90 @@ Still in `public/bookshelf-spa`:
 npm run build
 ```
 Expected (the names after `index-` vary):
+```text
+dist/index.html                   0.77 kB │ gzip:  0.42 kB
+dist/assets/index-V7JhSuPx.css   64.82 kB │ gzip: 12.25 kB
+dist/assets/index-C_ig7SGR.js   151.08 kB │ gzip: 57.17 kB
+
+✓ built in 111ms
 ```
-dist/assets/index-....css   64.67 kB
-dist/assets/index-....js   150.73 kB
-✓ built in 377ms
-```
-Caligrafy serves the built app: open http://localhost:8080/public/bookshelf-spa/dist/index.html, then add
-`#/books/1` and then `#/books/3` to the address: Kindred shows. No Node.js runs now: these are plain files.
-`dist/` and `node_modules/` are in the SPA's `.gitignore`: git does not keep them, you build again after a change.
-Go back with `cd ../..`.
+Go back with `cd ../..`. Caligrafy serves the built app: open
+http://localhost:8080/public/bookshelf-spa/dist/index.html#/books/3: Kindred, and no Node.js runs now. `dist/` is
+committed: the production image of lesson 14 runs no npm, it serves these files. `node_modules/` is not (the SPA's
+`.gitignore`). After a change to the SPA or to a capability, build again and commit `dist/`.
 
 You now have three experiences of one catalog: the pages, the finder and the SPA. Same capabilities, same messages,
-same look (`layout.css` and `look.css`).
+same look.
 
 > **If it doesn't work**
 >
 > | What you see | Cause | Fix |
 > |---|---|---|
-> | No Install button and no install icon | Not Chrome or Edge, already installed, or you clicked **Not now** before | Try Chrome; **Not now** is remembered in the browser (`localStorage`, `caligrafy-install-dismissed`): clear the site data of localhost |
-> | `npm: command not found` on your computer | Node.js is not installed, or the terminal was opened before | Install Node.js (lesson 00) and open a new terminal |
-> | `Vite requires Node.js version 20.19+ or 22.12+` | Your Node.js is too old | Install the current LTS |
-> | The SPA shows no books; the terminal of `npm run dev` shows `http proxy error` | Caligrafy is not reachable on 8080 (containers stopped, or another port) | `docker compose ps`; if you changed the port in lesson 01, use it in `vite.config.js` |
+> | No Install button and no install icon | Not Chrome or Edge, already installed, or **Not now** was clicked | Try Chrome; to see the button again, remove `caligrafy-install-dismissed` in the developer tools (Application, Local storage) |
+> | `curl ... /books` prints nothing in step 2 | `'with' => ['install' => true]` is missing or on another route | Compare `web.php` with step 2 |
+> | `npm: command not found` | Node.js is not installed, or the terminal was opened before | Install Node.js (lesson 00) and open a new terminal |
+> | `Vite requires Node.js version 20.19+ or 22.12+` | Node.js is too old | Install the current LTS |
+> | The SPA shows no books; the Vite terminal shows `http proxy error` | Caligrafy is not on 8080 (containers stopped, or another port) | `docker compose ps`; put your port in the `proxy` line of `vite.config.js` |
 > | `Failed to resolve import "../../capabilities.js"` | Step 7 was skipped | Generate the SPA client, then reload |
-> | `Failed to resolve import "../components/pages/HomePage.vue"` | `src/router/index.js` is still the template | Replace it with the file of step 6 |
+> | `Failed to resolve import "../components/pages/HomePage.vue"` | `src/router/index.js` is still the template | Write the file of step 6 |
 > | `#/books/1` then `#/books/3` still shows book 1 | `:key="$route.fullPath"` is missing in `App.vue` | Add it as in step 6 |
-> | The built page is blank, 404 for `/assets/index-...js` in the Network tab | `base: './'` is missing | Add it to `vite.config.js` and build again |
-> | The built page loads but no books | You opened `dist/index.html` as a file (`file:///...`) | Open it through http://localhost:8080/public/bookshelf-spa/dist/index.html |
-> | Changes do not show on port 8080 | The built files are from the last build | `npm run build` again |
-> | `Permission denied` or `EACCES` when you save or create a file (Linux, or WSL) | The container writes the files it creates as root | In the `bookshelf` folder run `sudo chown -R "$USER": .`, then retry (again after a `caligrafer` command that creates files) |
+> | The built page is blank, 404 for `/assets/index-...js` | `base: './'` is missing | Add it to `vite.config.js` and build again |
+> | The built page loads but shows no books | It was opened as a file (`file:///...`) | Open it through http://localhost:8080/public/bookshelf-spa/dist/index.html |
+> | `EACCES` when you save a file (Linux, WSL) | The container created the files as root | In `bookshelf`, run `sudo chown -R "$USER": .` |
 
 ---
+
+## Check
+
+- [ ] `public/manifest.webmanifest` and `web.php` are identical to the File blocks; `git diff lesson-09 -- application`
+      shows only the `'with'` of the catalog.
+- [ ] `/books` has `id="caligrafy-install"`, `/books/3` does not.
+- [ ] The six files of steps 5 and 6 are identical to the File blocks; `HomePage.vue` is deleted.
+- [ ] `src/capabilities.js` was written by the `client` command.
+- [ ] No `apiKey`, `VITE_API_KEY`, `axios` or `Authorization` in the files you wrote.
+- [ ] Step 8 works (search, the 422 message, `#/books/42`, one column at 375 px), and the built app shows Kindred on 8080.
 
 ## With Claude
 
 Part 1, in `claude` in the `bookshelf` folder:
-```
-Make Bookshelf installable: in public/manifest.webmanifest set name and short_name to "Bookshelf" and description
-to "The books we love" (change nothing else). In web.php, the closures of GET / and GET /books pass
-array('install' => true) to view('Bookshelf/books'). Change nothing else.
+```text
+Make Bookshelf installable: in public/manifest.webmanifest set name and short_name to "Bookshelf" and description to
+"The books we love" (change nothing else). In web.php add 'with' => ['install' => true] to the Route::page of /books,
+with the comment "// install: offer to add it to the home screen". Change nothing else.
 ```
 Part 2:
-```
+```text
 /caligrafy-quill:new-app create bookshelf-spa
 ```
 then:
-```
-Turn public/bookshelf-spa into the Bookshelf SPA. Generate its client with
-php caligrafer.php client public/bookshelf-spa/src/capabilities.js and import the functions from it (no axios, no
-API key, no Pinia). vite.config.js: base './' and server.proxy { '/capabilities': 'http://localhost:8080' }.
+```text
+Turn public/bookshelf-spa into the Bookshelf SPA. Run npm install on my computer, not in Docker. Generate its client
+with php caligrafer.php client public/bookshelf-spa/src/capabilities.js and import the functions from it (no axios,
+no API key, no Pinia). vite.config.js: base './' and server.proxy { '/capabilities': 'http://localhost:8080' }.
 index.html: title Bookshelf. Router: createWebHashHistory, '/' named home -> BooksPage, '/books/:id' named book ->
-BookPage with props: true. App.vue: show-navigation (keep the template's ShowNavigation.vue and main.js), then
-<router-view :key="$route.fullPath">, then footer.cq-footer. Use Caligrafy's look of the pages (layout.css): BooksPage
-is a title band (section.cq-hero.cq-hero--page, "Bookshelf"), then .cq-split: section.cq-split-main with a search
-.cq-field (searchBooks 250 ms after typing pauses, (await listBooks()).data under 2 characters) and ul.cq-rows of router-links to the
-books, and aside.cq-split-detail "Add a book" with a .cq-form-grid form (title, author select from listAuthors, year) that calls createBook and shows a CapabilityError's
-field messages in p.cq-field-error. BookPage: getBook({ id }), a title band (title, "by <author>, <year>"), the
-summary, a Delete button (confirm, deleteBook, back home); a full-screen section.cq-hero "Not found" with the error
-message when getBook fails. No cq-card. Delete src/components/pages/HomePage.vue. Do not change any server file.
-Run npm install on my computer, not in Docker.
+BookPage with props: true. App.vue: show-navigation (keep ShowNavigation.vue and main.js), then
+<router-view :key="$route.fullPath">, then footer.cq-footer. BooksPage: section.cq-hero.cq-hero--page "Bookshelf",
+then .cq-split: section.cq-split-main with a search .cq-field (searchBooks 250 ms after typing pauses,
+(await listBooks()).data under 2 characters) and ul.cq-rows of router-links with "<book.author.name>, <year>"; and
+aside.cq-split-detail "Add a book" with a .cq-form-grid form (title, an author select from listAuthors, year) that
+calls createBook and shows a CapabilityError's field messages in p.cq-field-error. BookPage: getBook({ id }) (the book
+with book.author), a title band (title, "by <author>, <year>"), the summary, Delete (confirm, deleteBook, back home);
+a full-screen section.cq-hero "Not found" with the error message when getBook fails. No cq-card. Delete
+src/components/pages/HomePage.vue. Do not change any server file.
 ```
-
-**What Claude should do:** change the manifest and two routes; run `create`, then `npm install` on your computer,
-`client`, write the six files of steps 5 and 6, and delete `HomePage.vue`.
 
 **Check** before you accept:
-- [ ] `git diff application` shows only the two `array('install' => true)` lines; no new route, no new service.
-- [ ] `vite.config.js` has `base: './'` and the `/capabilities` proxy.
-- [ ] The router uses `createWebHashHistory()`; `App.vue` has `:key="$route.fullPath"`.
-- [ ] The pages import from `../../capabilities.js`; no `apiKey`, `VITE_API_KEY` or `Authorization` in the files it wrote.
-- [ ] The screens use the title band, rows and side by side (`cq-hero`, `cq-rows`, `cq-split`), not `cq-card`; `src/main.js` still imports `layout.css` and `look.css`.
-- [ ] Step 8 works (search, the 422 message, `#/books/42` Not found, the form beside the list on a laptop and after it on a phone), then step 9.
+- [ ] `git diff application` shows only the `'with'` line; no new route, service or controller.
+- [ ] `vite.config.js` has `base: './'` and the `/capabilities` proxy; the router uses `createWebHashHistory()`;
+      `App.vue` has `:key="$route.fullPath"`.
+- [ ] The pages import from `../../capabilities.js`, generated by the `client` command.
+- [ ] No `apiKey`, `VITE_API_KEY` or `Authorization` in the files Claude wrote; `src/main.js` still imports
+      `layout.css` and `look.css`.
+- [ ] Steps 8 and 9 work.
 
-**If Claude's result differs:** if it uses `createWebHistory()`, the addresses have no `#`, but then the server
-must send `index.html` for every address of the app, which this course does not set up: ask for hash history. If it adds a
-Pinia store, it works, but it is code you do not need: ask it to call the client from the pages. If it runs
-`npm install` in the container and it fails, run it yourself (step 4). If it runs `npm audit fix --force`, stop it (see the note of step 4).
+If Claude uses `createWebHistory()`, the addresses have no `#`, and the server must then answer `index.html` for every
+address of the app, which this course does not set up: ask for hash history. If it runs `npm audit fix --force`, stop
+it.
 
 ---
 
@@ -519,24 +659,29 @@ git commit -m "Lesson 10: the Vite app for phones and tablets, install to home s
 git tag lesson-10
 ```
 Reference: [`checkpoints/lesson-10`](https://github.com/caligrafy/caligrafy-quill-course/tree/main/checkpoints/lesson-10)
-(only the files you write or change: the template files of the SPA are not repeated there).
+(only the files you write or change: the template files of the SPA are not repeated there). After copying a
+checkpoint, run `npm install` in `public/bookshelf-spa` again.
 Learn more: [7. Views, install](https://github.com/caligrafy/caligrafy-quill/wiki/7.-Views#install) and
 [9.8.1 Setting up the Vue application](https://github.com/caligrafy/caligrafy-quill/wiki/9.8.1---Setting-up-the-Vue-application).
 
 ## Quiz
 
-1. In development, what would happen to the calls of the JS client without the `proxy` of `vite.config.js`?
-2. Why does the router use hash addresses (`#/books/3`)?
-3. Which server files did you change to build the SPA?
+1. Which two files give every experience the same look, and what does each hold?
+2. Why can a phone on your Wi-Fi not install Bookshelf from `http://192.168.1.20:8080`?
+3. Why does the SPA call `/capabilities` on port 5173 during development and still reach Caligrafy?
+4. What would break without `:key="$route.fullPath"`?
+5. The SPA has `src/capabilities.js` and the finder uses `public/js/capabilities.js`. After a change to a capability,
+   what do you run?
 
-<details><summary>Show the solution</summary>
+<details><summary>Answers</summary>
 
-1. They go to `http://localhost:5173/capabilities/...`, and Vite, which knows nothing about capabilities, does not
-   answer with their JSON. The proxy forwards them to Caligrafy on 8080, cookies included.
-2. The part after `#` never reaches the server: the built app works from `public/bookshelf-spa/dist/index.html`
-   (or any folder) and a reload never asks Apache for `/books/3`.
-3. None. The manifest and the two `install` routes are for the installable pages (part 1). The SPA only has a
-   generated client of the capabilities that already existed.
+1. `public/css/tokens.css`, the design tokens (colors, spacing, touch target, the safe areas when installed), and
+   `public/css/layout.css`, the page components (`cq-nav`, `cq-hero`, `cq-rows`, `cq-split`...).
+2. Installing needs HTTPS, or `localhost` on the same computer; that address is neither.
+3. The `proxy` of `vite.config.js` forwards `/capabilities` to `http://localhost:8080`, with the cookies.
+4. Going from one book to another would keep showing the first: Vue reuses the screen and `mounted()` does not run.
+5. Both clients: `php caligrafer.php client` and `php caligrafer.php client public/bookshelf-spa/src/capabilities.js`
+   (then `npm run build` for the built SPA).
 </details>
 
 ---

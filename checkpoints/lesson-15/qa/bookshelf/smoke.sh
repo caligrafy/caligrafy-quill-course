@@ -26,6 +26,7 @@ check 404 "a book that does not exist"   "$BASE/books/999999"
 check 403 ".env is never served"         "$BASE/.env"
 check 403 "a form without its token"     -X POST -d '_method=PUT&title=x' "$BASE/books/1"
 check 200 "the authors as a CSV file"    "$BASE/authors.csv"
+check 302 "people: visitors to sign in"  "$BASE/people"
 # REST
 check 200 "REST: list the books"         "${JSON[@]}" "$BASE/api/books"
 check 422 "REST: a search too short"     -X POST "${JSON[@]}" -d '{"query":"a"}' "$BASE/capabilities/search_books"

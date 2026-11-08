@@ -44,7 +44,7 @@
                         <li class="cq-row" v-for="book in books" :key="book.id">
                             <div class="cq-row-main">
                                 <p class="cq-row-title">{{ book.title }}</p>
-                                <p class="cq-row-meta">{{ book.published_year }}</p>
+                                <p class="cq-row-meta">{{ book.author.name }}, {{ book.published_year }}</p>
                             </div>
                             <div class="cq-row-actions">
                                 <button type="button" class="btn btn-secondary" @click="open(book.id)">Open</button>
@@ -57,9 +57,9 @@
 
                 <aside class="cq-split-detail" aria-live="polite">
                     <template v-if="selected">
-                        <h2 class="cq-heading">{{ selected.book.title }}</h2>
-                        <p class="cq-lead">by {{ selected.author.name }}, {{ selected.book.published_year }}</p>
-                        <p class="cq-lead">{{ selected.book.summary || 'No summary yet.' }}</p>
+                        <h2 class="cq-heading">{{ selected.title }}</h2>
+                        <p class="cq-lead">by {{ selected.author.name }}, {{ selected.published_year }}</p>
+                        <p class="cq-lead">{{ selected.summary || 'No summary yet.' }}</p>
                         <p class="cq-row-meta">{{ selected.author.bio }}</p>
                     </template>
                     <p class="cq-empty-state" v-else>Open a book to read about it.</p>

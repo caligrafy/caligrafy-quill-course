@@ -5,10 +5,10 @@ use Caligrafy\Context;
 use Caligrafy\Service;
 use Caligrafy\ServiceError;
 
-// get_book: one book and its author, or "not found"
+// get_book: one book with its author, or "not found"
 #[Capability(
     name: 'get_book',
-    description: 'Returns one book of the catalog (id, title, year, summary) and its author (id, name, bio), by the id of the book.',
+    description: 'Returns one book of the catalog with its author (id, name, bio), by the id of the book.',
     scope: 'books:read',
     readOnly: true,
     public: true
@@ -20,10 +20,10 @@ class GetBook extends Service
 
     public function handle(array $input, Context $context)
     {
-        $book = Book::find($input['id']);
+        $book = Book::with('author')->find($input['id']);
         if (!$book) {
             throw ServiceError::notFound("There is no book #{$input['id']}");
         }
-        return array('book' => $book, 'author' => $book->author());
+        return $book;
     }
 }

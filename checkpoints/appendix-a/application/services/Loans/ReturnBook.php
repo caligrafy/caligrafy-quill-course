@@ -8,7 +8,7 @@ use Caligrafy\ServiceError;
 // return_book: closes the open loan of a book
 #[Capability(
     name: 'return_book',
-    description: 'Records that a lent book came back, by the id of the book. Returns the closed loan.',
+    description: 'Records that a lent book came back, by the id of the book. Returns the closed loan with its book.',
     scope: 'loans:write'
 )]
 class ReturnBook extends Service
@@ -23,6 +23,6 @@ class ReturnBook extends Service
             throw ServiceError::notFound("Book #{$input['book_id']} is not lent");
         }
         Loan::where('id', $open->id)->update(array('returned_at' => date('Y-m-d H:i:s')));
-        return Loan::find($open->id);
+        return Loan::with('book')->find($open->id);
     }
 }

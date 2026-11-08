@@ -1,12 +1,12 @@
 # Lesson 06 - Web pages
 
-**In this lesson** Bookshelf gets its first experience for people: a catalog page (list, filter by author, add,
-delete) and a page per book (read and edit). Both use the capabilities of lessons 04 and 05, in the two ways a page
-can: the catalog from the browser with the **JS client**, the book page from the server with **`Route::page`**, and
-its edit form with one more line, **`Route::form`**. You write no controller.
+**In this lesson** Bookshelf gets its first experience for people: a catalog page (the books, page by page, filtered by
+author, and a form to add one) and a page per book (edit it, delete it), both rendered on the server. Each is one line
+of `web.php`: **`Route::page`** shows a view with the data of a capability, **`Route::form`** sends a form to a
+capability, **`Route::download`** offers its result as a file. You write the views, and no controller.
 
-**Before you start:** lesson 05 is done (tag `lesson-05`): `capabilities` lists 19 capabilities (your 6 and the
-framework's 13), and `docker compose ps` shows the 3 containers running.
+**Before you start:** lesson 05 is done (tag `lesson-05`): `capabilities` lists 19 capabilities, and
+`docker compose ps` shows the 3 containers running.
 
 **Time:** 60 to 75 minutes.
 
@@ -16,127 +16,204 @@ framework's 13), and `docker compose ps` shows the 3 containers running.
 
 **View and Pug.** A **view** is the HTML of a page. Caligrafy writes views in **Pug**, files ending in `.pug` in
 `application/views/`. Pug is a short way to write HTML: no closing tags, and the **indentation** says what is inside
-what.
+what. In Caligrafy the values in a view are **PHP**.
 
 | Pug | HTML |
 |---|---|
 | `h1.cq-display Bookshelf` | `<h1 class="cq-display">Bookshelf</h1>` |
 | `.cq-field` | `<div class="cq-field"></div>` (a `.` without a tag name is a `div`) |
 | `input#title.form-control(type='text', name='title')` | `<input id="title" class="form-control" type="text" name="title">` |
-| `h2= $book['title']` | the value of `$book['title']`, **escaped** (a `<` is shown as text, never run) |
-| `p by #{$author['name']}` | text with a value inside, escaped |
-| `each $a in $authors` / `if $errors` + indented lines | repeats the lines / shows them only when true |
+| `h1= $book['title']` | the value, **escaped** (a `<` is shown as text, never run) |
+| `p by #{$book['author']['name']}` | text with a value inside, escaped |
+| `a(href="{$home}books/{$b['id']}")` | an attribute built from values (a PHP string in double quotes) |
+| `= $book['title'] . ' · Bookshelf'` | PHP joins strings with `.`, never `+` |
+| `each $b in $books['data']` / `if errors('title')` | repeats the indented lines / shows them only when true |
+| `- $filter = ...;` | a line of PHP, nothing shown |
 
-The values are PHP. Indent with **spaces only**, 4 per level: a tab or one space too many breaks the page.
+Indent with **spaces only**, 4 per level: a tab or one space too many breaks the page.
 
-**Master.** Every page starts with `extends ../default/master/site`: the master of Caligrafy's own pages (the sign-in
-page, the Tasks example). It holds the head, the stylesheets, the light **top bar** with the Caligrafy mark and the
-*Sign in* / *Sign out* links (under a **Menu** button on phones), and the footer. The page fills **blocks**: `title`
-(the name in the browser tab), `content` (the page itself) and `additional_scripts` (its scripts); `brand`,
-`nav_links`, `footer` and `additional_css` are there when you need them. The master gives each view `$home`, the
-address of the site (`http://localhost:8080/`): build every link from it, `href="{$home}books"`.
+**Master.** Every page starts with `extends ../default/master/site`: the master of Caligrafy's own pages. It holds the
+head, the stylesheets, the light **top bar** (the Caligrafy mark, *Sign in* and *Create account*; under a **Menu**
+button on phones) and the footer. The page fills **blocks**: `title` (the name in the browser tab) and `content`. The
+master gives each view `$home`, the address of the site (`http://localhost:8080/`): build every link from it.
 
-**Caligrafy's look.** Ready-made classes of `public/css/layout.css` (the structure) and `public/css/look.css` (the
-style: white canvas, Inter, black primary buttons, no cards, no shadows) that every page uses, with no CSS to write
+**Caligrafy's look.** Classes of `public/css/layout.css` and `look.css` that every page uses, with no CSS to write
 ([page components](https://github.com/caligrafy/caligrafy-quill/wiki/7.-Views#pagecomponents)):
 
 | Markup | What it is |
 |---|---|
-| `section.cq-hero.cq-hero--page > h1.cq-display + p.cq-lead` | the **title band**: the title of the page and one line of context |
-| `section.cq-band.cq-band--tight > .cq-inner.cq-inner--narrow` | a **band**: a full-width section, its content in a centered column (720px) |
-| `.cq-form-grid.cq-form-grid--2 > .cq-field > label + input` | labeled fields, two columns from tablets up, one on phones |
-| `button.btn.btn-primary` | the black button of the main action (`btn-secondary`: the grey one) |
-| `p.cq-field-error(role='alert')` | where the messages of a refusal go, next to the action |
-| `.cq-segments > button(.active)` | **segments**: the choices that filter one list (tabs) |
-| `ul.cq-rows > li.cq-row > .cq-row-main (p.cq-row-title + p.cq-row-meta) + .cq-row-actions` | **rows**: a list without cards, the buttons of each row on its right |
-| `p.cq-empty-state`, `p.cq-auth-note` | what to do when the list is empty; a small centered note under the content |
-| `section.cq-hero > h1.cq-display + p.cq-lead + .cq-cta` | a full-screen message, one per page at most (the Not found page) |
+| `section.cq-hero.cq-hero--page > h1.cq-display + p.cq-lead` | the **title band** of a page |
+| `section.cq-band.cq-band--tight > .cq-inner.cq-inner--narrow` | a **band**: a full-width section, its content in a centered column |
+| `.cq-form-grid.cq-form-grid--2 > .cq-field > label + input.form-control` | labeled fields, two columns from tablets up, one on phones |
+| `button.btn.btn-primary` / `.btn-secondary` | the black button of the main action / a grey one |
+| `p.cq-field-error` / `p.cq-alert` | a message of a refusal / a confirmation |
+| `ul.cq-rows > li.cq-row > .cq-row-main (p.cq-row-title + p.cq-row-meta)` | **rows**: a list without cards |
+| `p.cq-empty-state`, `p.cq-auth-note` | what to do when a list is empty; a small centered note |
+| `section.cq-hero > h1.cq-display + p.cq-lead + .cq-cta` | a full-screen message (the Not found page) |
 
-A page is a title band, then one band or more, one under the other. The same classes work at every width: phones
-(under 576px), tablets and computers.
+**`Route::page` with data.** `Route::page('/books/{id}', 'Bookshelf/book', ['data' => ['book' => 'get_book']])` shows
+the view `application/views/Bookshelf/book.pug` and gives it `$book`: what `get_book` returned. The capability is
+called **as the person who opens the page**, with the route variables (`{id}`) and the query string (`?page=2`) as
+inputs: the same rules and checks as REST and agents. Only read-only capabilities can feed a page: opening a page never
+changes data. When the capability refuses, the page does not render: a missing book answers **404** with the view
+named in `notFound` (it gets `$message`, the capability's message). **Pages never read the models**: the data of a page
+comes from capabilities.
 
-**Two ways a page uses a capability.**
-
-| | In the browser: the JS client | On the server: `Route::page` with data |
-|---|---|---|
-| How | JavaScript calls `listBooks()`, `createBook(...)` | the route calls `get_book`, then renders the view with what it returned |
-| Good for | interactive pages: add, filter, delete without reloading | pages that must work without JavaScript, and that search engines read |
-| In Bookshelf | the catalog `/books` | the page of a book `/books/{id}` |
-
-**JS client.** A JavaScript file, `public/js/capabilities.js`, generated by Caligrafer from your services: one
-function per capability (`list_books` becomes `listBooks`). Each function calls `POST /capabilities/<name>` and
-returns the `data`, or throws a `CapabilityError` with `status`, `code`, `message` and `fields`. In a page of the
-application it sends the visitor's session and the CSRF token by itself. **Generate it again after every change to
-a capability.**
-
-**`Route::page`.** One line declares a page: `Route::page('/books', 'Bookshelf/books')` shows the view
-`application/views/Bookshelf/books.pug`. Every page declared this way gets `$authorized` (is someone signed in?),
-`$user` and the route variables (`{id}` becomes `$id`). With `data`, the page also gets what capabilities return:
-`Route::page('/books/{id}', 'Bookshelf/book', ['data' => ['found' => 'get_book']])` calls `get_book` with the `{id}`
-of the address, as the person who opens the page (the same checks as every other channel), and gives the view
-`$found`. Only capabilities that change nothing (`readOnly`) can feed a page: opening a page never changes data. When
-the capability refuses, the page does not render: a missing book answers **404**, with the view you name in
-`notFound` (it gets `$message`, the capability's message), or the framework's error text without it.
-
-**Pages never read the models.** The data of a page comes from capabilities, so the rules stay in one place: the
-page, REST and AI agents all follow them.
-
-**`Route::form`.** One line connects a form to a capability:
-`Route::form('/books/{id}', 'update_book', ['method' => 'PUT', 'success' => '/books/{id}', 'flash' => 'Saved'])`.
-When the form is sent, it calls `update_book` as the visitor, with the `{id}` of the address and the fields of the
-form as inputs, then:
+**`Route::form`.** `Route::form('/books', 'create_book', ['success' => '/books/{id}', 'flash' => 'Book added'])`
+receives the form's POST and calls `create_book` as the visitor, with the fields of the form (and the route
+variables) as inputs, then:
 
 | The capability | The browser goes to | The next page has |
 |---|---|---|
-| succeeds | `success` (its `{id}` filled from the result) | `flash('success')`: `Saved` |
-| refuses the inputs | back to the page of the form | `errors('title')`: the message of each field, `old('title')`: what was typed, `flash('error')` |
+| succeeds | `success`, its `{id}` filled from the result | `flash('success')`: `Book added` |
+| refuses the inputs | back to the page of the form | `errors('title')`: the message of each field; `old('title')`: what was typed; `flash('error')`: the message of the refusal |
 | finds no such book | the error page, 404 | |
 
-The view reads these with three helpers: `errors('title')`, `old('title', $default)` and `flash('success')`. They
-last **one request**: the page right after the redirect. That is the whole edit form: no PHP class. (Under the
-hood it is what a **controller** did before Caligrafy Quill 2.19.0: [Appendix A](A-Routes-and-Controllers) shows
-one. Since 2.19.0 a controller is only for HTTP that none of the one-line routes covers.)
+These three helpers last **one request**: the page right after the redirect.
 
-**CSRF and PUT from a form.** A form changes data with POST. Caligrafy refuses a browser POST that does not carry
-the CSRF token of the visitor's session (`[ERROR 3000] Security Error - Cross Site Forgery`, 403): it proves the
-form came from your site. `=csrf()` writes that token as a hidden field. HTML forms only send GET and POST:
-`=methodField('PUT')` adds a hidden field that makes Caligrafy treat the POST as a PUT, so the `Route::form` with
-`'method' => 'PUT'` answers it.
+**CSRF, PUT and DELETE.** Caligrafy refuses a browser POST that does not carry the CSRF token of the visitor's session
+(`[ERROR 3000] Security Error - Cross Site Forgery`, 403): it proves the form came from your site. `=csrf()` writes that
+token as a hidden field. HTML forms only send GET and POST: `=methodField('PUT')` adds a hidden field `_method`, and
+Caligrafy treats the POST as a PUT, which the `Route::form` with `'method' => 'PUT'` answers.
 
 **A session only when a page needs one.** The CSRF token lives in the visitor's **session**, which a cookie
-(`PHPSESSID`) finds again at the next request. A page that prints a form with `=csrf()` starts a session and sends
-that cookie, and so does every POST, PUT or DELETE. A visit that only reads (a page without a form, a `GET` of the
-REST API of lesson 07) gets no session and no cookie: less work for the server (since Caligrafy Quill 2.19.0).
-The JS client asks for the token once, at its first call (`GET /capabilities`), which starts the session.
+(`PHPSESSID`) finds again at the next request. A page that prints a form with `=csrf()` starts a session, and so does
+every POST, PUT or DELETE; a visit that only reads gets no cookie.
+
+**`Route::download`.** `Route::download('/authors.csv', 'list_authors', ['filename' => 'authors.csv'])` turns a
+read-only capability into a file: a CSV (comma-separated values, which every spreadsheet opens), one line per row, with
+a first line of column names.
+
+**`Route::redirect`.** `Route::redirect('/', '/books')` sends the visitors of `/` to the catalog.
 
 ---
 
-## Manual track
+## Steps
 
 Run every command from the `bookshelf` folder.
 
-### Step 1 - Generate the JS client
+### Step 1 - The routes
 
-```bash
-docker compose exec dev-box php caligrafer.php client public/js/capabilities.js
+In `application/config/routing/web.php`, replace the first route, `Route::page('/', 'default/index');` and its
+comment, with the redirect, and add the `// BOOKSHELF PAGES` block above `// MUST NOT BE REMOVED`. The file is then:
+
+**File `application/config/routing/web.php`** (the redirect of `/` and the six lines of the Bookshelf pages):
+
+```php
+<?php
+/**
+ * web.php
+ * Web Routes are defined in this file
+ * @author Dory A.Azar
+ * @copyright 2019
+ * @version 1.0
+ *
+*/
+
+use Caligrafy\Auth;
+use Caligrafy\Route;
+use Caligrafy\Errors;
+use \Exception as Exception;
+
+try {
+    
+    // API ACCESS - add comments if you don't want to allow API access on routes
+    Auth::activateAPI();
+    
+    
+    // AUTHENTICATION - Remove comment if you have an authentication implemented
+    // Auth::authentication('User', 'users');
+    
+    // ROUTE DEFINITION: get, post, put and delete
+    Route::redirect('/', '/books');   // the home of Bookshelf is its catalog
+    Route::get('/helloworld', function() { echo "Hello World"; });
+	
+    // Auth Routes - Uncomment only if AUTHENTICATION activated above
+    // Route::get('/home', 'Caligrafy\\Controllers\\AuthController@home');
+    // Route::get('/login', 'Caligrafy\\Controllers\\AuthController');
+    // Route::get('/logout', 'Caligrafy\\Controllers\\AuthController@logout');
+	// Route::get('/notAuthorized', 'Caligrafy\\Controllers\\AuthController@notAuthorized');
+    // Route::get('/register', 'Caligrafy\\Controllers\\AuthController@registerForm');
+    // Route::post('/login', 'Caligrafy\\Controllers\\AuthController@login');
+    // Route::post('/register', 'Caligrafy\\Controllers\\AuthController@register');
+
+    // User Administration Routes - Uncomment only if AUTHENTICATION activated above
+	// Route::get('/admin', 'Caligrafy\\Controllers\\AdminController');
+	// Route::get('/users', 'Caligrafy\\Controllers\\AdminController');
+	// Route::get('/users/{id}/edit', 'Caligrafy\\Controllers\\AdminController@editUserForm');
+	// Route::put('/users/{id}/edit', 'Caligrafy\\Controllers\\AdminController@updateUser');
+	// Route::delete('/users/{id}/edit', 'Caligrafy\\Controllers\\AdminController@deleteUser');
+
+    // GPT AI controller
+    // Route::get('/ai', 'Caligrafy\\Controllers\\AIController');
+    // Route::post('/ai', 'Caligrafy\\Controllers\\AIController@query');
+
+    // ROUTING TO JAVASCRIPT APPS
+    // Make sure you create a JS app or a Vue app in Caligrafer first
+    Route::get('/apps/{appName}', 'Caligrafy\\Controllers\\ClientController'); // you can specify any path as long as it ends with appName
+
+    
+    // BOT PAGE ROUTES
+    Route::get('/bot/{appName}', 'Caligrafy\\Controllers\\ClientController');  // A botSkillId needs to be provided in the URL. For Example: ?botSkillId=62196ce3-0b22-4aea-b2f2-d39730c03797
+    
+    // BOT DATA ROUTES
+    // routes need to start with reserved path __bots__ 
+    Route::post('/__bots__/{appName}/communicate', 'Caligrafy\\Controllers\\WatsonController@communicate');
+    Route::post('/__bots__/{appName}/{appId}', 'Caligrafy\\Controllers\\WatsonController@connect');
+    Route::delete('/__bots__/{appName}', 'Caligrafy\\Controllers\\WatsonController@end');   
+
+    /* ML Routes
+     *
+     * If you don't specify an up, it will go to the face, body detector.
+     * Specify an app as a URI Parameter ?app=<name of app>
+     * 
+     * There are 3 possible apps: featureextractor, neuralnetwork and posedetector
+    */
+    Route::get('/ml/{appName}', 'Caligrafy\\Controllers\\ClientController'); 
+    
+
+    // BUILD ONCE: every capability, for the JS client and AI agents
+    Route::capabilities('/capabilities');   // the capabilities for the JS client of the Vue apps
+    Route::mcp('/mcp');                     // the capabilities as tools for AI agents (personal access tokens)
+    Route::notifications();                 // the pages notification emails link to (confirm, unsubscribe)
+
+    // BOOKSHELF PAGES: rendered on the server with the data of the capabilities; each form calls one capability
+    Route::page('/books', 'Bookshelf/books', ['data' => ['books' => 'list_books', 'authors' => 'list_authors']]);
+    Route::form('/books', 'create_book', ['success' => '/books/{id}', 'flash' => 'Book added']);
+    Route::page('/books/{id}', 'Bookshelf/book', ['data' => ['book' => 'get_book', 'authors' => 'list_authors'], 'notFound' => 'Bookshelf/notfound']);
+    Route::form('/books/{id}', 'update_book', ['method' => 'PUT', 'success' => '/books/{id}', 'flash' => 'Saved']);
+    Route::form('/books/{id}', 'delete_book', ['method' => 'DELETE', 'success' => '/books', 'flash' => 'Book deleted']);
+    Route::download('/authors.csv', 'list_authors', ['filename' => 'authors.csv']);   // the same capability, as a file
+
+    // MUST NOT BE REMOVED - Routes need to be run after being defined 
+    Route::run(); 
+}
+catch (Exception $e) {
+    
+    // Error handling: HTTP status code (404, 401, 403, 500...) with the error text, or a JSON error for API calls
+    Errors::handle($e);
+}
 ```
-Expected: ` public/js/capabilities.js written: 19 capabilities, calls /capabilities (...)`. Open the file: near the
-end there is one function per capability, with its description, for example:
-```js
-export const listBooks = (input = {}) => call('list_books', input)
-```
-You never edit this file: you generate it again.
+
+- `/books` gets two pieces of data: `$books` (a page of `list_books`: it reads `?author_id=` and `?page=` from the
+  address) and `$authors` (`list_authors`, for the form's list of authors).
+- `POST /books` is the add form: on success, the new book's page.
+- `/books/{id}` gets `$book` from `get_book` (with the `{id}` of the address) and `$authors`; a missing book shows
+  `Bookshelf/notfound`, status 404.
+- `PUT` and `DELETE /books/{id}` are the edit and delete forms of that page: the same address, other methods.
+- `/authors.csv` is the download.
 
 ### Step 2 - The catalog page
 
 Create the folder `application/views/Bookshelf` and:
 
-**File `application/views/Bookshelf/books.pug`** (a title band, then a band with the form, the segments and the rows; the script fills it):
+**File `application/views/Bookshelf/books.pug`** (the form, the rows of the page, and the links):
 
 ```pug
 extends ../default/master/site
 
-//- The catalog: every action calls a capability through the JS client (public/js/books.js)
+//- The catalog: Route::page gives it $books (list_books: a page of books) and $authors (list_authors).
+//- The form posts to Route::form('/books', 'create_book'): a refusal comes back here with errors(), old() and flash('error')
 
 block title
     | Bookshelf
@@ -148,212 +225,144 @@ block content
 
     section.cq-band.cq-band--tight
         .cq-inner.cq-inner--narrow
-            form#new-book(method='POST', novalidate)
+            if flash('success')
+                p.cq-alert(role='status')= flash('success')
+
+            form(method='POST', action="{$home}books", novalidate)
+                =csrf()
                 .cq-form-grid.cq-form-grid--2
                     .cq-field
-                        label(for='book-title') * Title
-                        input#book-title.form-control(type='text', name='title', maxlength='200', autocomplete='off')
+                        label(for='title') * Title
+                        input#title.form-control(type='text', name='title', value=old('title'), maxlength='200')
+                        if errors('title')
+                            p.cq-field-error= errors('title')
                     .cq-field
-                        label(for='book-author') * Author
-                        select#book-author.form-select(name='author_id')
+                        label(for='author_id') * Author
+                        select#author_id.form-select(name='author_id')
+                            each $a in $authors
+                                option(value=$a['id'], selected=$a['id'] == old('author_id'))= $a['name']
+                        if errors('author_id')
+                            p.cq-field-error= errors('author_id')
                     .cq-field
-                        label(for='book-year') * Year
-                        input#book-year.form-control(type='number', name='published_year', placeholder='1969')
+                        label(for='published_year') * Year
+                        input#published_year.form-control(type='number', name='published_year', value=old('published_year'), placeholder='1969')
+                        if errors('published_year')
+                            p.cq-field-error= errors('published_year')
                     .cq-field
-                        label(for='book-summary') Summary
-                        input#book-summary.form-control(type='text', name='summary', placeholder='Optional', maxlength='2000', autocomplete='off')
+                        label(for='isbn') ISBN
+                        input#isbn.form-control(type='text', name='isbn', value=old('isbn'), placeholder='Optional', maxlength='20')
+                        if errors('isbn')
+                            p.cq-field-error= errors('isbn')
+                .cq-field
+                    label(for='summary') Summary
+                    input#summary.form-control(type='text', name='summary', value=old('summary'), placeholder='Optional', maxlength='2000')
                 button.btn.btn-primary(type='submit') Add book
-            p#error.cq-field-error(role='alert')
+            if flash('error')
+                p.cq-field-error(role='alert')= flash('error')
 
-            .cq-segments#authors(role='tablist')
-            ul#books.cq-rows
-            p#empty.cq-empty-state(hidden) No books here yet: add the first one above.
-
-block additional_scripts
-    script(type='module', src="{$home}public/js/books.js")
+    section.cq-band.cq-band--tight
+        .cq-inner.cq-inner--narrow
+            h2.cq-heading Books
+            if $books['total'] == 0
+                p.cq-empty-state No books here yet: add the first one above.
+            else
+                ul.cq-rows
+                    each $b in $books['data']
+                        li.cq-row
+                            .cq-row-main
+                                p.cq-row-title
+                                    a(href="{$home}books/{$b['id']}")= $b['title']
+                                p.cq-row-meta
+                                    a(href="{$home}books?author_id={$b['author_id']}")= $b['author']['name']
+                                    | , #{$b['published_year']}
+                //- the next and previous pages keep the author of the address (?author_id=2)
+                - $filter = isset($_GET['author_id']) ? '&author_id=' . (int) $_GET['author_id'] : '';
+                p.cq-auth-note
+                    | Page #{$books['page']} of #{$books['pages']}, #{$books['total']} books
+                    if $books['page'] > 1
+                        |  · 
+                        a(href="{$home}books?page=" . ($books['page'] - 1) . $filter) Previous
+                    if $books['page'] < $books['pages']
+                        |  · 
+                        a(href="{$home}books?page=" . ($books['page'] + 1) . $filter) Next
+            p.cq-auth-note
+                a(href="{$home}books") All books
+                |  · 
+                a(href="{$home}authors.csv") The authors as a spreadsheet (CSV)
 ```
-- `block title` names the browser tab; `block content` is the page: the title band, then one band.
-- The form, the segments (`#authors`), the rows (`#books`) and the empty state are empty boxes with an `id`: the
-  script fills them. A script always finds its elements by `id`: the top bar has a button of its own (Menu), so the
-  first `button` of the page is not yours.
-- `script(type='module', ...)`: a JavaScript **module**, which may `import` other files.
 
-**File `public/js/books.js`** (every action calls a capability through the JS client):
+- The form posts to `{$home}books` with `=csrf()`. Each field shows `old(...)` (empty on a normal visit) and, under it,
+  `errors(...)` when `Route::form` sent the form back.
+- `$books['data']` holds the books of the page, each with its `author`; `$books['total']`, `['page']` and `['pages']`
+  are the rest of the page of lesson 04. The name of the author is a link to `?author_id=<id>`: the same page, filtered.
+- `Previous` and `Next` show only when there is another page; they keep the author of the address.
 
-```js
-// The catalog page: every action goes through the same capabilities as REST and AI agents
-import { listBooks, listAuthors, createBook, deleteBook, CapabilityError } from './capabilities.js'
+### Step 3 - Try the catalog
 
-const form = document.getElementById('new-book')
-const authorSelect = document.getElementById('book-author')
-const tabs = document.getElementById('authors')
-const list = document.getElementById('books')
-const empty = document.getElementById('empty')
-const errorBox = document.getElementById('error')
-let authorId = ''   // the selected tab: '' for every author
+Open **http://localhost:8080/** : the browser goes to `/books`. You see the title **Bookshelf**, the form (Title, Author
+with the 3 authors, Year, ISBN, Summary, **Add book**), then **Books**: the 5 books sorted by title, each with
+"author, year", and `Page 1 of 1, 5 books`.
 
-// A refusal of a capability has a message per field (CapabilityError): show them under the form
-function showError (e) {
-  if (e instanceof CapabilityError) {
-    errorBox.textContent = Object.keys(e.fields).length ? Object.values(e.fields).join(' ') : e.message
-  } else {
-    errorBox.textContent = 'Something went wrong. Try again.'
-    console.error(e)
-  }
-}
+1. Type the year `2099`, leave the title empty, and click **Add book**. The page comes back with
+   `The Title field is required` under Title, `The Published Year field needs to be a numeric value, equal to, or
+   lower than 2026` under Year, `2099` still in Year, and `Some of the inputs are invalid` under the form. These are
+   the messages of lesson 05: the same rules, now on a page. Reload: the messages are gone (they last one request).
+2. Add **The Dispossessed**, author Ursula K. Le Guin, year 1974, ISBN `978-0-06-051275-0`. The browser goes to its
+   page, `/books/7` (7 if you followed every step: ids are never reused), with `Book added` above the summary.
+3. Back on the catalog, click **Octavia E. Butler** under Kindred: the address is `/books?author_id=2`, and only Kindred
+   and Parable of the Sower are listed. **All books** brings the whole list back.
 
-function tab (label, id) {
-  const b = document.createElement('button')
-  b.type = 'button'
-  b.setAttribute('role', 'tab')
-  b.textContent = label
-  b.className = id === authorId ? 'active' : ''
-  b.setAttribute('aria-selected', String(id === authorId))
-  b.addEventListener('click', () => { authorId = id; showAuthors(); showBooks() })
-  return b
-}
-
-let authors = []
-function showAuthors () {
-  tabs.replaceChildren(tab('All', ''), ...authors.map((a) => tab(a.name, String(a.id))))
-}
-
-function row (book) {
-  const li = document.createElement('li')
-  li.className = 'cq-row'
-  li.innerHTML = '<div class="cq-row-main"><p class="cq-row-title"><a></a></p><p class="cq-row-meta"></p></div><div class="cq-row-actions"></div>'
-  const link = li.querySelector('a')
-  link.href = 'books/' + book.id
-  link.textContent = book.title
-  li.querySelector('.cq-row-meta').textContent = book.author.name + ', ' + book.published_year
-
-  const remove = document.createElement('button')
-  remove.type = 'button'
-  remove.className = 'btn btn-secondary'
-  remove.textContent = 'Delete'
-  remove.addEventListener('click', async () => {
-    if (!confirm('Delete "' + book.title + '"?')) return
-    try {
-      await deleteBook({ id: book.id })
-      await showBooks()
-    } catch (e) {
-      showError(e)
-    }
-  })
-  li.querySelector('.cq-row-actions').append(remove)
-  return li
-}
-
-async function showBooks () {
-  const page = await listBooks(authorId ? { author_id: authorId } : {})   // a page: data, total, page, per_page, pages
-  list.replaceChildren(...page.data.map(row))
-  empty.hidden = page.total > 0
-}
-
-form.addEventListener('submit', async (event) => {
-  event.preventDefault()
-  errorBox.textContent = ''
-  try {
-    await createBook(Object.fromEntries(new FormData(form)))
-    form.reset()
-    form.elements.title.focus()
-    await showBooks()
-  } catch (e) {
-    showError(e)
-  }
-})
-
-authors = await listAuthors()
-authorSelect.replaceChildren(...authors.map((a) => new Option(a.name, a.id)))
-showAuthors()
-await showBooks()
+The same from the terminal: the first command shows where `/` sends visitors, the second the titles of the filtered
+page.
+```bash
+curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' http://localhost:8080/
+curl -s "http://localhost:8080/books?author_id=2" | grep -oE 'books/[0-9]+">[^<]*'
 ```
-- `import { listBooks, ... } from './capabilities.js'`: the functions of step 1.
-- `listBooks()` returns a page of list_books (lesson 04): its books are in `page.data`, each with its `author`, so a
-  row shows `book.author.name`. `page.total` counts every book of the list.
-- `createBook(Object.fromEntries(new FormData(form)))` sends the fields of the form, named like the inputs of
-  create_book (`title`, `author_id`, `published_year`, `summary`).
-- `showError()` shows the `fields` of a `CapabilityError` under the form: the messages of `$rules` and `handle()`.
-- `event.preventDefault()` keeps the browser from sending the form itself: the script sends it. The form still has
-  `method='POST'`: if the script does not run, a form without a method is sent as a GET, its fields in the address.
-- The rows are built with `textContent`, never by pasting a title into HTML: a title like `<b>` stays text. Each row
-  is `li.cq-row`: the title and "author, year" in `.cq-row-main`, the Delete button in `.cq-row-actions`.
-
-### Step 3 - The routes of the pages
-
-In `application/config/routing/web.php`, replace the first route (`Route::page('/', 'default/index');` and its comment) with:
-```php
-    Route::page('/', 'Bookshelf/books');
+Expected:
+```text
+302 http://localhost:8080/books
+books/3">Kindred
+books/4">Parable of the Sower
 ```
-Then add these lines above `// MUST NOT BE REMOVED` and `Route::run();`:
-```php
-    // BOOKSHELF PAGES: the catalog (public/js/books.js), the page of one book (data: get_book and list_authors) and its form
-    Route::page('/books', 'Bookshelf/books');
-    Route::page('/books/{id}', 'Bookshelf/book', ['data' => ['found' => 'get_book', 'authors' => ['list_authors', []]], 'notFound' => 'Bookshelf/notfound']);
-    Route::form('/books/{id}', 'update_book', ['method' => 'PUT', 'success' => '/books/{id}', 'flash' => 'Saved']);   // the edit form: no controller
-```
-`Route::page('/books', 'Bookshelf/books')` shows `application/views/Bookshelf/books.pug`. The page of a book (step 5)
-gets two pieces of data: `found` from `get_book` (with the `{id}` of the address) and `authors` from `list_authors`
-(with no inputs: `['list_authors', []]`). When `get_book` refuses, `notFound` shows the view `Bookshelf/notfound` (step 6)
-with its message and status 404. The `Route::form` line receives the edit form of step 5 (`PUT /books/{id}`): the
-same address as the page, another method. The full file is in the checkpoint.
-
-### Step 4 - Try the catalog
-
-Open **http://localhost:8080/books** (and http://localhost:8080/: the same page). You should see:
-- the top bar (the Caligrafy mark, **Sign in**, **Create account**), the title **Bookshelf**, and the form: Title,
-  Author (a list of the 3 authors), Year, Summary, **Add book**;
-- the segments **All**, Italo Calvino, Octavia E. Butler, Ursula K. Le Guin (list_authors sorts them by name);
-- the 5 books, each with its title as a link, "author, year" and a **Delete** button.
-
-Now check each capability through the page:
-1. Click **Add book** with the form empty. Under the form: `The Title field is required The Published Year field is required`.
-   These are the messages `curl` got in lesson 05: the same rules, now on a page.
-2. Add **The Dispossessed**, author Ursula K. Le Guin, year 1974. It appears in the list, the form is emptied and the
-   cursor is back in Title.
-3. Click the segment **Octavia E. Butler**: only Kindred and Parable of the Sower (list_books with `author_id`).
-4. Click **Delete** on any book: the browser asks `Delete "<title>"?`. Click **Cancel** (keep the books).
 
 > **If it doesn't work**
 >
 > | What you see | Cause | Fix |
 > |---|---|---|
-> | The title and the form show, but no segments and no books | The script failed. Open the browser's developer tools (F12), tab Console | Read the first red line, then the rows below |
-> | Console: `does not provide an export named 'listBooks'` (or another name) | The JS client was generated before the capabilities existed | Step 1 again, then reload the page |
-> | Console: `404` for `books.js` | The file is not in `public/js/`, or is misnamed | `ls public/js`: `books.js` and `capabilities.js` |
-> | http://localhost:8080/ still shows the Caligrafy home page | The first route still shows `default/index` | Replace it as in step 3 |
-> | An error page that names `books.pug` and a line | An indentation error in the view (a tab, or one space too many) | Indent with 4 spaces per level, as in the File block |
-> | `Something went wrong. Try again.` under the form | A call failed without a capability error (server stopped) | `docker compose ps`; reload the page |
+> | An error page that names `books.pug` and a line | An indentation error (a tab, or one space too many) | Indent with 4 spaces per level, as in the File block |
+> | `[ERROR 3000] Security Error - Cross Site Forgery` when you add a book | `=csrf()` is missing from the form | Add it under `form(...)`, as in the File block |
+> | `Route::page('Bookshelf/books'): no capability named ...` | A capability name in the `Route::page` line is wrong | Compare with step 1: `'books' => 'list_books'` |
+> | `http://localhost:8080/` still shows the Caligrafy welcome page | The first route still shows `default/index` | Step 1: `Route::redirect('/', '/books');` |
+> | The messages never show under the fields | The view reads a variable `$errors` instead of the helper `errors('title')` | Compare with the File block |
 
-### Step 5 - The book page and its form
+### Step 4 - The book page
 
-The route of step 3 already gives the page its data. Write the view:
-
-**File `application/views/Bookshelf/book.pug`** (the book in the title band, then a band with its summary and the edit form):
+**File `application/views/Bookshelf/book.pug`** (the book, its edit form and its delete form):
 
 ```pug
 extends ../default/master/site
 
-//- One book, rendered on the server by Route::page with the data of get_book; the form posts to Route::form (update_book)
+//- One book: Route::page gives it $book (get_book: the book with its author) and $authors (list_authors).
+//- The edit form posts to Route::form (PUT, update_book), the delete form to Route::form (DELETE, delete_book)
 
 block title
-    = $found['book']['title'] . ' · Bookshelf'
+    = $book['title'] . ' · Bookshelf'
 
 block content
-    //- $found: what get_book returned (Route::page data). After a refused save, old() and errors() hold what Route::form sent back
-    - $book = $found['book'];
-    - $author = $found['author'];
     section.cq-hero.cq-hero--page
         h1.cq-display= $book['title']
         p.cq-lead
-            | by #{$author['name']}, #{$book['published_year']}
+            | by #{$book['author']['name']}, #{$book['published_year']}
 
     section.cq-band.cq-band--tight
         .cq-inner.cq-inner--narrow
             if flash('success')
                 p.cq-alert(role='status')= flash('success')
             p= $book['summary'] ?: 'No summary yet.'
+            if $book['isbn']
+                p.cq-row-meta ISBN #{$book['isbn']}
 
+            //- each field shows what was typed after a refusal (old), else what is saved
             form(method='POST', action="{$home}books/{$book['id']}", novalidate)
                 =csrf()
                 =methodField('PUT')
@@ -368,44 +377,48 @@ block content
                         select#author_id.form-select(name='author_id')
                             each $a in $authors
                                 option(value=$a['id'], selected=$a['id'] == old('author_id', $book['author_id']))= $a['name']
+                        if errors('author_id')
+                            p.cq-field-error= errors('author_id')
                     .cq-field
                         label(for='published_year') * Year
                         input#published_year.form-control(type='number', name='published_year', value=old('published_year', $book['published_year']))
                         if errors('published_year')
                             p.cq-field-error= errors('published_year')
                     .cq-field
-                        label(for='summary') Summary
-                        input#summary.form-control(type='text', name='summary', value=old('summary', $book['summary']), maxlength='2000')
+                        label(for='isbn') ISBN
+                        input#isbn.form-control(type='text', name='isbn', value=old('isbn', $book['isbn']), maxlength='20')
+                        if errors('isbn')
+                            p.cq-field-error= errors('isbn')
+                .cq-field
+                    label(for='summary') Summary
+                    input#summary.form-control(type='text', name='summary', value=old('summary', $book['summary']), maxlength='2000')
                 button.btn.btn-primary(type='submit') Save changes
-
             if flash('error')
                 p.cq-field-error(role='alert')= flash('error')
 
-            p.cq-auth-note
-                a(href="{$home}books") All books
+            form(method='POST', action="{$home}books/{$book['id']}", onsubmit="return confirm('Delete this book? This cannot be undone.')")
+                =csrf()
+                =methodField('DELETE')
+                p.cq-auth-note
+                    button.btn.btn-secondary(type='submit') Delete this book
+                    |  
+                    a(href="{$home}books") All books
 ```
-- `$found` is what `get_book` returned: the book and its author. The two `-` lines at the top are PHP: they name
-  `$book` and `$author`.
-- The title band (and `block title`) show `$book`, what is saved. Each field shows `old('title', $book['title'])`:
-  what was typed when `Route::form` sent the form back, else the saved value.
-- `errors('title')` is the message of that field after a refusal (`The Title field is required`), shown under it;
-  `flash('error')` the message of the whole refusal, under the form; `flash('success')` the `Saved` of the route,
-  above the summary. All three are empty on a normal visit.
-- `=csrf()` and `=methodField('PUT')`: the two hidden fields of the concepts above. The form posts to the address of
-  the page, `{$home}books/<id>`.
+
+- `$book` is what `get_book` returned: the book with its `author`. The title band shows what is saved; each field
+  shows `old('title', $book['title'])`: what was typed when `Route::form` sent the form back, else the saved value.
+- The edit form carries `=csrf()` and `=methodField('PUT')`; the delete form `=csrf()` and `=methodField('DELETE')`,
+  and asks the browser to confirm first (`onsubmit`). Both post to the address of the page.
 - `$book['summary'] ?: 'No summary yet.'`: the summary, or this text when it is empty.
-- `p.cq-auth-note` under the form holds the link back to the catalog.
-- No PHP class was needed, to show this page or to save its form: `Route::page` called the capabilities and rendered
-  the view, `Route::form` calls `update_book` and redirects.
 
-### Step 6 - The Not found page
+### Step 5 - The Not found page
 
-**File `application/views/Bookshelf/notfound.pug`** (the message of the ServiceError, for the page of a missing book):
+**File `application/views/Bookshelf/notfound.pug`** (the message of the capability that refused):
 
 ```pug
 extends ../default/master/site
 
-//- The message of a refused capability ($message): the notFound view of Route::page, for a missing book
+//- The notFound view of Route::page: $message is the message of the capability that refused (get_book)
 
 block title
     | Not found · Bookshelf
@@ -418,110 +431,97 @@ block content
             a.btn.btn-primary(href="{$home}books") All books
 ```
 
-### Step 7 - Try the book page
+### Step 6 - Try the book page
 
-In the catalog, click **The Dispossessed**. The address is `/books/7` (7 if you followed every step; use yours).
-You should see the title, `by Ursula K. Le Guin, 1974`, `No summary yet.`, and the edit form filled with the book.
+Open the page of The Dispossessed (`/books/7`): the title, `by Ursula K. Le Guin, 1974`, `No summary yet.`,
+`ISBN 978-0-06-051275-0`, and the form filled with the book.
 
-1. Empty the Title and click **Save changes**. The same page comes back: the Title field is empty, the title band still
-   shows the real title, `The Title field is required` (the message of update_book) is under the field, and
-   `Some of the inputs are invalid` under the form. Reload the page: the messages are gone (they last one request).
-2. Type the title back, add the summary `An anarchist physicist crosses to the twin world.` and save. You are back
-   on `/books/7` with the summary, and `Saved` above it.
-3. Open http://localhost:8080/books/99: a full-screen **Not found** message with `There is no book #99` and an
-   **All books** button. `get_book` refused, so `Route::page` showed its `notFound` view with status 404 instead of
-   rendering a broken page.
+1. Empty the Title and click **Save changes**. The page comes back: the title band still shows **The Dispossessed**
+   (what is saved), the Title field is empty (what you sent), `The Title field is required` is under it and
+   `Some of the inputs are invalid` under the form.
+2. Type the title back, empty the ISBN, add the summary `An anarchist physicist crosses to the twin world.` and save.
+   You are back on `/books/7` with `Saved`, the summary, and no ISBN line: `update_book` stored the empty ISBN as none.
+3. On the catalog, add a book `A book to delete` (Italo Calvino, 2000). On its page (`/books/8`), click
+   **Delete this book**, then **OK**. You are on the catalog, with `Book deleted` and `Page 1 of 1, 6 books`.
+4. Open http://localhost:8080/books/99: a full-screen **Not found** with `There is no book #99` and an **All books**
+   button.
 
-Check the statuses from the terminal:
+Check the statuses, then the session cookie, from the terminal:
 ```bash
 curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8080/books/1
 curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8080/books/99
-```
-Expected: `200`, then `404`.
-
-And the session cookie of the concepts: the catalog has no form, the page of a book has one.
-```bash
-curl -s -D - -o /dev/null http://localhost:8080/books | grep -i set-cookie
 curl -s -D - -o /dev/null http://localhost:8080/books/1 | grep -i set-cookie
 ```
-Expected: nothing for the catalog, then one line for the book page: `Set-Cookie: PHPSESSID=...; path=/` (your id
-differs). Without `=csrf()` the book page would start no session either.
+Expected: `200`, `404`, then `Set-Cookie: PHPSESSID=...; path=/` (your id differs): the page prints a form with
+`=csrf()`, so it starts a session.
 
-Last, the phone check. In the developer tools (F12), turn on the device toolbar and choose a width of 375 px: both
-pages show one column, the links of the top bar open under **Menu**, and the page does not scroll sideways.
+Last, the phone check. In the browser's developer tools (F12), turn on the device toolbar and choose a width of
+375 px: both pages show one column, the links of the top bar open under **Menu**, and nothing scrolls sideways.
 
 > **If it doesn't work**
 >
 > | What you see | Cause | Fix |
 > |---|---|---|
-> | `[ERROR 3000] Security Error - Cross Site Forgery` on Save | `=csrf()` is missing from the form | Add it under `form(method='POST', ...)`, indented like `=methodField('PUT')` |
-> | `/books/7` shows `[ERROR 1000] Invalid Http Request Method: this address answers PUT` (405) | The `Route::page` line of `/books/{id}` is missing: only the form's `PUT` answers that address | Check the lines of step 3 |
-> | Save shows `[ERROR 1000] ... this address answers GET, PUT` (405) | `=methodField('PUT')` is missing, so the form sends a POST | Add it under `=csrf()` |
-> | Save shows `[ERROR 1005] Page Not Found` (404) | The book was deleted in the meantime: update_book refused it | Open the catalog again |
-> | The messages never show under the fields | The view reads `$errors` (a variable) instead of `errors('title')` (the helper) | Compare with the File block of step 5 |
-> | `/books/7` shows an error that names `no capability named` | The capability name in the `Route::page` line is wrong | Compare with step 3: `'found' => 'get_book'` |
-> | `/books/99` shows `[ERROR 1005] Page Not Found` instead of the Not found page | `'notFound' => 'Bookshelf/notfound'` is missing from the `Route::page` line | Compare with step 3 |
-> | An error that names `book.pug` and `$found` | The view uses `$found` but the route has no `data` | Use the `Route::page` line of step 3 for `/books/{id}` |
-> | `Route::form: '/books/{book_id}' needs {book_id}, which neither the result nor the route has` after a save | The `success` path names a value that update_book does not return | Use `'success' => '/books/{id}'`, as in step 3 |
+> | Save shows `[ERROR 1000] Invalid Http Request Method: this address answers GET, PUT, DELETE` (405) | `=methodField('PUT')` is missing, so the form sends a POST | Add it under `=csrf()` |
+> | **Delete this book** shows `Saved` and the book stays | The delete form has `methodField('PUT')`, so it calls `update_book` with no changes | `=methodField('DELETE')` in the second form |
+> | Save shows `[ERROR 1005] Page Not Found` (404) | The book was deleted in the meantime | Open the catalog again |
+> | `/books/99` shows `[ERROR 1005] Page Not Found` instead of the Not found page | `'notFound' => 'Bookshelf/notfound'` is missing | Compare with step 1 |
+> | `Route::form: '/books/{book_id}' needs {book_id}, which neither the result nor the route has` | The `success` path names a value that the capability does not return | `'success' => '/books/{id}'` |
+
+### Step 7 - The download
+
+Click **The authors as a spreadsheet (CSV)** under the list: the browser saves `authors.csv`. From the terminal:
+```bash
+curl -s -i http://localhost:8080/authors.csv
+```
+Expected, among the headers, `Content-Disposition: attachment; filename="authors.csv"` and
+`Content-Type: text/csv; charset=utf-8`, then the file (your dates differ):
+```text
+id,name,bio,created_at,modified_at
+3,Italo Calvino,"Italian writer of playful, inventive novels and short stories.",2026-11-07 23:24:20,2026-11-07 23:24:20
+2,Octavia E. Butler,"American science fiction author, the first to receive a MacArthur fellowship.",2026-11-07 23:24:20,2026-11-07 23:24:20
+1,Ursula K. Le Guin,"American author of science fiction and fantasy, known for the Earthsea books.",2026-11-07 23:24:20,2026-11-07 23:24:20
+```
+A bio with a comma is put in quotes, so the spreadsheet keeps it in one cell. The rows are those of `list_authors`,
+in its order: the same capability as the form's list of authors, as one more experience.
 
 ---
 
+## Check
+
+- [ ] `web.php` and the three views are identical to the File blocks; `application/controllers/` has no Bookshelf file.
+- [ ] `/` redirects to `/books`; the catalog lists the books with `Page 1 of 1`; `?author_id=2` filters it.
+- [ ] A refused form comes back with the messages under the fields and what you typed; a reload clears them.
+- [ ] Adding goes to the new book's page with `Book added`; saving shows `Saved`; deleting goes to the catalog with
+      `Book deleted`.
+- [ ] `/books/99` answers 404 with the Not found page; `/authors.csv` downloads the 3 authors.
+- [ ] Both pages work at 375 px.
+
 ## With Claude
 
-Start Claude Code in the `bookshelf` folder (`claude`) and give it this prompt:
-
+```text
+Add the Bookshelf web pages on the existing capabilities, rendered on the server, with no controller and no
+JavaScript of our own. In application/config/routing/web.php replace Route::page('/', 'default/index') with
+Route::redirect('/', '/books') and add a "// BOOKSHELF PAGES" block above Route::run():
+Route::page('/books', 'Bookshelf/books', ['data' => ['books' => 'list_books', 'authors' => 'list_authors']]);
+Route::form('/books', 'create_book', ['success' => '/books/{id}', 'flash' => 'Book added']);
+Route::page('/books/{id}', 'Bookshelf/book', ['data' => ['book' => 'get_book', 'authors' => 'list_authors'], 'notFound' => 'Bookshelf/notfound']);
+Route::form('/books/{id}', 'update_book', ['method' => 'PUT', 'success' => '/books/{id}', 'flash' => 'Saved']);
+Route::form('/books/{id}', 'delete_book', ['method' => 'DELETE', 'success' => '/books', 'flash' => 'Book deleted']);
+Route::download('/authors.csv', 'list_authors', ['filename' => 'authors.csv']);
+Then the views in application/views/Bookshelf/ (extends ../default/master/site, Caligrafy's look, 4-space indents):
+books.pug (flash('success'), the add form with =csrf(), each field with old() and errors(), flash('error'); the rows of
+$books['data'] with the author's name linking to ?author_id=; "Page x of y, n books" with Previous/Next; links to all
+books and authors.csv), book.pug (the book, an edit form with =csrf() and =methodField('PUT'), a delete form with
+=methodField('DELETE') and a confirm), notfound.pug ($message and an All books button).
 ```
-Add the Bookshelf web pages. They must only use the existing capabilities (list_books, get_book, list_authors,
-create_book, update_book, delete_book): no rules, SQL or models in the pages, and no controller. Pages are declared
-with Route::page, the edit form with Route::form.
-1. Regenerate the JS client: php caligrafer.php client public/js/capabilities.js (in the dev-box container).
-2. application/views/Bookshelf/books.pug: the catalog in Caligrafy's look (extends ../default/master/site, block
-   title "Bookshelf"; a title band section.cq-hero.cq-hero--page with h1.cq-display "Bookshelf" and a p.cq-lead; then
-   section.cq-band.cq-band--tight > .cq-inner.cq-inner--narrow). A form#new-book with a .cq-form-grid.cq-form-grid--2
-   of .cq-field: Title (book-title), an Author select (book-author, name author_id), Year (book-year, name
-   published_year) and Summary (book-summary), button.btn.btn-primary "Add book"; p#error.cq-field-error;
-   .cq-segments#authors; ul#books.cq-rows; p#empty.cq-empty-state. Script: public/js/books.js as a module in block
-   additional_scripts.
-3. public/js/books.js: imports listBooks, listAuthors, createBook, deleteBook and CapabilityError from
-   ./capabilities.js. Segments "All" + one per author filter the list (list_books with author_id; it returns a
-   page: the books are in .data, each with author.name). Each row
-   (li.cq-row > .cq-row-main with p.cq-row-title and p.cq-row-meta, then .cq-row-actions): the title as a link to
-   books/<id>, "author, year", a Delete button with confirm('Delete "<title>"?'). Find elements by id. Show
-   CapabilityError field messages in #error; after adding, reset the form and focus Title. Build rows with
-   textContent.
-4. web.php: the route / is Route::page('/', 'Bookshelf/books'); add a "// BOOKSHELF PAGES" block above Route::run():
-   Route::page('/books', 'Bookshelf/books'), Route::page('/books/{id}', 'Bookshelf/book', ['data' => ['found' =>
-   'get_book', 'authors' => ['list_authors', []]], 'notFound' => 'Bookshelf/notfound']) and
-   Route::form('/books/{id}', 'update_book', ['method' => 'PUT', 'success' => '/books/{id}', 'flash' => 'Saved']).
-5. application/views/Bookshelf/book.pug: $found is what get_book returns (book, author); set $book and $author at
-   the top. A title band (the title, "by <author>, <year>"), then a band: flash('success') in a p.cq-alert, the
-   summary or "No summary yet.", an edit form (.cq-form-grid.cq-form-grid--2) with =csrf() and =methodField('PUT')
-   posting to {$home}books/<id>, each field's value old('<field>', $book['<field>']) and its errors('<field>') in a
-   p.cq-field-error under it, button "Save changes", flash('error') in a p.cq-field-error under the form, a
-   p.cq-auth-note link "All books".
-6. application/views/Bookshelf/notfound.pug: a full-screen section.cq-hero "Not found" with $message and an
-   "All books" button, for the notFound of the book page.
-Then check both pages at desktop width and at 375 px.
-```
-
-**What Claude should do:** generate the client and write the four files and the routes of steps 1 to 6. No file
-in `application/controllers/`.
 
 **Check** before you accept:
-- [ ] `capabilities.js` was regenerated (19 capabilities), not edited by hand.
-- [ ] Every page extends `default/master/site` and uses a title band, bands and the classes of Caligrafy's look (`cq-rows`, `cq-segments`, `cq-field-error`...); no cards, no Bootstrap color classes (`btn-danger`...), no `style` block.
-- [ ] `books.js` calls only the generated functions (no `fetch` of its own) and shows errors in `#error`, never `alert()`.
-- [ ] The pages are declared with `Route::page`; `/books/{id}` gets its data from `get_book` and `list_authors`.
-- [ ] The edit form is one `Route::form` line with `'method' => 'PUT'` and `'success' => '/books/{id}'`; `application/controllers/` has no Bookshelf file.
-- [ ] The edit form has `=csrf()` and `=methodField('PUT')`, and reads `old()`, `errors()` and `flash()`: no `$form` or `$errors` variable.
-- [ ] The checks of steps 4 and 7 give what the lesson describes, at desktop width and at 375 px.
-
-**If Claude's result differs:** Claude may render the catalog on the server too, or call `fetch('/capabilities/...')`
-directly. Both work, but the course uses the JS client for the catalog and `Route::page` for the book page, to show
-both ways: ask for the version of the prompt. If Claude writes a controller (a `show()` to render the book page, an
-`update()` that calls `update_book` and redirects), replace it with the `Route::page` and `Route::form` lines: since
-Caligrafy Quill 2.19.0 a controller is only for HTTP that none of the one-line routes covers. If Claude writes the
-validation again in a view or a controller, remove it: the rules live in the capabilities only.
+- [ ] No file in `application/controllers/`; no rule repeated in a view; the views read `errors()`, `old()` and
+      `flash()`, never a `$errors` variable.
+- [ ] Every form has `=csrf()`; the edit and delete forms have `methodField('PUT')` and `methodField('DELETE')`.
+- [ ] String joins in the views use `.`, not `+`.
+- [ ] The checks of steps 3, 6 and 7 give what the lesson describes, at desktop width and at 375 px.
 
 ---
 
@@ -529,32 +529,28 @@ validation again in a view or a controller, remove it: the rules live in the cap
 
 ```bash
 git add -A
-git commit -m "Lesson 06: the catalog page and the page of a book"
+git commit -m "Lesson 06: the catalog page, the page of a book, the authors as CSV"
 git tag lesson-06
 ```
 Reference: [`checkpoints/lesson-06`](https://github.com/caligrafy/caligrafy-quill-course/tree/main/checkpoints/lesson-06).
 
 ## Quiz
 
-1. You add a capability `search_books` but do not run `php caligrafer.php client` again. What happens when `books.js` imports `searchBooks`?
-2. The catalog uses the JS client; the book page is rendered on the server by `Route::page`. Name one reason to render a page on the server.
-3. Where is the rule "a title is required" written, and which places show its message?
-4. After a refused save, the title band shows the saved title but the Title field is empty. Where does each come from?
-5. You open the book page, save with an empty title, then open the catalog in the same tab and come back. Is the
-   message still there? Why?
+1. Where is the rule "a title is required" written, and which places show its message?
+2. After a refused save, the title band shows the saved title but the Title field is empty. Where does each come from?
+3. You save with an empty title, then open the catalog and come back. Is the message still there? Why?
+4. Why can `list_books` feed a page and a download, but `create_book` cannot?
 
 <details><summary>Show the solution</summary>
 
-1. The browser refuses the module (`does not provide an export named 'searchBooks'`) and the script does not run: the
-   page stays empty. Generate the client after every change to a capability.
-2. It works without JavaScript, and search engines read the HTML directly. (The capability is the same either way.)
-3. Once, in the `$rules` of `create_book` (and in `handle()` of `update_book`). Its message appears under the
-   catalog form, on the book page, for `curl` (lesson 05) and for AI agents.
-4. The title band shows `$book`, which `get_book` reads again on every visit: what is saved (the refused title was
-   not). The field shows `old('title', ...)`: what the visitor typed, which `Route::form` kept for the next page.
-5. No. `errors()`, `old()` and `flash()` last one request: the page right after the redirect of `Route::form`. The
-   catalog was that request, so the book page is back to normal.
+1. Once, in the `$rules` of `create_book` (and for an update, in `handle()` of `update_book`). Its message appears under
+   the field of both pages, for `curl` (lesson 05) and for AI agents.
+2. The title band shows `$book`, which `get_book` reads again on every visit: what is saved. The field shows
+   `old('title', ...)`: what the visitor typed, which `Route::form` kept for the next page.
+3. No. `errors()`, `old()` and `flash()` last one request: the page right after the redirect of `Route::form`.
+4. Opening a page or a link must never change data: `Route::page` and `Route::download` accept only `readOnly`
+   capabilities. A change goes through a form, `Route::form`, with its CSRF token.
 </details>
 
 ---
-Previous: [Lesson 05 - Rules: adding, changing and deleting books](05-Rules-and-Changes) · Next: [Lesson 07 - The REST API](07-The-REST-API)
+Previous: [Lesson 05 - Rules and changes](05-Rules-and-Changes) · Next: [Lesson 07 - The REST API](07-The-REST-API)

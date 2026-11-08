@@ -1,66 +1,60 @@
-# Appendix B - Classic forms and controller APIs
+# Appendix B - Classic forms
 
-**In this appendix** you write a classic form, "Add an author", handled entirely by a controller: CSRF protection,
-filters and rules, a 422 with the messages, saving with the controller's database helpers and a redirect. Then you
-see what that costs (no other experience gets it), and in the exercise you turn it into a `create_author` capability
-and replace the controller with two lines of `web.php`, the way of the lessons since Caligrafy Quill 2.19.0.
+**In this appendix** you write a form by hand, the way it was done before `Route::form`: a controller shows the empty
+form, receives the posted fields, filters and validates them itself, shows the errors, writes the row and redirects.
+It is the work that the one line `Route::form('/books', 'create_book', [...])` of lesson 06 does for every Bookshelf
+form, with the rules in the capability. At the end, the same form is rewritten with `Route::form`.
 
-**Before you start:** [Appendix A](A-Routes-and-Controllers) is done (tag `appendix-a`), the containers run
-(`docker compose ps`), and you have the account `reader1` of lesson 11 (if you are before lesson 11, see the note in
-step 4).
+> **This is another way, not the course's way.** For a form, write a capability and one `Route::form` line (lesson 06).
+> A hand-written form keeps its rules in one controller: REST, the JS clients and the agents never get them. Read this
+> appendix to understand older projects, or what `Route::form` does for you.
 
-**Time:** 45 minutes.
+**Before you start:** Appendix A is done (tag `appendix-a`), the containers run, and you can sign in as reader1.
+
+**Time:** 40 minutes.
 
 ---
 
 ## New concepts
 
-**A classic form** sends the page to the server: `form(method='POST', action=".../authors")` posts the fields
-(`name=...&bio=...`) to `POST /authors`, and the server answers with a whole new page. The edit form of a book
-(lesson 06) is one too, but `Route::form` handles it: this appendix writes by hand what that line does. The catalog
-of lesson 06 works differently: JavaScript calls a capability and updates the page in place.
+**A classic form** is a round trip of two routes:
 
-**Reading the posted fields.** In a controller, `$this->request->parameters()` returns the posted fields as an array.
-Careful: `$this->request->fetch('name')` reads **route variables** only (`{name}` of the path), not posted fields.
-This course met that bug while writing this appendix: the name was always empty.
+| Route | Action | What it does |
+|---|---|---|
+| `GET /authors/new` | `createForm()` | shows the empty form |
+| `POST /authors` | `create()` | reads the fields, filters and validates them; when they are wrong, shows the form again with the errors and what was typed (status 422); when they are right, saves the row and **redirects** to its page |
 
-**CSRF (Cross-Site Request Forgery).** Without protection, another website could hold a hidden form that posts to
-your Bookshelf with the browser of a visitor who is signed in. Caligrafy refuses every browser `POST`, `PUT` and
-`DELETE` that does not carry the secret token of the visitor's session, with status **403**. In Pug, `=csrf()` writes
-that token as a hidden field. **Every form needs `=csrf()`.** (The JS client sends the same token in a header, which
-is why you never wrote it for the catalog.) A form that must send `PUT` or `DELETE` also adds `=methodField('PUT')`:
-HTML forms only know GET and POST (you saw both in `book.pug`, lesson 06).
+The redirect after a successful POST (the **Post/Redirect/Get** pattern) means that reloading the next page does not
+send the form twice.
 
-**Filters and rules in a controller.** `$this->validator` is the GUMP validator, the same library behind `$rules` in
-a capability:
-- `$this->validator->filter($data, $filters)` cleans the values (`trim`);
-- `$this->validator->validate($data, $rules)` returns `true`, or something else when a rule fails;
-- `$this->validator->get_errors_array()` then gives one message per field: `array('name' => 'The Name field is required')`.
-Call `filter()` then `validate()`. (`check()` also exists, but with rules **and** filters it returns an array even
-when everything is valid: a classic bug.)
+**What the controller does by hand**, and `Route::form` does for you:
 
-**The controller's database helpers** (the "controller API"):
-
-| Call | What it does |
+| By hand, in `AuthorController` | With `Route::form` and a capability |
 |---|---|
-| `$this->associate('Author', 'authors')` | the model and table the next calls work on |
-| `$this->all($args)`, `$this->find($id)` | read rows (Appendix A) |
-| `$this->save($data)` | inserts a row when the route has no `{id}`, updates the row `{id}` when it has one; returns the model |
-| `$this->delete($id)` | deletes a row (by default the `{id}` of the route) |
+| `$this->request->parameters()`: the posted fields | the fields and the route variables become the inputs |
+| `$this->validator->filter(...)` and `validate(...)` with the rules written in the action | the `$filters` and `$rules` of the capability, the same for every experience |
+| render the form again with the values and the errors, status 422 | redirect back with `errors()`, `old()` and `flash('error')` for the view (never a password) |
+| `$this->save($data)` | `handle()` of the capability, audited |
+| `redirect('/authors/' . $author->id)` | `'success' => '/authors/{id}'`, filled from the answer, and a `flash` message |
+| `if (!authorized()) redirect('/login')` | the capability refuses visitors, and `Route::form` sends them to `/login` |
 
-**After a valid POST, redirect.** The controller saves, then `redirect('/authors/4')`: the browser loads that page
-with GET, so pressing Reload does not send the form twice. `redirect()` only sends a header: write `exit;` after it.
-When the form is invalid, the controller shows the form again with status **422** and the messages.
+**The CSRF token.** `=csrf()` in the form adds the hidden field `_token`; Caligrafy checks it on every POST, whoever
+handles it. A form posted from another site has no token: 403.
+
+**The route order.** `/authors/new` and `/authors/{id}` both have two segments: `/authors/new` is declared first, or
+`{id}` would catch the word `new` (rule 2 of Appendix A).
 
 ---
 
-## Manual track
+## Steps
+
+Run every command from the `bookshelf` folder.
 
 ### Step 1 - The controller actions
 
-`AuthorController` gets two actions, `createForm()` and `create()`, and two private helpers.
+Add `createForm()`, `create()` and two private helpers to the controller of Appendix A. The file is then:
 
-**File `application/controllers/Bookshelf/AuthorController.php`** (replace its whole content):
+**File `application/controllers/Bookshelf/AuthorController.php`** (the classic form: two actions):
 
 ```php
 <?php
@@ -69,30 +63,32 @@ namespace Bookshelf;
 
 use Caligrafy\Controller;
 
-// The classic way: a controller reads the models itself and renders a view. No capability is involved,
-// so only this page has these features: REST clients and AI agents do not see them
+// Under the hood, the classic way: the controller reads and writes the tables itself and renders views. No capability
+// is involved, so only these pages have these features: REST clients, the JS clients and AI agents do not see them
 class AuthorController extends Controller
 {
     // GET /authors/{id}: an author and their books
     public function show()
     {
-        $this->associate('Author', 'authors');   // the model and the table this controller works on
-        $author = $this->find();                 // finds the row whose id is {id} of the route
+        $this->associate('Author', 'authors');   // the model and the table the next calls work on
+        $author = $this->find();                 // the row whose id is {id} of the route, or nothing
         if (!$author) {
             http_response_code(404);
-            return view('Bookshelf/notfound', array('message' => 'There is no such author.', 'authorized' => authorized()));
+            return view('Bookshelf/notfound', array('message' => 'There is no such author.'));
         }
-        return view('Bookshelf/author', array('author' => $author, 'books' => $author->books(), 'authorized' => authorized()));
+        $this->associate('Book', 'books');
+        $books = $this->all(array('condition' => 'WHERE author_id = ?', 'bindings' => array($author->id), 'order' => 'ORDER BY title'));
+        return view('Bookshelf/author', array('author' => $author, 'books' => $books));
     }
 
-    // GET /v1/authors: JSON for programs (Accept: application/json and a token with the scope *)
+    // GET /v1/authors: JSON for programs, the classic api() output (Accept: application/json and a token with *)
     public function index()
     {
         $this->associate('Author', 'authors');
         return api(array('authors' => $this->all(array('order' => 'ORDER BY name'))));
     }
 
-    // GET /authors/new: the empty form (signed-in users only)
+    // GET /authors/new: the empty form (people signed in only)
     public function createForm()
     {
         $this->signedInOnly();
@@ -121,10 +117,10 @@ class AuthorController extends Controller
 
     private function form(array $values, array $errors)
     {
-        return view('Bookshelf/authorform', array('values' => $values, 'errors' => $errors, 'authorized' => authorized()));
+        return view('Bookshelf/authorform', array('values' => $values, 'errors' => $errors));
     }
 
-    // Sends visitors who are not signed in to the sign-in page
+    // sends visitors who are not signed in to the sign-in page
     private function signedInOnly()
     {
         if (!authorized()) {
@@ -135,12 +131,9 @@ class AuthorController extends Controller
 }
 ```
 
-- `signedInOnly()`: a visitor is sent to the sign-in page. `authorized()` is true when someone is signed in.
-- `create()` keeps only `name` and `bio` from the posted fields (a visitor could post anything), trims them, checks
-  them, and on failure shows the form again with what was typed and the messages.
-- `save($data)`: the route `POST /authors` has no `{id}`, so it inserts. It returns the new `Author`, whose `id`
-  builds the address of the redirect.
-- `form()` is `private`: only public methods can be actions.
+- `signedInOnly()` is a private method: no route can call it.
+- `get_errors_array()` gives one message per wrong field, for example `The Name field is required`.
+- `save($data)` inserts a row (there is no `{id}` in the route) and returns the new author.
 
 ### Step 2 - The form
 
@@ -176,129 +169,194 @@ block content
             a(href="{$home}books") All books
 ```
 
-- `main.cq-auth.cq-auth--wide` is the column of Caligrafy's sign-in page, a little wider: the title, a lead, the
-  fields (`.cq-field`) and a full-width black button. `p.cq-auth-note` holds the link under it.
-- `=csrf()` right under `form(...)` writes the hidden `_token` field.
-- `value=$values['name']` and the textarea content keep what the visitor typed when the form comes back with errors.
-- `novalidate` turns off the browser's own checks, so you see the server's messages (the ones every client gets).
-
 ### Step 3 - The routes
 
-In `application/config/routing/web.php`, rename the comment of the Appendix A block:
+In the block of Appendix A, renamed `// APPENDIX: routes, controllers and forms written by hand`, add
+`GET /authors/new` and `POST /authors` above `/authors/{id}`. The file is then:
+
+**File `application/config/routing/web.php`** (`/authors/new` before `/authors/{id}`):
+
 ```php
+<?php
+/**
+ * web.php
+ * Web Routes are defined in this file
+ * @author Dory A.Azar
+ * @copyright 2019
+ * @version 1.0
+ *
+*/
+
+use Caligrafy\Auth;
+use Caligrafy\Route;
+use Caligrafy\Errors;
+use \Exception as Exception;
+
+try {
+    
+    // API ACCESS - add comments if you don't want to allow API access on routes
+    Auth::activateAPI();
+    
+    
+    // AUTHENTICATION - Remove comment if you have an authentication implemented
+    Auth::authentication('User', 'users');
+    
+    // ROUTE DEFINITION: get, post, put and delete
+    Route::redirect('/', '/books');   // the home of Bookshelf is its catalog
+    Route::get('/helloworld', function() { echo "Hello World"; });
+	
+    // SIGN IN, SIGN OUT, SIGN UP: /login, /logout, /register and /notAuthorized; after signing in or up, the catalog
+    Route::auth(['home' => '/books', 'signInAfterRegister' => true]);
+
+    // User Administration Routes - Uncomment only if AUTHENTICATION activated above
+	// Route::get('/admin', 'Caligrafy\\Controllers\\AdminController');
+	// Route::get('/users', 'Caligrafy\\Controllers\\AdminController');
+	// Route::get('/users/{id}/edit', 'Caligrafy\\Controllers\\AdminController@editUserForm');
+	// Route::put('/users/{id}/edit', 'Caligrafy\\Controllers\\AdminController@updateUser');
+	// Route::delete('/users/{id}/edit', 'Caligrafy\\Controllers\\AdminController@deleteUser');
+
+    // GPT AI controller
+    // Route::get('/ai', 'Caligrafy\\Controllers\\AIController');
+    // Route::post('/ai', 'Caligrafy\\Controllers\\AIController@query');
+
+    // ROUTING TO JAVASCRIPT APPS
+    // Make sure you create a JS app or a Vue app in Caligrafer first
+    Route::get('/apps/{appName}', 'Caligrafy\\Controllers\\ClientController'); // you can specify any path as long as it ends with appName
+
+    
+    // BOT PAGE ROUTES
+    Route::get('/bot/{appName}', 'Caligrafy\\Controllers\\ClientController');  // A botSkillId needs to be provided in the URL. For Example: ?botSkillId=62196ce3-0b22-4aea-b2f2-d39730c03797
+    
+    // BOT DATA ROUTES
+    // routes need to start with reserved path __bots__ 
+    Route::post('/__bots__/{appName}/communicate', 'Caligrafy\\Controllers\\WatsonController@communicate');
+    Route::post('/__bots__/{appName}/{appId}', 'Caligrafy\\Controllers\\WatsonController@connect');
+    Route::delete('/__bots__/{appName}', 'Caligrafy\\Controllers\\WatsonController@end');   
+
+    /* ML Routes
+     *
+     * If you don't specify an up, it will go to the face, body detector.
+     * Specify an app as a URI Parameter ?app=<name of app>
+     * 
+     * There are 3 possible apps: featureextractor, neuralnetwork and posedetector
+    */
+    Route::get('/ml/{appName}', 'Caligrafy\\Controllers\\ClientController'); 
+    
+
+    // BUILD ONCE: every capability, for the JS client and AI agents
+    Route::capabilities('/capabilities');   // the capabilities for the JS client of the Vue apps
+    Route::mcp('/mcp');                     // the capabilities as tools for AI agents (personal access tokens)
+    Route::notifications();                 // the pages notification emails link to (confirm, unsubscribe)
+
+    // BOOKSHELF PAGES: rendered on the server with the data of the capabilities; each form calls one capability
+    Route::page('/books', 'Bookshelf/books', ['data' => ['books' => 'list_books', 'authors' => 'list_authors'], 'with' => ['install' => true]]);   // install: offer to add it to the home screen
+    Route::form('/books', 'create_book', ['success' => '/books/{id}', 'flash' => 'Book added']);
+    Route::page('/books/{id}', 'Bookshelf/book', ['data' => ['book' => 'get_book', 'authors' => 'list_authors'], 'notFound' => 'Bookshelf/notfound']);
+    Route::form('/books/{id}', 'update_book', ['method' => 'PUT', 'success' => '/books/{id}', 'flash' => 'Saved']);
+    Route::form('/books/{id}', 'delete_book', ['method' => 'DELETE', 'success' => '/books', 'flash' => 'Book deleted']);
+    Route::download('/authors.csv', 'list_authors', ['filename' => 'authors.csv']);   // the same capability, as a file
+    Route::page('/people', 'Bookshelf/people', ['level' => 1, 'data' => ['people' => 'list_users']]);   // administrators only
+
+    // BOOKSHELF API: the same capabilities, for other applications (JSON)
+    Route::capability('GET', '/api/books', 'list_books');
+    Route::capability('GET', '/api/books/{id}', 'get_book');
+    Route::capability('POST', '/api/books', 'create_book');
+    Route::capability('PUT', '/api/books/{id}', 'update_book');
+    Route::capability('DELETE', '/api/books/{id}', 'delete_book');
+    Route::capability('GET', '/api/authors', 'list_authors');
+
+    // LOANS: one more feature, every experience: a page and its forms, REST, the JS clients and AI agents
+    Route::page('/loans', 'Loans/index', ['signedIn' => true, 'data' => ['loans' => 'list_loans', 'books' => 'list_books']]);
+    Route::form('/loans', 'lend_book', ['success' => '/loans', 'flash' => 'Lent to {borrower} until {due_on}']);
+    Route::form('/loans/{book_id}/return', 'return_book', ['success' => '/loans', 'flash' => 'Returned by {borrower}']);
+    Route::form('/loans/remind', 'send_reminders', ['success' => '/loans', 'flash' => 'The reminders are on their way (job {job})']);   // administrators
+    Route::capability('GET', '/api/loans', 'list_loans');
+    Route::capability('POST', '/api/loans', 'lend_book');
+    Route::capability('POST', '/api/books/{book_id}/return', 'return_book');
+
     // APPENDIX: routes, controllers and forms written by hand
-```
-and add these two lines right **above** `Route::get('/authors/{id}', ...)` (the full file is in the checkpoint):
-```php
+    Route::get('/about', function () {
+        echo 'Bookshelf: a small catalog of the books we love.';
+    });
+    Route::get('/hello/{name}', function () {
+        $name = request()->fetch('name');        // the {name} part of the address
+        echo 'Hello ' . sanitize($name) . '!';   // sanitize: never print what a visitor typed as is
+    });
+    Route::get('/feed', 'Bookshelf\\FeedController@books');        // custom HTTP: a controller that calls a capability
     Route::get('/authors/new', 'Bookshelf\\AuthorController@createForm');   // before /authors/{id}, or {id} would take "new"
     Route::post('/authors', 'Bookshelf\\AuthorController@create');
+    Route::get('/authors/{id}', 'Bookshelf\\AuthorController@show');   // under the hood: the classic way
+    Route::get('/v1/authors', 'Bookshelf\\AuthorController@index');
+
+    // MUST NOT BE REMOVED - Routes need to be run after being defined 
+    Route::run(); 
+}
+catch (Exception $e) {
+    
+    // Error handling: HTTP status code (404, 401, 403, 500...) with the error text, or a JSON error for API calls
+    Errors::handle($e);
+}
 ```
 
 ### Step 4 - Try it
 
-Signed out, from the `bookshelf` folder:
+1. As a visitor, open http://localhost:8080/authors/new: you land on the sign-in page.
+2. Sign in as reader1 and open it again: **Add an author**, a Name and a Bio.
+3. Leave the name empty, type `x` in Bio, **Add author**: `The Name field is required`, and `x` is still in Bio
+   (status 422).
+4. Name `  N. K. Jemisin ` (with spaces), Bio `American writer of the Broken Earth trilogy.`, **Add author**: you land
+   on her page, `/authors/30` (your number differs: each test of lesson 12 used an id too), titled `N. K. Jemisin`
+   without the spaces.
+5. The catalog form of http://localhost:8080/books lists her in **Author**: `list_authors` reads the same table.
+
+A post without the token, as another site would send it:
 ```bash
-curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' http://localhost:8080/authors/new
+curl -s -o /dev/null -w "%{http_code}\n" -d "name=x" http://localhost:8080/authors
 ```
-Expected: `302 http://localhost:8080/login` (302 is a redirect).
+Expected: `403`.
 
-Without the CSRF token, as another website would post:
-```bash
-curl -s -o /dev/null -w '%{http_code}\n' -X POST -d 'name=Forged' http://localhost:8080/authors
-```
-Expected: `403`. Nothing was saved.
-
-In the browser, sign in as `reader1` and open http://localhost:8080/authors/new: the page "Add an author" with Name,
-Bio and "Add author".
-- Click "Add author" with an empty name: the same form, with "The Name field is required" (status 422).
-- Type `N. K. Jemisin` and a bio (for example "American author of the Broken Earth trilogy."), click "Add author":
-  you land on her page, http://localhost:8080/authors/<id> (no books yet). The id is 4 or more: every run of the
-  tests of lesson 12 added an author and took it back, and MySQL never gives an id twice.
-- Open http://localhost:8080/books: the author segments (one per author, from `list_authors`) now include N. K. Jemisin. The data is shared by everyone; only
-  the **form** is private to this page.
-
-> Before lesson 11 nobody can sign in, so `/authors/new` always redirects to `/login`. Remove the two `$this->signedInOnly();` lines to try the form, and put them back afterwards.
+The rules of this form exist only here: an agent cannot add an author, and `POST /capabilities/create_author` answers
+`{"error":{"code":"not_found","message":"There is no capability 'create_author'"}}` (404).
 
 > **If it doesn't work**
 >
 > | What you see | Cause | Fix |
 > |---|---|---|
-> | `[ERROR 3000] Security Error - Cross Site Forgery` (403) when you submit your own form | `=csrf()` is missing, or your session expired (the form was open while the containers restarted) | Add `=csrf()` under `form(...)`; reload the form and submit again |
-> | `/authors/new` shows "There is no such author." | `/authors/new` is declared below `/authors/{id}` | Move it above |
-> | "The Name field is required" although you typed a name | The controller reads the field with `$this->request->fetch('name')` (route variables only) | Use `$this->request->parameters()` |
-> | A blank page after a valid submit | `exit;` is missing after `redirect()`, or code after it failed | Keep `redirect(...); exit;` |
-> | Saving changed an existing author | The route that receives the form has an `{id}`, so `save()` updated that row | Post to `/authors` (no `{id}`) to create |
+> | `/authors/new` shows the Not found page of an author | `/authors/new` is declared below `/authors/{id}` | Move it above (step 3) |
+> | `[ERROR 3000] Security Error - Cross Site Forgery` when you submit | `=csrf()` is missing from the form, or the page was opened before a sign-in | Compare with step 2; reload the form |
+> | `[ERROR 1001] Invalid Controller or Action` | A typo in `createForm` or `create`, in the route or the class | Compare with steps 1 and 3 |
+> | The errors show but the typed bio is gone | The view does not print `$values['bio']` | Compare with step 2 |
 
 ---
+
+## Check
+
+- [ ] The controller, `authorform.pug` and `web.php` are identical to the File blocks.
+- [ ] A visitor goes to `/login`; an empty name gives `The Name field is required` and keeps the bio; a good one
+      redirects to the author's page.
+- [ ] A post without `_token` answers 403.
 
 ## With Claude
 
-This appendix writes the classic way on purpose, so ask Claude directly (the plugin's `/caligrafy-quill:new-resource`
-builds a resource capabilities first, the way of the lessons, not this way). Authors already exist:
-```
-The classic way, without capabilities: add to Bookshelf\AuthorController a createForm() action for GET /authors/new
-and a create() action for POST /authors. Both are for signed-in users only (redirect('/login') and exit otherwise).
-create() reads the posted fields with $this->request->parameters(), keeps only name and bio, trims them with
-$this->validator->filter(), validates with $this->validator->validate() (name required, max 150; bio max 2000), and
-on failure shows the form again with status 422 and $this->validator->get_errors_array(). On success:
-associate('Author', 'authors'), save(), redirect to /authors/<id> and exit. The view
-application/views/Bookshelf/authorform.pug extends ../default/master/site, puts the form in main.cq-auth.cq-auth--wide
-(h1, p.cq-lead, .cq-field), uses =csrf(), keeps the typed values and shows the errors in p.cq-field-error. In
-web.php, add GET /authors/new above GET /authors/{id}, and POST /authors.
+```text
+The classic way, for Appendix B only: add createForm() and create() to application/controllers/Bookshelf/
+AuthorController.php. createForm shows application/views/Bookshelf/authorform.pug (main.cq-auth.cq-auth--wide,
+"Add an author", =csrf(), name and bio). create reads $this->request->parameters(), filters trim, validates
+name required|max_len,150 and bio max_len,2000 with $this->validator, shows the form again with the values and the
+errors (status 422), else associate('Author', 'authors'), save() and redirect to /authors/<id>. Both send visitors
+to /login. Routes GET /authors/new (above /authors/{id}) and POST /authors.
 ```
 
 **Check** before you accept:
-- [ ] The form has `=csrf()`.
-- [ ] `/authors/new` is declared **above** `/authors/{id}`.
-- [ ] The posted fields come from `parameters()`, not `fetch()` or `$_POST`.
-- [ ] `filter()` then `validate()` (not `check()` with both rules and filters).
-- [ ] `http_response_code(422)` before the form is shown again; `exit;` after every `redirect()`.
-- [ ] The checks of step 4 give the same answers (302, 403, the 422 message, the redirect to the new author).
-
-**If Claude's result differs:** if it puts the rules in a separate class or uses `check()` correctly, that works too.
-If it offers a `create_author` capability, keep that for the exercise.
+- [ ] `/authors/new` is declared above `/authors/{id}`; the form has `=csrf()`.
+- [ ] A refused form answers 422 with the typed values; a good one redirects.
+- [ ] The checks of step 4 give the same answers.
 
 ---
 
-## Compare with capabilities
+## The same form, with Route::form
 
-| | The form of this appendix | A `create_author` capability |
-|---|---|---|
-| The web page | yes | yes, with one `Route::form` line and no controller |
-| REST | no JSON route: `POST /authors` is made for a browser form and answers with a page or a redirect | `Route::capability('POST', '/api/authors', 'create_author')` |
-| The JS client | no `createAuthor()` | yes, after `client` |
-| AI agents | no tool: an agent cannot add an author | a `create_author` tool, with its description and schema |
-| Rules, scopes, audit | in this controller only, no scope, nothing audited | `$rules` once, scope `books:write`, every change and refusal audited |
-
-A classic form in a controller is for HTTP that is truly its own. For anything else, the exercise below is the
-better design: a capability, and `Route::form` for its page.
-
----
-
-## Checkpoint
-
-```bash
-git add -A
-git commit -m "Appendix B: a classic form"
-git tag appendix-b
-```
-Reference: [`checkpoints/appendix-b`](https://github.com/caligrafy/caligrafy-quill-course/tree/main/checkpoints/appendix-b).
-
-## Exercise
-
-Turn the form into a capability: write `create_author` (scope `books:write`, the same rules), show the form with
-`Route::page` and send it to `Route::form` (delete `createForm()` and `create()` from the controller), give it a REST
-route `POST /api/authors`, regenerate the clients, and check that an agent with the "Claude Code" token can add an
-author. (This goes beyond the checkpoint. Do it after lesson 13; earlier, skip the SPA
-client and expect fewer capabilities.)
-
-<details><summary>Show the solution</summary>
-
-```bash
-docker compose exec dev-box php caligrafer.php service Bookshelf/CreateAuthor --scope books:write
-```
-
-`application/services/Bookshelf/CreateAuthor.php` (like the other Bookshelf services: no namespace):
+The course's way is a capability and two lines. `create_author` holds the rules:
 ```php
 <?php
 
@@ -309,63 +367,58 @@ use Caligrafy\Service;
 // create_author: adds an author, with the same rules whoever calls it
 #[Capability(
     name: 'create_author',
-    description: 'Adds an author to the Bookshelf catalog and returns it with its id. Use it before create_book when list_authors does not have the author.',
+    description: 'Adds an author to the Bookshelf catalog and returns it with its id.',
     scope: 'books:write'
 )]
 class CreateAuthor extends Service
 {
     public $rules = array('name' => 'required|max_len,150', 'bio' => 'max_len,2000');
     public $filters = array('name' => 'trim', 'bio' => 'trim');
-    public $descriptions = array(
-        'name' => 'The name of the author, for example N. K. Jemisin',
-        'bio' => 'Optional: one or two sentences about the author'
-    );
+    public $descriptions = array('name' => 'The name of the author', 'bio' => 'Optional: a sentence about them');
 
     public function handle(array $input, Context $context)
     {
-        return Author::find(Author::insert($input));   // the new author, with its id
+        return Author::find(Author::insert($input));
     }
 }
 ```
-
-In `web.php`, replace the two routes of step 3 (keep them above `/authors/{id}`):
+In `web.php` the two controller routes become:
 ```php
-    Route::page('/authors/new', 'Bookshelf/authorform', ['signedIn' => true]);   // before /authors/{id}, or {id} would take "new"
-    Route::form('/authors', 'create_author', ['success' => '/authors/{id}']);
+    Route::page('/authors/new', 'Bookshelf/authorform', ['signedIn' => true]);
+    Route::form('/authors', 'create_author', ['success' => '/authors/{id}', 'flash' => 'Author added']);
 ```
-and, in the `// BOOKSHELF API` block:
-```php
-    Route::capability('POST', '/api/authors', 'create_author');
-```
-In `authorform.pug`, the values and the messages now come from `Route::form`:
-```pug
-                input#name.form-control(type='text', name='name', value=old('name'), maxlength='150')
-```
-```pug
-                textarea#bio.form-control(name='bio', rows='3', maxlength='2000')= old('bio')
-```
-```pug
-        if errors()
-            p.cq-field-error(role='alert')= implode(' ', errors())
-```
-In `AuthorController.php`, delete `createForm()`, `create()`, `form()` and `signedInOnly()`: `['signedIn' => true]`
-sends visitors to `/login`, and `Route::form` checks the token, calls `create_author` as the person signed in,
-redirects to `/authors/<id>` or back to the form with the messages. `show()` and `index()` stay.
+and the view reads `value=old('name')`, `= old('bio')` and `errors('name')` in place of `$values` and `$errors`.
+`createForm()`, `create()` and the two helpers are deleted. Tried on the course's run: an empty name comes back with
+`The Name field is required` and the typed bio, a good one redirects to `/authors/31`, a visitor goes to `/login`, and
+the same capability now answers REST and agents:
+`{"error":{"code":"invalid","message":"Some of the inputs are invalid","fields":{"name":"The Name field is required"}}}`
+(422) for an empty name. That version is not in the checkpoint.
 
-Then:
+---
+
+## Checkpoint
+
 ```bash
-docker compose exec dev-box php caligrafer.php client public/js/capabilities.js
-docker compose exec dev-box php caligrafer.php client public/bookshelf-spa/src/capabilities.js
-docker compose exec dev-box php caligrafer.php capabilities
+git add -A
+git commit -m "Appendix B: classic forms"
+git tag appendix-b
 ```
-The client now has `createAuthor()` (24 capabilities), and `capabilities` lists `create_author  books:write  writes`.
-The form works as before, with a redirect instead of a 422 page: an empty name sends you back to the form with "The
-Name field is required" and the bio you typed. `POST /api/authors` answers `401` to a visitor, and with the "Claude
-Code" token `422` with `"fields":{"name":"The Name field is required"}` for `{"name": ""}`, and `201` with the new
-author for `{"name": "Becky Chambers"}`. Reconnect Claude Code with that token if needed and ask "Add the author Ted
-Chiang, then list the authors": it calls the `create_author` tool. `audit --limit 5` shows the calls, with the web
-form as channel `web`, REST as `rest` and the agent as `mcp`. One capability, every experience.
+Reference: [`checkpoints/appendix-b`](https://github.com/caligrafy/caligrafy-quill-course/tree/main/checkpoints/appendix-b).
+Learn more: [Declarative routes](https://github.com/caligrafy/caligrafy-quill/wiki/Declarative-Routes) and
+[9. Helpers, Forms and REST API](https://github.com/caligrafy/caligrafy-quill/wiki/9.-Helpers-,-Forms-&-REST-API).
+
+## Exercise
+
+Why does `create()` end with `redirect(...)` and `exit`, and what happens if you reload the author's page after
+adding one? What would happen if `create()` rendered the author's page directly instead?
+
+<details><summary>Show the solution</summary>
+
+`redirect()` sends the browser to `/authors/<id>` with a GET; `exit` stops the action there. Reloading the author's
+page repeats that GET: nothing is added twice. If `create()` rendered the page itself, the browser would still be on
+the POST: a reload asks "send the form again?" and adds the author a second time. `Route::form` always redirects after
+a success, for the same reason.
 </details>
 
 ---
-Previous: [Appendix A - Routes and controllers by hand](A-Routes-and-Controllers) · Next: [Back to the course home](Home)
+Previous: [Appendix A - Routes and controllers by hand](A-Routes-and-Controllers) · [Back to the course](Home)

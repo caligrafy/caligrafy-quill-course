@@ -1,25 +1,26 @@
 extends ../default/master/site
 
-//- One book, rendered on the server by Route::page with the data of get_book; the form posts to Route::form (update_book)
+//- One book: Route::page gives it $book (get_book: the book with its author) and $authors (list_authors).
+//- The edit form posts to Route::form (PUT, update_book), the delete form to Route::form (DELETE, delete_book)
 
 block title
-    = $found['book']['title'] . ' · Bookshelf'
+    = $book['title'] . ' · Bookshelf'
 
 block content
-    //- $found: what get_book returned (Route::page data). After a refused save, old() and errors() hold what Route::form sent back
-    - $book = $found['book'];
-    - $author = $found['author'];
     section.cq-hero.cq-hero--page
         h1.cq-display= $book['title']
         p.cq-lead
-            | by #{$author['name']}, #{$book['published_year']}
+            | by #{$book['author']['name']}, #{$book['published_year']}
 
     section.cq-band.cq-band--tight
         .cq-inner.cq-inner--narrow
             if flash('success')
                 p.cq-alert(role='status')= flash('success')
             p= $book['summary'] ?: 'No summary yet.'
+            if $book['isbn']
+                p.cq-row-meta ISBN #{$book['isbn']}
 
+            //- each field shows what was typed after a refusal (old), else what is saved
             form(method='POST', action="{$home}books/{$book['id']}", novalidate)
                 =csrf()
                 =methodField('PUT')
@@ -34,18 +35,29 @@ block content
                         select#author_id.form-select(name='author_id')
                             each $a in $authors
                                 option(value=$a['id'], selected=$a['id'] == old('author_id', $book['author_id']))= $a['name']
+                        if errors('author_id')
+                            p.cq-field-error= errors('author_id')
                     .cq-field
                         label(for='published_year') * Year
                         input#published_year.form-control(type='number', name='published_year', value=old('published_year', $book['published_year']))
                         if errors('published_year')
                             p.cq-field-error= errors('published_year')
                     .cq-field
-                        label(for='summary') Summary
-                        input#summary.form-control(type='text', name='summary', value=old('summary', $book['summary']), maxlength='2000')
+                        label(for='isbn') ISBN
+                        input#isbn.form-control(type='text', name='isbn', value=old('isbn', $book['isbn']), maxlength='20')
+                        if errors('isbn')
+                            p.cq-field-error= errors('isbn')
+                .cq-field
+                    label(for='summary') Summary
+                    input#summary.form-control(type='text', name='summary', value=old('summary', $book['summary']), maxlength='2000')
                 button.btn.btn-primary(type='submit') Save changes
-
             if flash('error')
                 p.cq-field-error(role='alert')= flash('error')
 
-            p.cq-auth-note
-                a(href="{$home}books") All books
+            form(method='POST', action="{$home}books/{$book['id']}", onsubmit="return confirm('Delete this book? This cannot be undone.')")
+                =csrf()
+                =methodField('DELETE')
+                p.cq-auth-note
+                    button.btn.btn-secondary(type='submit') Delete this book
+                    |  
+                    a(href="{$home}books") All books

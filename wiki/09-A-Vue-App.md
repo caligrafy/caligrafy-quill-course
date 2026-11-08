@@ -1,12 +1,11 @@
 # Lesson 09 - A Vue app
 
-**In this lesson** you build **finder**, a small Vue app served by Caligrafy at http://localhost:8080/apps/finder:
-you type a few words, the list of books updates as you type, and you open a book to read about it and its author. It
-is a new experience of the same catalog, built with zero new server code: it calls `search_books`, `list_books` and
-`get_book` through the JS client.
+**In this lesson** you build **finder**, a small Vue app served by Caligrafy at http://localhost:8080/apps/finder: you
+type a few words, the list of books changes as you type, and you open a book to read about it and its author. You
+generate the **JS client** of Bookshelf, one JavaScript function per capability, and the app calls `list_books`,
+`search_books` and `get_book` through it. No server code is written: no route, no controller, no capability.
 
-**Before you start:** lesson 08 is done (tag `lesson-08`), the containers run (`docker compose ps`), and
-`public/js/capabilities.js` has 20 capabilities (`grep -c "export const" public/js/capabilities.js` prints `20`).
+**Before you start:** lesson 08 is done (tag `lesson-08`) and `docker compose ps` shows the 3 containers running.
 
 **Time:** 40 minutes.
 
@@ -14,74 +13,97 @@ is a new experience of the same catalog, built with zero new server code: it cal
 
 ## New concepts
 
-**Vue.js.** A JavaScript library that keeps a part of the page in sync with your data. You write the HTML once with
-a few special attributes; when the data changes, Vue updates the page by itself.
+**Vue.js.** A JavaScript library that keeps a part of the page in sync with your data. You write the HTML once with a
+few special attributes; when the data changes, Vue updates the page.
 
 | In the HTML | Meaning |
 |---|---|
-| `{{ book.title }}` | the value of `book.title`, shown as text (escaped, so it is safe) |
+| `{{ book.title }}` | the value of `book.title`, as text (escaped, so it is safe) |
 | `v-for="book in books" :key="book.id"` | repeat this element for each book; `:key` tells Vue which row is which |
-| `v-if="selected"` / `v-else` | show this element only when `selected` has a value / otherwise show the next one |
+| `v-if="selected"` / `v-else` | show this element only when `selected` has a value / otherwise the next one |
 | `v-model="query"` | the input and `query` always hold the same value |
 | `@input="search"` | on every key typed, call the method `search` |
-| `@click="open(book.id)"` | on click, call `open` with the id |
+| `@click="open(book.id)"` | on a click, call `open` with the id |
 | `@submit.prevent` | when the form is submitted, do not reload the page |
 | `v-cloak` | hides the element until Vue is ready (no flash of `{{ }}`) |
 
 In the JavaScript, `Vue.createApp({ data(), mounted(), methods })` defines the app: `data()` returns the data,
-`mounted()` runs once when the app appears, `methods` are the functions the HTML calls. `app.mount('#app')` attaches
-it to `<div id="app">`.
+`mounted()` runs once when the app appears, `methods` are the functions the HTML calls. `app.mount('#app')` attaches it
+to `<div id="app">`.
 
-**Vue as a library.** The simplest way to use Vue: a `<script>` tag loads it, with no build step and no Node.js.
-Caligrafy calls this a **client app**: a folder `public/<name>/` with an `index.php` (the HTML) and
-`scripts/main.js` (the Vue code). `php caligrafer.php app <name>` creates it. The route
-`Route::get('/apps/{appName}', 'Caligrafy\\Controllers\\ClientController');` is already in `web.php`: it shows any
-client app at `/apps/<folder name>`. (Lesson 10 builds the other kind of Vue app, with Vite.)
+**A client app.** The simplest way to use Vue: a `<script>` tag loads it, with no build step and no Node.js. In
+Caligrafy a client app is a folder `public/<name>/` with `index.php` (the HTML) and `scripts/main.js` (the Vue code);
+`php caligrafer.php app <name>` creates it. The route
+`Route::get('/apps/{appName}', 'Caligrafy\\Controllers\\ClientController');`, already in `web.php`, shows any client app
+at `/apps/<folder>`. In `index.php`, `loadEnvironment()` creates the object `env` (`env.home` is the address of the
+application, `http://localhost:8080/`), and `loadVue({ scripts: ['main'] })` loads `scripts/main.js`. Lesson 10 builds
+the other kind of Vue app, with Vite.
 
-**`env`.** The server gives the app what it needs in a JavaScript object: `loadEnvironment()` creates `env`, and
-`env.home` is the address of your application (`http://localhost:8080/`). `loadVue({ scripts: ['main'] })` then loads
-`scripts/main.js`.
+**The JS client.** `php caligrafer.php client` reads your capabilities and writes `public/js/capabilities.js`: one
+function per capability, named in camelCase (`list_books` becomes `listBooks`). Each function posts to
+`/capabilities/<name>` (the `Route::capabilities` of lesson 07) and returns the `data` of the answer; a refusal throws a
+`CapabilityError` with `status`, `code`, `message` and `fields`. It is generated: run the command again after you add or
+change a capability, and never edit the file.
 
-**Dynamic import.** The JS client `public/js/capabilities.js` is an **ES module**: a file that `export`s functions
-(`export const searchBooks = ...`). A page loads a module with `<script type="module">`, but Vue as a library runs
-`main.js` as a classic script, where the `import ... from` line is not allowed. A classic script can still load a
-module with the function `import()`:
+| Capability | Function | What it returns |
+|---|---|---|
+| `list_books` | `listBooks({ author_id, page })` | a page: the books are in `.data`, with `total`, `page`, `per_page`, `pages` |
+| `search_books` | `searchBooks({ query })` | a list of books |
+| `get_book` | `getBook({ id })` | one book, its author in `.author` (`book.author.name`) |
+
+**No key in the page.** In a page of the application, the client needs no token and no key: the browser sends the
+**session cookie** with each call, and the client asks `GET /capabilities` once for the **CSRF token** (a random value
+the server gives its own pages, so that another site cannot send requests in your name) and sends it in the header
+`X-CSRF-Token`. Lesson 11 builds sign-in on this session.
+
+**Dynamic import.** The client is an **ES module** (a file that `export`s functions). Vue as a library runs `main.js`
+as a classic script, where `import ... from` is not allowed, but the function `import()` is:
 ```js
 this.api = await import(env.home + 'public/js/capabilities.js')
 ```
-`this.api` then holds every function of the module: `this.api.listBooks()`, `this.api.searchBooks({ query })`.
-
-**No key in the page.** The template that Caligrafer copies already uses the JS client: it lists the capabilities
-the visitor may call. (Older versions of the template called the server with axios and an API key written in the
-page, which anyone can read in the page source.) The JS client needs no key: the browser sends the **session cookie**
-of `localhost:8080` with every call, and before a call the client fetches the **CSRF token** once (a random value the
-server gives to its own pages, so another site cannot send requests in your name). Lesson 11 builds sign-in on top
-of this session.
-
-**Build once, in practice.** The server already knows how to search, list and open books (lessons 04 and 08). This
-lesson adds two files in `public/finder/` and nothing else: no route, no controller, no capability.
+`this.api` then holds every function: `this.api.listBooks()`, `this.api.searchBooks({ query })`.
 
 ---
 
-## Manual track
+## Steps
 
-### Step 1 - Create the app folder
+Run every command from the `bookshelf` folder.
+
+### Step 1 - Generate the JS client
+
+```bash
+docker compose exec dev-box php caligrafer.php client
+```
+Expected:
+```text
+ public/js/capabilities.js written: 20 capabilities, calls /capabilities (Route::capabilities('/capabilities') in web.php)
+ import { createBook, CapabilityError } from './capabilities.js'
+```
+20: your 7 and 13 of the framework (the accounts, the notifications and the queue: a function for each, which a visitor
+cannot call). The second line shows how a module imports it. Check one function:
+```bash
+grep -n "export const searchBooks" public/js/capabilities.js
+```
+Expected: `175:export const searchBooks = (input = {}) => call('search_books', input)`. Above it, a comment repeats the
+capability's description and the types of its inputs, which your editor shows as you type.
+
+### Step 2 - Create the app
 
 ```bash
 docker compose exec dev-box php caligrafer.php app finder
 ```
 Expected:
-```
+```text
  Project created in the public folder.
  Type cd public/finder to access it anytime
 ```
-It copied a template to `public/finder/`: `index.php` and `scripts/main.js`. Open
-http://localhost:8080/apps/finder: it answers (status 200) with the template's content, already in Caligrafy's look:
-the top bar, the title *My Vue app* and the capabilities you may call, as rows. You replace both files.
+It copied a template to `public/finder/`: `index.php` and `scripts/main.js`. Open http://localhost:8080/apps/finder:
+the template already uses the client and Caligrafy's look; under the title *My Vue app* it lists the capabilities you
+may call. You replace both files.
 
-### Step 2 - The HTML of the app
+### Step 3 - The HTML
 
-**File `public/finder/index.php`** (the same look as the pages: the top bar, a title band, then the search field and the rows side by side with the book):
+**File `public/finder/index.php`** (the look of the pages: the top bar, a title band, then the search and the rows beside the book):
 
 ```php
 <!DOCTYPE html>
@@ -130,7 +152,7 @@ the top bar, the title *My Vue app* and the capabilities you may call, as rows. 
                         <li class="cq-row" v-for="book in books" :key="book.id">
                             <div class="cq-row-main">
                                 <p class="cq-row-title">{{ book.title }}</p>
-                                <p class="cq-row-meta">{{ book.published_year }}</p>
+                                <p class="cq-row-meta">{{ book.author.name }}, {{ book.published_year }}</p>
                             </div>
                             <div class="cq-row-actions">
                                 <button type="button" class="btn btn-secondary" @click="open(book.id)">Open</button>
@@ -143,9 +165,9 @@ the top bar, the title *My Vue app* and the capabilities you may call, as rows. 
 
                 <aside class="cq-split-detail" aria-live="polite">
                     <template v-if="selected">
-                        <h2 class="cq-heading">{{ selected.book.title }}</h2>
-                        <p class="cq-lead">by {{ selected.author.name }}, {{ selected.book.published_year }}</p>
-                        <p class="cq-lead">{{ selected.book.summary || 'No summary yet.' }}</p>
+                        <h2 class="cq-heading">{{ selected.title }}</h2>
+                        <p class="cq-lead">by {{ selected.author.name }}, {{ selected.published_year }}</p>
+                        <p class="cq-lead">{{ selected.summary || 'No summary yet.' }}</p>
                         <p class="cq-row-meta">{{ selected.author.bio }}</p>
                     </template>
                     <p class="cq-empty-state" v-else>Open a book to read about it.</p>
@@ -165,18 +187,17 @@ the top bar, the title *My Vue app* and the capabilities you may call, as rows. 
 ```
 
 What to notice:
-- The `<link>` tags load the same CSS as the Pug pages (`theme.css`, `tokens.css`, then `layout.css` and `look.css`),
-  and `<body class="cq-site">` turns Caligrafy's look on: same top bar, same title band and rows (`cq-hero`,
-  `cq-rows`) as the pages of lesson 06. The PHP of `index.php` writes the address of the site
-  (`session('home')`) and of its `public` folder (`session('public')`) for the links and the mark.
-- `.cq-split` puts two parts side by side: `.cq-split-main` (the search field and the rows) and
-  `aside.cq-split-detail` (the book opened), a grey panel that stays in view while the list scrolls. From tablets up
-  they sit side by side; on a phone the panel comes after the list. You write no CSS for that.
-- The book of the panel comes from `get_book`: `selected.book` and `selected.author`, the two parts of its answer.
+- The `<link>` tags load the same CSS as the Pug pages: `theme.css`, `tokens.css` (the design tokens: colors, spacing,
+  fonts as CSS variables), `layout.css` (the page components: `cq-nav`, `cq-hero`, `cq-rows`, `cq-split`...) and
+  `look.css`. The app looks like the catalog.
+- `.cq-split` puts `.cq-split-main` (search and rows) and `.cq-split-detail` (the book opened) side by side from
+  tablets up, one under the other on phones.
+- Each row shows `book.author.name`: `list_books` and `search_books` give each book its author. The panel shows
+  `selected.author.bio`, from `get_book`.
 
-### Step 3 - The Vue code
+### Step 4 - The Vue code
 
-**File `public/finder/scripts/main.js`** (loads the JS client, then calls three capabilities):
+**File `public/finder/scripts/main.js`** (loads the client, then calls three capabilities):
 
 ```js
 // The finder: a Vue app on the same capabilities as the pages, REST and AI agents
@@ -185,15 +206,15 @@ const app = Vue.createApp({
     return {
       query: '',
       books: [],
-      selected: null,   // { book, author } from get_book
+      selected: null,   // the book of get_book, with its author
       error: '',
       timer: null
     }
   },
   async mounted () {
-    // the generated JS client: one function per capability (php caligrafer.php client public/js/capabilities.js)
+    // the generated JS client: one function per capability (php caligrafer.php client)
     this.api = await import(env.home + 'public/js/capabilities.js')
-    this.books = (await this.api.listBooks()).data
+    this.run(async () => { this.books = (await this.api.listBooks()).data })
   },
   methods: {
     // called on every key: wait until the typing pauses, then ask search_books
@@ -224,86 +245,90 @@ app.mount('#app')
 ```
 
 What to notice:
-- `mounted()` loads the client, then fills the list with the first page of `listBooks()`: its books are in
-  `.data` (lesson 04). `searchBooks()` returns a plain list, so it needs no `.data`.
-- `search()` waits until you stop typing for 250 ms before it calls the server: one call per pause, not one per key.
-  Under 2 characters it shows every book instead of calling `search_books` (whose rule asks for 2 or more).
-- `run()` wraps every call: when a capability refuses, the error is a `CapabilityError` with the same messages as the
-  REST API and the agent saw in lesson 08.
+- `mounted()` loads the client, then shows the first page of `listBooks()`: the books are in `.data`.
+  `searchBooks()` returns a plain list, so it needs no `.data`.
+- `search()` waits until the typing pauses for 250 ms before it calls the server: one call per pause, not per key.
+  Under 2 characters it lists the books instead of calling `search_books`, whose rule asks for 2 or more.
+- `run()` wraps every call: a refusal is a `CapabilityError` with the messages of the capability's rules, the same that
+  the REST API and the agent got.
 
-### Step 4 - Try it
+### Step 5 - Try it
 
-Open http://localhost:8080/apps/finder (reload if it was open).
-1. Under the title **Find a book**, the rows list every book; the note under them says how many (`5 book(s)`, or
-   more if you added some). The grey panel on the right says `Open a book to read about it.`
-2. Type `time` and pause: only **Kindred** stays (its summary says "pulled back in time"). The note: `1 book(s)`.
-3. Click **Open**: in the grey panel beside the list, "Kindred", "by Octavia E. Butler, 1979", the summary, then the
-   author's bio.
-4. Type `zzzz`: `No book matches "zzzz".`
-5. Make the window narrow (or open the browser's device toolbar at 375 px): one column, the book's panel after the
-   list, each Open button under its book, no horizontal scroll.
+Open http://localhost:8080/apps/finder (reload it if it was open).
+1. Under **Find a book**, the rows list every book with its author and year; the note under them says `8 book(s)` if
+   you followed every lesson. The grey panel says `Open a book to read about it.`
+2. Type `time` and pause: only **Kindred** stays, `1 book(s)`.
+3. Click **Open**: the panel shows *Kindred*, `by Octavia E. Butler, 1979`, the summary, then the author's bio.
+4. Type `zzzz`: `No book matches "zzzz".` and `0 book(s)`. Delete the letters down to `a`: every book is back.
+5. Make the window narrow (or the browser's device toolbar at 375 px): one column, the panel after the list, no
+   horizontal scroll.
 
-Check what the app sends: open the developer tools (<kbd>F12</kbd>), tab **Network**, reload, type `magic`.
-You see `GET capabilities` once (the client fetches the CSRF token), then `POST list_books` and `POST search_books`.
-Click one: the request has an `X-CSRF-Token` header and no `Authorization` header. No key in sight.
+See what the app sends: open the developer tools (<kbd>F12</kbd>), tab **Network**, reload, type `magic`. In order:
+`GET capabilities.js` (the client), `GET capabilities` once (the CSRF token), `POST list_books`, then
+`POST search_books`. Click one: it has an `X-CSRF-Token` header and no `Authorization` header.
 
 Check that no server code changed:
 ```bash
 git status --short
 ```
-Expected: one line, `?? public/finder/` (a new folder, nothing modified).
+Expected:
+```text
+?? public/finder/
+?? public/js/capabilities.js
+```
 
 > **If it doesn't work**
 >
 > | What you see | Cause | Fix |
 > |---|---|---|
-> | The page shows `{{ book.title }}` or stays empty | Vue did not start: an error in `main.js` | Open the Console (<kbd>F12</kbd>): it names the file and the line; compare with step 3 |
-> | Console: an error that names `public/js/capabilities.js` (404 in the Network tab) | The client file is missing | `docker compose exec dev-box php caligrafer.php client public/js/capabilities.js` |
-> | Console: `this.api.searchBooks is not a function` | The client was generated before `search_books` existed | Regenerate the client (lesson 08, step 3) |
-> | `/apps/finder` does not show your app | The folder name and the address differ | The folder is `public/finder`, the address `/apps/finder` |
-> | "Something went wrong. Try again." under the search field | The server did not answer with JSON (containers stopped, PHP error) | `docker compose ps`; run the `list_books` curl call of lesson 04 and read its answer |
+> | The page shows `{{ book.title }}` or stays empty | Vue did not start: an error in `main.js` | The Console (<kbd>F12</kbd>) names the file and the line; compare with step 4 |
+> | Console: `Failed to fetch dynamically imported module` and a 404 for `capabilities.js` | Step 1 was skipped | Run the `client` command of step 1 |
+> | Console: `this.api.searchBooks is not a function` | The client was generated before `search_books` existed | Run the `client` command again |
+> | `Something went wrong. Try again.` under the search field | The server did not answer JSON (containers stopped, a PHP error) | `docker compose ps`; call `search_books` with the curl command of lesson 08 and read the answer |
+> | The rows show `, 1979` with no name | `main.js` or `index.php` reads `book.author_name` or an older shape | Each book has `author` with `name`: `book.author.name` |
 > | Changes to `main.js` do not show | The browser kept the old file | Reload with <kbd>Shift</kbd> pressed, or tick *Disable cache* in the Network tab |
-> | `The project could not be created` | The folder already exists, or the name is reserved (`app`, `bot`, `css`, `js`, `ml`...) | Delete the folder first, or choose another name |
+> | `The project could not be created` | The folder exists, or the name is reserved (`app`, `bot`, `css`, `js`, `ml`...) | Delete the folder first, or choose another name |
 
 ---
+
+## Check
+
+- [ ] `public/finder/index.php` and `public/finder/scripts/main.js` are identical to the File blocks.
+- [ ] `public/js/capabilities.js` was written by the `client` command (20 capabilities) and not edited.
+- [ ] `git status --short` shows only the two new paths: no change in `application/`.
+- [ ] No `apiKey`, no `axios`, no `Authorization` in `public/finder/`.
+- [ ] `time` finds Kindred; Open shows the author's bio; at 375 px the page is one column.
 
 ## With Claude
 
 In the `bookshelf` folder, start `claude` and type:
-```
+```text
 /caligrafy-quill:new-app app finder
 ```
 then:
+```text
+Turn public/finder into a Vue 3 app (Vue as a library) that finds books with the Bookshelf capabilities. First run
+php caligrafer.php client. No axios, no API key: in mounted() load the client with
+this.api = await import(env.home + 'public/js/capabilities.js'), then show (await this.api.listBooks()).data
+(list_books returns a page). A search field calls searchBooks({ query }) 250 ms after the typing pauses (listBooks()
+under 2 characters). Each row shows the title and "<book.author.name>, <year>" and has an Open button that calls
+getBook({ id }) and shows, in a panel beside the list, the title, "by <author>, <year>", the summary (or "No summary
+yet.") and the author's bio. Show a CapabilityError's field messages (or its message) in p.cq-field-error. Use
+Caligrafy's look like the template: body.cq-site, nav.cq-nav, section.cq-hero.cq-hero--page "Find a book", then
+.cq-split with section.cq-split-main (the search .cq-field, ul.cq-rows, p.cq-empty-state, p.cq-auth-note "N book(s)")
+and aside.cq-split-detail. Do not add routes or server code: /apps/{appName} serves it.
 ```
-Turn public/finder into a Vue 3 app (Vue as a library) that finds books with the Bookshelf capabilities. Do not
-use axios or the API key: in mounted(), load the JS client with this.api = await import(env.home +
-'public/js/capabilities.js'), then show (await listBooks()).data (list_books returns a page: data, total...).
-A search field calls searchBooks({ query }) 250 ms after the
-typing pauses (listBooks() when the query has fewer than 2 characters). Each book has an Open button that calls
-getBook({ id }) and shows, in a panel beside the list, the title, "by <author>, <year>", the summary (or "No
-summary yet.") and the author's bio. Show a CapabilityError's field messages (or its message) in p.cq-field-error.
-Use Caligrafy's look, like the app template: body.cq-site, the top bar nav.cq-nav, a title band
-section.cq-hero.cq-hero--page ("Find a book"), then .cq-split: section.cq-split-main with the search .cq-field,
-ul.cq-rows > li.cq-row (.cq-row-main, .cq-row-actions), p.cq-empty-state and a p.cq-auth-note with "N book(s)", and
-aside.cq-split-detail for the book; link theme.css, tokens.css, layout.css and look.css like the template.
-Do not add routes or server code: /apps/{appName} already serves it.
-```
-
-**What Claude should do:** run `php caligrafer.php app finder`, then replace `public/finder/index.php` and
-`public/finder/scripts/main.js`.
 
 **Check** before you accept:
-- [ ] No `apiKey`, no `axios`, no `Authorization` header anywhere in `public/finder/`.
-- [ ] The client is loaded with `import(env.home + 'public/js/capabilities.js')`, and the app calls `listBooks`,
-      `searchBooks` and `getBook` only.
-- [ ] `git status --short` shows only `?? public/finder/`: no change in `web.php`, `application/` or the services.
-- [ ] The page has `body.cq-site`, uses `cq-hero`, `cq-split`, `cq-rows` (no `cq-card`) and loads `layout.css` and `look.css`.
-- [ ] Step 4 works: `time` finds Kindred, Open shows the author's bio beside the list, phone width is one column.
+- [ ] Claude ran `php caligrafer.php client` and did not edit `public/js/capabilities.js` by hand.
+- [ ] The app calls only `listBooks`, `searchBooks` and `getBook`, through `import(env.home + 'public/js/capabilities.js')`.
+- [ ] `git status --short` shows only `public/finder/` and `public/js/capabilities.js`.
+- [ ] No `apiKey`, `axios` or `Authorization` header; no `cq-card`.
+- [ ] Step 5 works.
 
-**If Claude's result differs:** if it adds a route such as `/finder`, ask it to remove it: `/apps/finder` is enough.
-If it writes `import { searchBooks } from ...` at the top of `main.js`, the app does not start (a classic script
-cannot use `import ... from`): ask for the dynamic `import()`. Small differences of wording or layout are fine;
-compare with the checkpoint to see one way to do it.
+If Claude writes `import { searchBooks } from ...` at the top of `main.js`, the app does not start (a classic script
+cannot use `import ... from`): ask for the dynamic `import()`. If it adds a route such as `/finder`, ask it to remove
+it: `/apps/finder` is enough.
 
 ---
 
@@ -315,32 +340,35 @@ git commit -m "Lesson 09: the finder Vue app"
 git tag lesson-09
 ```
 Reference: [`checkpoints/lesson-09`](https://github.com/caligrafy/caligrafy-quill-course/tree/main/checkpoints/lesson-09).
-Learn more: [9.7.3 Requests](https://github.com/caligrafy/caligrafy-quill/wiki/9.7.3-Requests) (calling capabilities from a Vue app).
+Learn more: [9.7.3 Requests](https://github.com/caligrafy/caligrafy-quill/wiki/9.7.3-Requests) (calling capabilities
+from a Vue app).
 
 ## Exercise
 
 Add a select **Author** under the search field. Choosing an author shows only that author's books (with `list_books`
-and its optional `author_id`); choosing "Every author" shows them all again. Still no server code.
+and its `author_id`); choosing "Every author" shows them all again. Still no server code.
 
 <details><summary>Show the solution</summary>
 
-In `public/finder/index.php`, add a second field in the form, after the Search field:
+In `public/finder/index.php`, add a field in the form, after the Search field:
 ```html
-<div class="cq-field">
-    <label for="author">Author</label>
-    <select id="author" class="form-select" v-model="authorId" @change="filter">
-        <option value="">Every author</option>
-        <option v-for="author in authors" :key="author.id" :value="author.id">{{ author.name }}</option>
-    </select>
-</div>
+                        <div class="cq-field">
+                            <label for="author">Author</label>
+                            <select id="author" class="form-select" v-model="authorId" @change="filter">
+                                <option value="">Every author</option>
+                                <option v-for="author in authors" :key="author.id" :value="author.id">{{ author.name }}</option>
+                            </select>
+                        </div>
 ```
-In `public/finder/scripts/main.js`, add `authors: []` and `authorId: ''` to `data()`, load the authors in
-`mounted()`, and add a method:
+In `public/finder/scripts/main.js`, add `authors: []` and `authorId: ''` to `data()`, load the authors in `mounted()`,
+and add the method `filter`:
 ```js
   async mounted () {
     this.api = await import(env.home + 'public/js/capabilities.js')
-    this.authors = await this.api.listAuthors()
-    this.books = (await this.api.listBooks()).data
+    this.run(async () => {
+      this.authors = await this.api.listAuthors()
+      this.books = (await this.api.listBooks()).data
+    })
   },
 ```
 ```js
@@ -351,8 +379,8 @@ In `public/finder/scripts/main.js`, add `authors: []` and `authorId: ''` to `dat
       })
     },
 ```
-`list_authors` and `list_books` already existed (lesson 04): the server learns nothing new, the app just uses more of
-it. To stay identical to the checkpoint, undo it afterwards with `git checkout public/finder`.
+Choose Octavia E. Butler: `3 book(s)`. `list_authors` and `list_books` existed since lesson 04: the server learns
+nothing new. To stay identical to the checkpoint, undo it with `git checkout public/finder`.
 </details>
 
 ---

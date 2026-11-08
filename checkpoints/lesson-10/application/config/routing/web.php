@@ -23,7 +23,7 @@ try {
     // Auth::authentication('User', 'users');
     
     // ROUTE DEFINITION: get, post, put and delete
-    Route::page('/', 'Bookshelf/books', ['with' => ['install' => true]]);
+    Route::redirect('/', '/books');   // the home of Bookshelf is its catalog
     Route::get('/helloworld', function() { echo "Hello World"; });
 	
     // Auth Routes - Uncomment only if AUTHENTICATION activated above
@@ -75,10 +75,13 @@ try {
     Route::mcp('/mcp');                     // the capabilities as tools for AI agents (personal access tokens)
     Route::notifications();                 // the pages notification emails link to (confirm, unsubscribe)
 
-    // BOOKSHELF PAGES: the catalog (public/js/books.js), the page of one book (data: get_book and list_authors) and its form
-    Route::page('/books', 'Bookshelf/books', ['with' => ['install' => true]]);   // install: offer to add it to the home screen
-    Route::page('/books/{id}', 'Bookshelf/book', ['data' => ['found' => 'get_book', 'authors' => ['list_authors', []]], 'notFound' => 'Bookshelf/notfound']);
-    Route::form('/books/{id}', 'update_book', ['method' => 'PUT', 'success' => '/books/{id}', 'flash' => 'Saved']);   // the edit form: no controller
+    // BOOKSHELF PAGES: rendered on the server with the data of the capabilities; each form calls one capability
+    Route::page('/books', 'Bookshelf/books', ['data' => ['books' => 'list_books', 'authors' => 'list_authors'], 'with' => ['install' => true]]);   // install: offer to add it to the home screen
+    Route::form('/books', 'create_book', ['success' => '/books/{id}', 'flash' => 'Book added']);
+    Route::page('/books/{id}', 'Bookshelf/book', ['data' => ['book' => 'get_book', 'authors' => 'list_authors'], 'notFound' => 'Bookshelf/notfound']);
+    Route::form('/books/{id}', 'update_book', ['method' => 'PUT', 'success' => '/books/{id}', 'flash' => 'Saved']);
+    Route::form('/books/{id}', 'delete_book', ['method' => 'DELETE', 'success' => '/books', 'flash' => 'Book deleted']);
+    Route::download('/authors.csv', 'list_authors', ['filename' => 'authors.csv']);   // the same capability, as a file
 
     // BOOKSHELF API: the same capabilities, for other applications (JSON)
     Route::capability('GET', '/api/books', 'list_books');
@@ -87,7 +90,6 @@ try {
     Route::capability('PUT', '/api/books/{id}', 'update_book');
     Route::capability('DELETE', '/api/books/{id}', 'delete_book');
     Route::capability('GET', '/api/authors', 'list_authors');
-    Route::download('/authors.csv', 'list_authors');   // the same capability, as a file for a spreadsheet
 
     // MUST NOT BE REMOVED - Routes need to be run after being defined 
     Route::run(); 

@@ -1,6 +1,7 @@
-/* Loans: who borrowed which book. Safe to run more than once: it never drops anything.
- * Run it with:
- * docker compose exec dev-box php caligrafer.php sql application/models/Loans/create_db.sql
+/* Loans: who borrowed which book, the first version of the table.
+ * Run it with: docker compose exec dev-box php caligrafer.php sql application/models/Loans/create_db.sql
+ * Safe to run again: CREATE TABLE IF NOT EXISTS skips a table that exists. The deploy step runs it on the server.
+ * Never edit it once it ran on a database with data: change the table with a migration.
  */
 
 CREATE TABLE IF NOT EXISTS loans (

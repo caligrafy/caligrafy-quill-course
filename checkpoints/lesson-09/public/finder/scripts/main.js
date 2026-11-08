@@ -4,15 +4,15 @@ const app = Vue.createApp({
     return {
       query: '',
       books: [],
-      selected: null,   // { book, author } from get_book
+      selected: null,   // the book of get_book, with its author
       error: '',
       timer: null
     }
   },
   async mounted () {
-    // the generated JS client: one function per capability (php caligrafer.php client public/js/capabilities.js)
+    // the generated JS client: one function per capability (php caligrafer.php client)
     this.api = await import(env.home + 'public/js/capabilities.js')
-    this.books = (await this.api.listBooks()).data
+    this.run(async () => { this.books = (await this.api.listBooks()).data })
   },
   methods: {
     // called on every key: wait until the typing pauses, then ask search_books

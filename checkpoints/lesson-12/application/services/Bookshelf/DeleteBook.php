@@ -11,7 +11,7 @@ use Caligrafy\ServiceError;
     description: 'Deletes a book of the catalog, by its id. This cannot be undone.',
     scope: 'books:write',
     destructive: true,
-    level: 1   // only users whose permissions are 1 or more (administrators)
+    level: 1   // people whose permissions are 1 or more (administrators), and tokens with books:write
 )]
 class DeleteBook extends Service
 {

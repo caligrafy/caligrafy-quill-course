@@ -1,42 +1,61 @@
 <?php
 
+use Caligrafy\Database;
 use Caligrafy\Testing\TestCase;
 
-// The rules of the Bookshelf capabilities: the same for the pages, the REST API, the Vue apps and AI agents.
+// The rules and permissions of the Bookshelf capabilities: the same for the pages, REST, the Vue apps and AI agents.
 // call() goes through the capability as every experience does: who calls, the rules, then handle().
-// Each test runs in a transaction that is rolled back at its end: the books it adds are gone afterwards
+// Each test runs in a transaction that is rolled back at its end: what it adds is gone afterwards
 final class BookRulesTest extends TestCase
 {
+    // an author of the test's own: the tests do not depend on the sample data
+    private function author(): int
+    {
+        return Database::table('authors')->insert(['name' => 'Test Author']);   // the id of the new row
+    }
+
     public function testABookNeedsATitleAYearAndAnAuthor(): void
     {
         $e = $this->assertCapabilityFails('invalid', 'create_book', [], $this->user(1));
         $this->assertSame(['title', 'published_year', 'author_id'], array_keys($e->fields));
     }
 
-    public function testTheYearMustBeAWholeNumber(): void
+    public function testTheYearIsAWholeNumberAndNotInTheFuture(): void
     {
-        $e = $this->assertCapabilityFails('invalid', 'create_book', ['title' => 'Kindred', 'published_year' => 'soon', 'author_id' => 2], $this->user(1));
+        $author = $this->author();
+        $e = $this->assertCapabilityFails('invalid', 'create_book', ['title' => 'Soon', 'published_year' => 'soon', 'author_id' => $author], $this->user(1));
+        $this->assertArrayHasKey('published_year', $e->fields);
+        $next = (int) date('Y') + 1;
+        $e = $this->assertCapabilityFails('invalid', 'create_book', ['title' => 'Soon', 'published_year' => $next, 'author_id' => $author], $this->user(1));
         $this->assertArrayHasKey('published_year', $e->fields);
     }
 
     public function testAValidBookIsTrimmedAndKeepsOnlyItsInputs(): void
     {
-        // an author of its own: the test does not depend on the sample data (the transaction removes it afterwards)
-        $author = Caligrafy\Database::table('authors')->insert(['name' => 'Octavia E. Butler']);   // the id of the new row
-        $book = $this->call('create_book', ['title' => '  Kindred ', 'published_year' => 1979, 'author_id' => $author, 'price' => 9], $this->user(1));
+        $book = $this->call('create_book', ['title' => '  Kindred ', 'published_year' => 1979, 'author_id' => $this->author(), 'price' => 9], $this->user(1));
         $this->assertSame('Kindred', $book['title']);
+        $this->assertSame('Test Author', $book['author']['name']);
         $this->assertArrayNotHasKey('price', $book);   // only the inputs of $rules reach handle()
+    }
+
+    public function testTwoBooksNeverShareAnIsbn(): void
+    {
+        $author = $this->author();
+        $this->call('create_book', ['title' => 'One', 'published_year' => 2000, 'author_id' => $author, 'isbn' => '978-0-00-000000-1'], $this->user(1));
+        $e = $this->assertCapabilityFails('invalid', 'create_book', ['title' => 'Two', 'published_year' => 2000, 'author_id' => $author, 'isbn' => '978-0-00-000000-1'], $this->user(1));
+        $this->assertArrayHasKey('isbn', $e->fields);
     }
 
     public function testAVisitorCannotAddABook(): void
     {
-        $this->assertCapabilityFails('unauthenticated', 'create_book', ['title' => 'Kindred', 'published_year' => 1979, 'author_id' => 2], 'guest');
+        $this->assertCapabilityFails('unauthenticated', 'create_book', ['title' => 'Kindred', 'published_year' => 1979, 'author_id' => $this->author()], 'guest');
     }
 
-    public function testUpdatingNeedsTheIdOfTheBook(): void
+    public function testOnlyAnAdministratorDeletesABook(): void
     {
-        $e = $this->assertCapabilityFails('invalid', 'update_book', ['title' => 'Kindred'], $this->user(1));
-        $this->assertArrayHasKey('id', $e->fields);
+        $book = $this->call('create_book', ['title' => 'Gone soon', 'published_year' => 2000, 'author_id' => $this->author()], $this->user(1));
+        $this->assertCapabilityFails('forbidden', 'delete_book', ['id' => $book['id']], $this->user(1, 0));   // a reader
+        $this->assertSame(['deleted' => $book['id']], $this->call('delete_book', ['id' => $book['id']], $this->user(1, 1)));
     }
 
     public function testASearchNeedsAtLeastTwoCharacters(): void

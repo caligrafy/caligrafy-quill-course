@@ -49,9 +49,9 @@ export async function call (name, input = {}) {
   return (await request('POST', '/' + encodeURIComponent(name), input)).data
 }
 /**
- * Adds a book to the Bookshelf catalog and returns it with its id. The author must already exist: use list_authors to find author_id.
+ * Adds a book to the Bookshelf catalog and returns it with its id and its author. The author must already exist: use list_authors to find author_id. The ISBN is optional and unique.
  * Capability create_book (writes, books:write)
- * @param {{title: string, published_year: number, summary?: string, author_id: number}} [input]
+ * @param {{title: string, published_year: number, summary?: string, isbn?: string, author_id: number}} [input]
  */
 export const createBook = (input = {}) => call('create_book', input)
 
@@ -70,7 +70,7 @@ export const deleteBook = (input = {}) => call('delete_book', input)
 export const deleteUser = (input = {}) => call('delete_user', input)
 
 /**
- * Returns one book of the catalog (id, title, year, summary) and its author (id, name, bio), by the id of the book.
+ * Returns one book of the catalog with its author (id, name, bio), by the id of the book.
  * Capability get_book (read-only, public)
  * @param {{id: number}} [input]
  */
@@ -84,7 +84,7 @@ export const getBook = (input = {}) => call('get_book', input)
 export const getUser = (input = {}) => call('get_user', input)
 
 /**
- * Lends a book of the catalog to someone for a number of days (14 by default) and returns the loan. Refused when the book is already lent.
+ * Lends a book of the catalog to someone for a number of days (14 by default) and returns the loan with its book. Refused when the book is already lent: use list_loans to see what is out.
  * Capability lend_book (writes, loans:write)
  * @param {{book_id: number, borrower: string, days?: number}} [input]
  */
@@ -105,7 +105,7 @@ export const listAuthors = (input = {}) => call('list_authors', input)
 export const listBooks = (input = {}) => call('list_books', input)
 
 /**
- * Lists the books that are lent and not returned yet: book id and title, borrower, due date, and overdue (true when the due date is past).
+ * Lists the books that are lent and not returned yet, the soonest due first: id, book_id, borrower, due_on, overdue (true when the due date is past) and the book (id, title, published_year...).
  * Capability list_loans (read-only, loans:read)
  * @param {{}} [input]
  */
@@ -182,23 +182,23 @@ export const queueWork = (input = {}) => call('queue_work', input)
 export const registerUser = (input = {}) => call('register_user', input)
 
 /**
- * Records that a lent book came back, by the id of the book. Returns the closed loan.
+ * Records that a lent book came back, by the id of the book. Returns the closed loan with its book.
  * Capability return_book (writes, loans:write)
  * @param {{book_id: number}} [input]
  */
 export const returnBook = (input = {}) => call('return_book', input)
 
 /**
- * Finds the books of the catalog whose title or summary contains some words, for example "time travel" or "magic". Returns id, title, year and summary of each book found.
+ * Finds the books of the catalog whose title or summary contains some words, for example "time travel" or "magic". Returns at most 20 books, sorted by title, each with its author (id, name, bio).
  * Capability search_books (read-only, public)
  * @param {{query: string}} [input]
  */
 export const searchBooks = (input = {}) => call('search_books', input)
 
 /**
- * Changes the title, year, summary or author of a book of the catalog, by its id. Only the inputs given are changed. Returns the book.
+ * Changes the title, year, summary, ISBN or author of a book of the catalog, by its id. Only the inputs given are changed. Returns the book with its author.
  * Capability update_book (writes, books:write)
- * @param {{id: number, title?: string, published_year?: number, summary?: string, author_id?: number}} [input]
+ * @param {{id: number, title?: string, published_year?: number, summary?: string, isbn?: string, author_id?: number}} [input]
  */
 export const updateBook = (input = {}) => call('update_book', input)
 

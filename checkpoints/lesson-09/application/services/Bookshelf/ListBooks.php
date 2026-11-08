@@ -22,7 +22,7 @@ class ListBooks extends Service
 
     public function handle(array $input, Context $context)
     {
-        // two queries in all: the books of the page, then all their authors at once
+        // two queries for the page (the count, then the books) and one for all their authors
         $query = Book::with('author')->orderBy('title');
         if (!empty($input['author_id'])) {
             $query->where('author_id', $input['author_id']);   // the value is bound, never pasted into the SQL

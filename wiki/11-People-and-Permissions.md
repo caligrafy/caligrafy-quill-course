@@ -1,12 +1,13 @@
 # Lesson 11 - People and permissions
 
-**In this lesson** Bookshelf gets accounts and rules: everyone can still read the catalog, signed-in people can add
-and edit books, only administrators can delete them, and each program or agent gets a token with just the rights it
-needs. You close the doors once, in three capabilities, and every experience (pages, REST, agents, the finder, the
-SPA) obeys at once. The pages show only the buttons the visitor may use.
+**In this lesson** Bookshelf gets accounts and rules: everyone can still read the catalog, signed-in people can add and
+edit books, only administrators can delete them or see who has an account, and each program or agent gets a token
+with just the rights it needs. One line of `web.php` (`Route::auth`) gives the sign-in and sign-up pages; you close the
+doors once, in three capabilities, and every experience obeys at once: the pages, REST, the agents, the finder and the
+SPA. The pages show only what the visitor may use.
 
-**Before you start:** lesson 10 is done (tag `lesson-10`), the containers run (`docker compose ps`), and you have the
-token of lesson 02 in `$TOKEN` (`TOKEN=cq_1_...`, see [Lesson 08](08-AI-Agents)).
+**Before you start:** lesson 10 is done (tag `lesson-10`), `docker compose ps` shows the 3 containers running, and you
+have token #2 "reading partner" of lesson 07.
 
 **Time:** 60 to 75 minutes.
 
@@ -14,142 +15,514 @@ token of lesson 02 in `$TOKEN` (`TOKEN=cq_1_...`, see [Lesson 08](08-AI-Agents))
 
 ## New concepts
 
-**Authentication and authorization.** Authentication answers "who are you?" (a person signs in with a username and a
-password; a program sends a token). Authorization answers "may you do this?" (only administrators delete books).
+**Authentication and authorization.** Authentication answers "who are you?": a person signs in with a username and a
+password, a program sends a token. Authorization answers "may you do this?": only administrators delete books.
 
-**Session.** HTTP forgets everything between two requests. PHP keeps a **session** per browser: a small storage on the
-server, found again thanks to a cookie the browser sends with every request. A visitor gets that cookie only when a
-page needs a session (a form, the JS client, signing in: lesson 06); then the browser sends it back each time. When a
-person signs in, Caligrafy stores the user in the session, under a **new** session id (an id someone saw before the
-sign-in is worthless after it). The **CSRF** token of lesson 06 lives there too: forms (`csrf()`) and the JS client
-(`X-CSRF-Token`) send it back, so another site cannot make your browser change data.
+**Session.** HTTP forgets everything between two requests. PHP keeps a **session** per browser, found again thanks to a
+cookie the browser sends with every request. When a person signs in, Caligrafy keeps the user in the session, under a
+**new** session id (an id someone saw before the sign-in is worthless after it), and a new CSRF token (lesson 06).
 
-**The users table and the permission level.** Caligrafy ships an authentication module (the sign-in and register
-pages, the `User` model). One line of `web.php`, `Route::auth()`, declares its addresses: `/login`, `/logout`,
-`/register` and `/notAuthorized`. It also limits failed sign-ins: after 5 wrong passwords for one username in 15
-minutes, that sign-in is refused (`429`) until the 15 minutes end. Its table `users` has `id`, `username`, `passcode` (a
-one-way hash, never the password), `permissions` (0 for every new account), `created_at`, `modified_at`. The number in
-`permissions` is the **permission level** of the person: 0 for a reader, 1 for an administrator in Bookshelf.
+**`Route::auth`.** One line declares the addresses of the authentication module:
 
-**Three ways a capability says who may call it**
-
-| In `#[Capability]` | Meaning |
+| Address | What it does |
 |---|---|
-| `public: true` | anyone, even a visitor nobody knows. Scope and level are not checked |
+| `GET /login`, `POST /login` | the sign-in page and its form; after 5 wrong passwords for one username in 15 minutes, that sign-in is refused until the 15 minutes end |
+| `GET /logout`, `POST /logout` | signs out, then goes to `/` |
+| `GET /register`, `POST /register` | the sign-up page; the form calls the framework capability `register_user` (permissions 0) |
+| `GET /notAuthorized` | the page (403) of a signed-in person whose level is too low |
+
+Options: `home` (where a person lands after signing in, default `/`), `signInAfterRegister` (`true`: a new account is
+signed in at once and goes to `home`; default `false`: it goes to the sign-in page), and others listed in
+[Declarative routes](https://github.com/caligrafy/caligrafy-quill/wiki/Declarative-Routes). It needs
+`Auth::authentication('User', 'users')` above it: the model and the table of the people.
+
+**The users table and the permission level.** The table `users` has `id`, `username`, `passcode` (a one-way hash,
+never the password), `permissions` (0 for every new account), `created_at`, `modified_at`. The number in `permissions`
+is the person's **permission level**: 0 for a reader, 1 for an administrator.
+
+**Who may call a capability.** Three settings of `#[Capability]`:
+
+| Setting | Meaning |
+|---|---|
+| `public: true` | anyone, even a visitor nobody knows; scope and level are not checked |
 | `scope: 'books:write'` | a **token** needs this scope (`books:write`, `books:*` or `*`) |
-| `level: 1` | a **person** needs `permissions` of 1 or more (default `level` is 0: any signed-in person) |
+| `level: 1` | a **person** needs `permissions` of 1 or more (default 0: any signed-in person) |
 
-**Who is calling, and what is checked**
+And who is calling:
 
-| Caller | How it is recognized | Checked against |
+| Caller | Recognized by | Checked against |
 |---|---|---|
-| visitor | nothing | only `public` capabilities (else 401 `unauthenticated`) |
-| person signed in | the session cookie | the `level` (people have no scopes) |
-| **application token** (`token create ... --scopes ...`) | `Authorization: Bearer cq_...` | its **scopes only**: no person behind it, so `level` does not apply |
-| token **for a person** (`token create ... --user <id>`) | `Authorization: Bearer cq_...` | its scopes **and** the `level` of that person |
+| visitor | nothing | only `public` capabilities, else 401 `unauthenticated` |
+| person signed in | the session cookie | the `level` (people have every scope) |
+| **application token** (`token create ... --scopes ...`) | `Authorization: Bearer cq_...` | its **scopes only**: no person behind it, so no level |
+| **token for a person** (`token create ... --user <id>`) | `Authorization: Bearer cq_...` | its scopes **and** the level of that person |
 
-Read the last two lines twice: `level` applies to people, and to tokens created with `--user`. An application token is
-limited by its scopes only. If you give `books:write` to an application token, it can delete books, administrator or
-not: give write scopes with care.
+Read the last two lines twice. A token with `books:write` and no `--user` can delete books; a token for reader1 can
+delete only once reader1 is an administrator. Give write scopes with care.
 
-**Show only what is allowed.** `GET /capabilities` (the function `capabilities()` of the JS client) lists only the
-capabilities the caller may call. The catalog page asks it once and shows the form if `create_book` is in the list,
-Delete if `delete_book` is. Hiding a button is for comfort; the protection is in the capability, which refuses on
-every channel.
+**Pages for some people only.** `Route::page` takes `signedIn` and `level`:
+`['signedIn' => true]` sends visitors to `/login`, `['level' => 1]` sends visitors to `/login` and people below level 1
+to `/notAuthorized`. Every page of `Route::page` also gets `$authorized` (true when someone is signed in) and `$user`
+(`id`, `username`, `permissions`, or null): the views use them to show only what the visitor may use. Hiding a button
+is for comfort; the protection is in the capability, which refuses on every channel.
+
+**The audit log.** Every write and every refusal is a line: when, through which channel (`web`, `rest`, `mcp`, `cli`),
+who (`guest`, `user 1`, `token 3`), which capability, and the outcome.
 
 ---
 
-## Manual track
+## Steps
 
-### Step 1 - Create the users table
+Run every command from the `bookshelf` folder.
 
+### Step 1 - The users table
+
+The script is the authentication module's own `create_db.sql`, which initialize copied into your project:
 ```bash
 docker compose exec dev-box php caligrafer.php sql application/models/Auth/create_db.sql
 ```
-Expected: ` application/models/Auth/create_db.sql run on caligrafy`. The script only creates the table if it is
-missing: running it again never deletes users.
+Expected: ` application/models/Auth/create_db.sql run on caligrafy`. It creates the table only if it is missing:
+running it again never deletes anyone.
 
-### Step 2 - Turn on sign-in
+### Step 2 - Sign-in, sign-up, and a page for administrators
 
-In `application/config/routing/web.php`:
+Three changes in `application/config/routing/web.php`:
+1. Uncomment `Auth::authentication('User', 'users');` (remove the `//`).
+2. Replace the commented block `// Auth Routes - Uncomment only if AUTHENTICATION activated above` and its 7 lines with
+   the `// SIGN IN, SIGN OUT, SIGN UP` comment and `Route::auth(...)`.
+3. In `// BOOKSHELF PAGES`, after the `Route::download` line, add the page `/people` with `'level' => 1`.
 
-1. Uncomment the authentication line (remove the `//`): it says which model and table hold the people.
-   ```php
-       Auth::authentication('User', 'users');
-   ```
-2. Replace the commented block `// Auth Routes - Uncomment only if AUTHENTICATION activated above` and its 7 lines with:
-   ```php
-       // SIGN IN, SIGN OUT, REGISTER: /login, /logout, /register and /notAuthorized; after signing in, the catalog
-       Route::auth(['home' => '/books']);
-   ```
-One line for the four addresses and their pages: `home` is where a person lands after signing in (signing out goes
-to `/`). The routes of `/` and `/books` do not change: a page declared with `Route::page` gets `$authorized` by itself, so the top bar of
-the master shows **Sign out** as soon as someone is signed in (**Sign in** and **Create account** before). The full
-file is in the checkpoint.
+The file is then:
 
-### Step 3 - Close the doors, once
+**File `application/config/routing/web.php`** (`Auth::authentication`, `Route::auth` and the `/people` page):
 
-In `application/services/Bookshelf/CreateBook.php` and `UpdateBook.php`, remove `public: true` (and the comma before
-it). The end of the `#[Capability]` block becomes:
 ```php
-    scope: 'books:write'
-)]
-```
-In `DeleteBook.php`, replace the `public: true` line with a level:
-```php
-    destructive: true,
-    level: 1   // only users whose permissions are 1 or more (administrators)
-)]
-```
-The four reads stay `public: true`. Check:
-```bash
-docker compose exec dev-box php caligrafer.php capabilities
-```
-Expected: the reads still say `public`, and the writes now show their scope:
-```
- create_book  books:write  writes   ...
- delete_book  books:write  destroys ...
- update_book  books:write  writes   ...
-```
-That is the whole security change. Everything below is about telling people and programs what they may do.
+<?php
+/**
+ * web.php
+ * Web Routes are defined in this file
+ * @author Dory A.Azar
+ * @copyright 2019
+ * @version 1.0
+ *
+*/
 
-### Step 4 - The pages show what the visitor may do
+use Caligrafy\Auth;
+use Caligrafy\Route;
+use Caligrafy\Errors;
+use \Exception as Exception;
 
-The edit form of lesson 06 needs no change to be safe: `update_book` now refuses visitors, and `Route::form` sends a
-visitor who saves to the sign-in page (`/login`) instead of showing an error. The page only has to hide the form from
-visitors.
+try {
+    
+    // API ACCESS - add comments if you don't want to allow API access on routes
+    Auth::activateAPI();
+    
+    
+    // AUTHENTICATION - Remove comment if you have an authentication implemented
+    Auth::authentication('User', 'users');
+    
+    // ROUTE DEFINITION: get, post, put and delete
+    Route::redirect('/', '/books');   // the home of Bookshelf is its catalog
+    Route::get('/helloworld', function() { echo "Hello World"; });
+	
+    // SIGN IN, SIGN OUT, SIGN UP: /login, /logout, /register and /notAuthorized; after signing in or up, the catalog
+    Route::auth(['home' => '/books', 'signInAfterRegister' => true]);
 
-- `Route::page` gives its pages `$authorized` (`true` when someone is signed in): the master shows **Sign out** in
-  the top bar, and the book page uses it for its form.
-- A page that only signed-in people may open would say so on its route: `Route::page('/account', 'Account/index',
-  ['signedIn' => true])` sends visitors to `/login`, and `['level' => 1]` sends people below level 1 to `/notAuthorized`.
-  Bookshelf's pages stay open to visitors: they may read.
+    // User Administration Routes - Uncomment only if AUTHENTICATION activated above
+	// Route::get('/admin', 'Caligrafy\\Controllers\\AdminController');
+	// Route::get('/users', 'Caligrafy\\Controllers\\AdminController');
+	// Route::get('/users/{id}/edit', 'Caligrafy\\Controllers\\AdminController@editUserForm');
+	// Route::put('/users/{id}/edit', 'Caligrafy\\Controllers\\AdminController@updateUser');
+	// Route::delete('/users/{id}/edit', 'Caligrafy\\Controllers\\AdminController@deleteUser');
 
-**File `application/views/Bookshelf/book.pug`** (the edit form only for people signed in):
+    // GPT AI controller
+    // Route::get('/ai', 'Caligrafy\\Controllers\\AIController');
+    // Route::post('/ai', 'Caligrafy\\Controllers\\AIController@query');
+
+    // ROUTING TO JAVASCRIPT APPS
+    // Make sure you create a JS app or a Vue app in Caligrafer first
+    Route::get('/apps/{appName}', 'Caligrafy\\Controllers\\ClientController'); // you can specify any path as long as it ends with appName
+
+    
+    // BOT PAGE ROUTES
+    Route::get('/bot/{appName}', 'Caligrafy\\Controllers\\ClientController');  // A botSkillId needs to be provided in the URL. For Example: ?botSkillId=62196ce3-0b22-4aea-b2f2-d39730c03797
+    
+    // BOT DATA ROUTES
+    // routes need to start with reserved path __bots__ 
+    Route::post('/__bots__/{appName}/communicate', 'Caligrafy\\Controllers\\WatsonController@communicate');
+    Route::post('/__bots__/{appName}/{appId}', 'Caligrafy\\Controllers\\WatsonController@connect');
+    Route::delete('/__bots__/{appName}', 'Caligrafy\\Controllers\\WatsonController@end');   
+
+    /* ML Routes
+     *
+     * If you don't specify an up, it will go to the face, body detector.
+     * Specify an app as a URI Parameter ?app=<name of app>
+     * 
+     * There are 3 possible apps: featureextractor, neuralnetwork and posedetector
+    */
+    Route::get('/ml/{appName}', 'Caligrafy\\Controllers\\ClientController'); 
+    
+
+    // BUILD ONCE: every capability, for the JS client and AI agents
+    Route::capabilities('/capabilities');   // the capabilities for the JS client of the Vue apps
+    Route::mcp('/mcp');                     // the capabilities as tools for AI agents (personal access tokens)
+    Route::notifications();                 // the pages notification emails link to (confirm, unsubscribe)
+
+    // BOOKSHELF PAGES: rendered on the server with the data of the capabilities; each form calls one capability
+    Route::page('/books', 'Bookshelf/books', ['data' => ['books' => 'list_books', 'authors' => 'list_authors'], 'with' => ['install' => true]]);   // install: offer to add it to the home screen
+    Route::form('/books', 'create_book', ['success' => '/books/{id}', 'flash' => 'Book added']);
+    Route::page('/books/{id}', 'Bookshelf/book', ['data' => ['book' => 'get_book', 'authors' => 'list_authors'], 'notFound' => 'Bookshelf/notfound']);
+    Route::form('/books/{id}', 'update_book', ['method' => 'PUT', 'success' => '/books/{id}', 'flash' => 'Saved']);
+    Route::form('/books/{id}', 'delete_book', ['method' => 'DELETE', 'success' => '/books', 'flash' => 'Book deleted']);
+    Route::download('/authors.csv', 'list_authors', ['filename' => 'authors.csv']);   // the same capability, as a file
+    Route::page('/people', 'Bookshelf/people', ['level' => 1, 'data' => ['people' => 'list_users']]);   // administrators only
+
+    // BOOKSHELF API: the same capabilities, for other applications (JSON)
+    Route::capability('GET', '/api/books', 'list_books');
+    Route::capability('GET', '/api/books/{id}', 'get_book');
+    Route::capability('POST', '/api/books', 'create_book');
+    Route::capability('PUT', '/api/books/{id}', 'update_book');
+    Route::capability('DELETE', '/api/books/{id}', 'delete_book');
+    Route::capability('GET', '/api/authors', 'list_authors');
+
+    // MUST NOT BE REMOVED - Routes need to be run after being defined 
+    Route::run(); 
+}
+catch (Exception $e) {
+    
+    // Error handling: HTTP status code (404, 401, 403, 500...) with the error text, or a JSON error for API calls
+    Errors::handle($e);
+}
+```
+
+`/people` gets its data from `list_users`, a capability of the framework (`users:read`, level 1, never a password).
+Write its view:
+
+**File `application/views/Bookshelf/people.pug`**:
 
 ```pug
 extends ../default/master/site
 
-//- One book, rendered on the server by Route::page with the data of get_book; the form (signed in only) posts to Route::form (update_book)
+//- The people who can sign in: Route::page('/people', ..., ['level' => 1]) opens it to administrators only, and gives
+//- it $people (list_users, a framework capability: id, username, permissions; never a password)
 
 block title
-    = $found['book']['title'] . ' · Bookshelf'
+    | People · Bookshelf
 
 block content
-    //- $found: what get_book returned (Route::page data). After a refused save, old() and errors() hold what Route::form sent back
-    - $book = $found['book'];
-    - $author = $found['author'];
+    section.cq-hero.cq-hero--page
+        h1.cq-display People
+        p.cq-lead Who can sign in to Bookshelf. Permissions 1 or more: an administrator.
+
+    section.cq-band.cq-band--tight
+        .cq-inner.cq-inner--narrow
+            ul.cq-rows
+                each $p in $people
+                    li.cq-row
+                        .cq-row-main
+                            p.cq-row-title= $p['username']
+                            p.cq-row-meta
+                                | #{$p['permissions'] >= 1 ? 'Administrator' : 'Reader'} · since #{$p['created_at']}
+            p.cq-auth-note
+                a(href="{$home}books") All books
+```
+
+Try it as a visitor:
+```bash
+curl -s -o /dev/null -w "%{http_code} %{redirect_url}\n" http://localhost:8080/people
+```
+Expected: `302 http://localhost:8080/login`. The **Sign in** and **Create account** links of the top bar now lead to
+real pages.
+
+### Step 3 - Close the doors, once
+
+`create_book` and `update_book` lose `public: true`; `delete_book` gets `level: 1` in its place. The four reads stay
+public. The three files are then:
+
+**File `application/services/Bookshelf/CreateBook.php`**:
+
+```php
+<?php
+
+use Caligrafy\Capability;
+use Caligrafy\Context;
+use Caligrafy\Service;
+
+// create_book: adds a book, with the same rules whoever calls it
+#[Capability(
+    name: 'create_book',
+    description: 'Adds a book to the Bookshelf catalog and returns it with its id and its author. The author must already exist: use list_authors to find author_id. The ISBN is optional and unique.',
+    scope: 'books:write'   // signed-in people, and tokens with books:write
+)]
+class CreateBook extends Service
+{
+    public $rules = array(
+        'title' => 'required|max_len,200',
+        'published_year' => 'required|integer|min_numeric,1450|max_numeric,current_year',
+        'summary' => 'max_len,2000',
+        'isbn' => 'alpha_numeric_dash|max_len,20|unique,books.isbn',
+        'author_id' => 'required|integer|exists,authors.id'
+    );
+    public $filters = array('title' => 'trim', 'summary' => 'trim', 'isbn' => 'trim');
+    public $descriptions = array(
+        'title' => 'The title of the book',
+        'published_year' => 'The year it was first published, for example 1969 (not after this year)',
+        'summary' => 'Optional: one or two sentences about the book',
+        'isbn' => 'Optional: its ISBN, digits and dashes, for example 978-0-441-47812-5; two books never share one',
+        'author_id' => 'The id of its author (list_authors)'
+    );
+
+    public function handle(array $input, Context $context)
+    {
+        // an empty ISBN is no ISBN: NULL, which the unique index allows on many books
+        $input['isbn'] = ($input['isbn'] ?? '') === '' ? null : $input['isbn'];
+        $id = Book::insert($input);   // one INSERT, every value bound; returns the id of the new book
+        return Book::with('author')->find($id);
+    }
+}
+```
+
+**File `application/services/Bookshelf/UpdateBook.php`**:
+
+```php
+<?php
+
+use Caligrafy\Capability;
+use Caligrafy\Context;
+use Caligrafy\Service;
+use Caligrafy\ServiceError;
+
+// update_book: changes only the inputs that are given
+#[Capability(
+    name: 'update_book',
+    description: 'Changes the title, year, summary, ISBN or author of a book of the catalog, by its id. Only the inputs given are changed. Returns the book with its author.',
+    scope: 'books:write'   // signed-in people, and tokens with books:write
+)]
+class UpdateBook extends Service
+{
+    public $rules = array(
+        'id' => 'required|integer',
+        'title' => 'max_len,200',
+        'published_year' => 'integer|min_numeric,1450|max_numeric,current_year',
+        'summary' => 'max_len,2000',
+        'isbn' => 'alpha_numeric_dash|max_len,20|unique,books.isbn,id,id',   // unique, except on this book itself
+        'author_id' => 'integer|exists,authors.id'
+    );
+    public $filters = array('title' => 'trim', 'summary' => 'trim', 'isbn' => 'trim');
+    public $descriptions = array(
+        'id' => 'The id of the book to change',
+        'title' => 'A new title',
+        'published_year' => 'A new year of publication',
+        'summary' => 'A new summary',
+        'isbn' => 'A new ISBN (empty removes it)',
+        'author_id' => 'The id of a new author (list_authors)'
+    );
+
+    public function handle(array $input, Context $context)
+    {
+        if (!Book::find($input['id'])) {
+            throw ServiceError::notFound("There is no book #{$input['id']}");
+        }
+        // keep only the inputs that were given: a missing input never erases a column
+        $changes = array();
+        foreach (array('title', 'published_year', 'summary', 'isbn', 'author_id') as $field) {
+            if (isset($input[$field])) {
+                $changes[$field] = $input[$field];
+            }
+        }
+        // a book always has a title, a year and an author: given empty, they are refused like a missing required input
+        $errors = array();
+        foreach (array('title' => 'Title', 'published_year' => 'Published Year', 'author_id' => 'Author Id') as $field => $label) {
+            if (($changes[$field] ?? null) === '') {
+                $errors[$field] = "The $label field is required";
+            }
+        }
+        if ($errors) {
+            throw ServiceError::invalid($errors);
+        }
+        if (($changes['isbn'] ?? null) === '') {
+            $changes['isbn'] = null;
+        }
+        if ($changes) {
+            Book::where('id', $input['id'])->update($changes);   // only this book: an update needs a where
+        }
+        return Book::with('author')->find($input['id']);
+    }
+}
+```
+
+**File `application/services/Bookshelf/DeleteBook.php`**:
+
+```php
+<?php
+
+use Caligrafy\Capability;
+use Caligrafy\Context;
+use Caligrafy\Service;
+use Caligrafy\ServiceError;
+
+// delete_book: destructive, so AI agents ask before calling it
+#[Capability(
+    name: 'delete_book',
+    description: 'Deletes a book of the catalog, by its id. This cannot be undone.',
+    scope: 'books:write',
+    destructive: true,
+    level: 1   // people whose permissions are 1 or more (administrators), and tokens with books:write
+)]
+class DeleteBook extends Service
+{
+    public $rules = array('id' => 'required|integer');
+    public $descriptions = array('id' => 'The id of the book to delete');
+
+    public function handle(array $input, Context $context)
+    {
+        // delete() returns how many rows it deleted: 0 when there is no such book
+        if (!Book::where('id', $input['id'])->delete()) {
+            throw ServiceError::notFound("There is no book #{$input['id']}");
+        }
+        return array('deleted' => (int) $input['id']);
+    }
+}
+```
+
+Check:
+```bash
+docker compose exec dev-box php caligrafer.php capabilities | grep "_book\|_author"
+```
+Expected (descriptions cut here):
+```text
+ create_book                  books:write    writes    Adds a book to the Bookshelf catalog ...
+ delete_book                  books:write    destroys  Deletes a book of the catalog, by its id. This cannot be undone.
+ get_book                     public         read      Returns one book of the catalog with its author ...
+ list_authors                 public         read      Lists the authors of the Bookshelf catalog, sorted by name: id, name and bio.
+ list_books                   public         read      Lists the books of the Bookshelf catalog, sorted by title, ...
+ search_books                 public         read      Finds the books of the catalog whose title or summary contains ...
+ update_book                  books:write    writes    Changes the title, year, summary, ISBN or author of a book ...
+```
+That is the whole security change. Everything below tells people and programs what they may do.
+
+### Step 4 - The pages show what the visitor may do
+
+The forms need no change to be safe: `Route::form` sends a visitor who submits to `/login`, and a reader who deletes
+gets the 403 page. The views only hide what the visitor may not use.
+
+**File `application/views/Bookshelf/books.pug`** (the form for people signed in, else a Sign in button):
+
+```pug
+extends ../default/master/site
+
+//- The catalog: Route::page gives it $books (list_books: a page of books) and $authors (list_authors).
+//- The form posts to Route::form('/books', 'create_book'): a refusal comes back here with errors(), old() and flash('error').
+//- $authorized and $user (id, username, permissions) come from Route::page: who is signed in
+
+block title
+    | Bookshelf
+
+block content
+    section.cq-hero.cq-hero--page
+        h1.cq-display Bookshelf
+        p.cq-lead The books we love. The same catalog that the REST API and AI agents use.
+
+    section.cq-band.cq-band--tight
+        .cq-inner.cq-inner--narrow
+            if flash('success')
+                p.cq-alert(role='status')= flash('success')
+
+            //- the form only for people signed in: create_book refuses visitors on every channel anyway
+            if $authorized
+                form(method='POST', action="{$home}books", novalidate)
+                    =csrf()
+                    .cq-form-grid.cq-form-grid--2
+                        .cq-field
+                            label(for='title') * Title
+                            input#title.form-control(type='text', name='title', value=old('title'), maxlength='200')
+                            if errors('title')
+                                p.cq-field-error= errors('title')
+                        .cq-field
+                            label(for='author_id') * Author
+                            select#author_id.form-select(name='author_id')
+                                each $a in $authors
+                                    option(value=$a['id'], selected=$a['id'] == old('author_id'))= $a['name']
+                            if errors('author_id')
+                                p.cq-field-error= errors('author_id')
+                        .cq-field
+                            label(for='published_year') * Year
+                            input#published_year.form-control(type='number', name='published_year', value=old('published_year'), placeholder='1969')
+                            if errors('published_year')
+                                p.cq-field-error= errors('published_year')
+                        .cq-field
+                            label(for='isbn') ISBN
+                            input#isbn.form-control(type='text', name='isbn', value=old('isbn'), placeholder='Optional', maxlength='20')
+                            if errors('isbn')
+                                p.cq-field-error= errors('isbn')
+                    .cq-field
+                        label(for='summary') Summary
+                        input#summary.form-control(type='text', name='summary', value=old('summary'), placeholder='Optional', maxlength='2000')
+                    button.btn.btn-primary(type='submit') Add book
+                if flash('error')
+                    p.cq-field-error(role='alert')= flash('error')
+            else
+                p.cq-auth-note
+                    a.btn.btn-primary(href="{$home}login") Sign in to add books
+
+    section.cq-band.cq-band--tight
+        .cq-inner.cq-inner--narrow
+            h2.cq-heading Books
+            if $books['total'] == 0
+                p.cq-empty-state No books here yet: add the first one above.
+            else
+                ul.cq-rows
+                    each $b in $books['data']
+                        li.cq-row
+                            .cq-row-main
+                                p.cq-row-title
+                                    a(href="{$home}books/{$b['id']}")= $b['title']
+                                p.cq-row-meta
+                                    a(href="{$home}books?author_id={$b['author_id']}")= $b['author']['name']
+                                    | , #{$b['published_year']}
+                //- the next and previous pages keep the author of the address (?author_id=2)
+                - $filter = isset($_GET['author_id']) ? '&author_id=' . (int) $_GET['author_id'] : '';
+                p.cq-auth-note
+                    | Page #{$books['page']} of #{$books['pages']}, #{$books['total']} books
+                    if $books['page'] > 1
+                        |  · 
+                        a(href="{$home}books?page=" . ($books['page'] - 1) . $filter) Previous
+                    if $books['page'] < $books['pages']
+                        |  · 
+                        a(href="{$home}books?page=" . ($books['page'] + 1) . $filter) Next
+            p.cq-auth-note
+                a(href="{$home}books") All books
+                |  · 
+                a(href="{$home}authors.csv") The authors as a spreadsheet (CSV)
+```
+
+**File `application/views/Bookshelf/book.pug`** (the edit form for people signed in, Delete for administrators):
+
+```pug
+extends ../default/master/site
+
+//- One book: Route::page gives it $book (get_book: the book with its author) and $authors (list_authors).
+//- The edit form posts to Route::form (PUT, update_book), the delete form to Route::form (DELETE, delete_book)
+
+block title
+    = $book['title'] . ' · Bookshelf'
+
+block content
     section.cq-hero.cq-hero--page
         h1.cq-display= $book['title']
         p.cq-lead
-            | by #{$author['name']}, #{$book['published_year']}
+            | by #{$book['author']['name']}, #{$book['published_year']}
 
     section.cq-band.cq-band--tight
         .cq-inner.cq-inner--narrow
             if flash('success')
                 p.cq-alert(role='status')= flash('success')
             p= $book['summary'] ?: 'No summary yet.'
+            if $book['isbn']
+                p.cq-row-meta ISBN #{$book['isbn']}
 
+            //- the edit form for people signed in, Delete for administrators (permissions 1 or more):
+            //- the capabilities refuse the others on every channel, the page only hides what they may not use
             if $authorized
                 form(method='POST', action="{$home}books/{$book['id']}", novalidate)
                     =csrf()
@@ -165,233 +538,243 @@ block content
                             select#author_id.form-select(name='author_id')
                                 each $a in $authors
                                     option(value=$a['id'], selected=$a['id'] == old('author_id', $book['author_id']))= $a['name']
+                            if errors('author_id')
+                                p.cq-field-error= errors('author_id')
                         .cq-field
                             label(for='published_year') * Year
                             input#published_year.form-control(type='number', name='published_year', value=old('published_year', $book['published_year']))
                             if errors('published_year')
                                 p.cq-field-error= errors('published_year')
                         .cq-field
-                            label(for='summary') Summary
-                            input#summary.form-control(type='text', name='summary', value=old('summary', $book['summary']), maxlength='2000')
+                            label(for='isbn') ISBN
+                            input#isbn.form-control(type='text', name='isbn', value=old('isbn', $book['isbn']), maxlength='20')
+                            if errors('isbn')
+                                p.cq-field-error= errors('isbn')
+                    .cq-field
+                        label(for='summary') Summary
+                        input#summary.form-control(type='text', name='summary', value=old('summary', $book['summary']), maxlength='2000')
                     button.btn.btn-primary(type='submit') Save changes
-            else
-                p
-                    a.btn.btn-secondary(href="{$home}login") Sign in to edit this book
-
-            if flash('error')
-                p.cq-field-error(role='alert')= flash('error')
-
+                if flash('error')
+                    p.cq-field-error(role='alert')= flash('error')
+                if $user['permissions'] >= 1
+                    form(method='POST', action="{$home}books/{$book['id']}", onsubmit="return confirm('Delete this book? This cannot be undone.')")
+                        =csrf()
+                        =methodField('DELETE')
+                        p.cq-auth-note
+                            button.btn.btn-secondary(type='submit') Delete this book
             p.cq-auth-note
+                if !$authorized
+                    a.btn.btn-primary(href="{$home}login") Sign in to edit this book
+                    |  
                 a(href="{$home}books") All books
 ```
 
-In `application/views/Bookshelf/books.pug`, hide the form until `books.js` decides, and add a sign-in button after
-the form (above `p#error.cq-field-error(role='alert')`):
-```pug
-            //- shown by books.js when the visitor may call create_book
-            form#new-book(method='POST', novalidate, hidden)
-```
-```pug
-            p#sign-in(hidden)
-                a.btn.btn-secondary(href="{$home}login") Sign in to add books
-```
-In `public/js/books.js`, import `capabilities` too, and remember what the visitor may call:
-```js
-import { capabilities, listBooks, listAuthors, createBook, deleteBook, CapabilityError } from './capabilities.js'
-```
-```js
-let allowed = new Set()   // the capabilities this visitor may call
-```
-In `row()`, before the Delete button is created:
-```js
-  if (!allowed.has('delete_book')) return li   // only administrators see Delete
-```
-And above `authors = await listAuthors()` at the end:
-```js
-// What may this visitor do? GET /capabilities lists only the capabilities they may call
-allowed = new Set((await capabilities()).map((c) => c.name))
-form.hidden = !allowed.has('create_book')
-document.getElementById('sign-in').hidden = allowed.has('create_book')
-```
-The full files are in the checkpoint.
+`$user['permissions'] >= 1` mirrors the `level: 1` of `delete_book`.
 
 ### Step 5 - Regenerate both clients
 
 ```bash
-docker compose exec dev-box php caligrafer.php client public/js/capabilities.js
+docker compose exec dev-box php caligrafer.php client
 docker compose exec dev-box php caligrafer.php client public/bookshelf-spa/src/capabilities.js
 ```
-Expected: `... written: 20 capabilities ...` twice. In the comments, `create_book (writes, public)` became
-`create_book (writes, books:write)`.
+Expected: `... written: 20 capabilities ...` twice. In their comments, `create_book (writes, public)` became
+`create_book (writes, books:write)`. Rebuild the SPA: `cd public/bookshelf-spa && npm run build && cd ../..`.
 
-### Step 6 - Try it as a visitor, then as a reader
+### Step 6 - As a visitor, then as a reader
 
-1. Open http://localhost:8080/books: the list, **Sign in to add books**, no form, no **Delete**. Open a book: **Sign in
-   to edit this book** instead of the form.
-2. Click **Sign in**, then the link to register (http://localhost:8080/register). Username `reader1`, passcode
-   `bookshelf-2026` twice. You land on the sign-in page (`/login`), which says `Your account is ready: sign in`. Usernames are letters and digits only; passcodes
-   8 to 72 characters.
-3. Sign in as `reader1`. You land on `/books`: the catalog, with **Sign out** in the top bar and the form. Still no
-   **Delete**: reader1 has permissions 0. Add a book: it works.
-4. Open a book, empty its title, **Save changes**: `The Title field is required` under the field.
+1. Open http://localhost:8080/books: the list and a **Sign in to add books** button, no form. Open a book: **Sign in
+   to edit this book**, no form, no Delete.
+2. Click **Create account** (http://localhost:8080/register). Username `reader1`, password `bookshelf-2026`, twice.
+   Usernames are letters and digits; passwords 8 to 72 characters. `signInAfterRegister` signs you in at once: you land
+   on `/books` with **Sign out** in the top bar and the form.
+3. Add *The Word for World Is Forest*, Ursula K. Le Guin, 1972: it works (`"id":12` if you followed every lesson).
+   Open it: the edit form, and no **Delete**: reader1 has permissions 0.
+4. Open http://localhost:8080/people: the **notAuthorized** page. reader1 is signed in, but below level 1.
 
-The REST API obeys the same rules:
+The REST API obeys the same rules. As a visitor:
 ```bash
 curl -s -X POST -H "Accept: application/json" -H "Content-Type: application/json" -d '{"title": "x", "published_year": 2000, "author_id": 1}' -w " [%{http_code}]\n" http://localhost:8080/api/books
+curl -s -o /dev/null -H "Accept: application/json" -w "[%{http_code}]\n" http://localhost:8080/api/books
 ```
-Expected: `{"error":{"code":"unauthenticated","message":"Sign in or send a personal access token"}} [401]`.
-`curl -s -H "Accept: application/json" -w " [%{http_code}]\n" http://localhost:8080/api/books` still answers `[200]`.
-
-And from the command line, `call --guest` calls as a visitor:
+Expected:
+```text
+{"error":{"code":"unauthenticated","message":"Sign in or send a personal access token"}} [401]
+[200]
+```
+From the command line, `call --guest` calls as a visitor (without it, `call` has full access, like any command you run
+on your own computer):
 ```bash
 docker compose exec dev-box php caligrafer.php call create_book title=Ghost published_year=2001 author_id=1 --guest
 ```
-Expected: the same refusal, `"code": "unauthenticated"`, `"message": "Sign in or send a personal access token"`.
-Without `--guest`, `call` has full access, like any command you run on your own server.
+Expected:
+```json
+{
+    "error": {
+        "code": "unauthenticated",
+        "message": "Sign in or send a personal access token"
+    }
+}
+```
 
 ### Step 7 - Tokens with just the rights they need
 
-Revoke the `*` token of lesson 02 (it can do everything). Find the id of "my agent" with
-`docker compose exec dev-box php caligrafer.php token list`, then revoke it (1 if you created no other token;
-otherwise replace 1 with that id):
+Token #2 (`books:read`, `read -rs PARTNER` if your terminal lost it) now sees only the reads:
+```bash
+curl -s -X POST -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $PARTNER" -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' http://localhost:8080/mcp | grep -o '"name":"[a-z_]*"'
+curl -s -X POST -H "Accept: application/json" -H "Content-Type: application/json" -H "Authorization: Bearer $PARTNER" -d '{"title": "x", "published_year": 2000, "author_id": 1}' -w " [%{http_code}]\n" http://localhost:8080/api/books
+```
+Expected:
+```text
+"name":"get_book"
+"name":"list_authors"
+"name":"list_books"
+"name":"register_user"
+"name":"search_books"
+{"error":{"code":"forbidden","message":"This needs the scope books:write"}} [403]
+```
+The public tools (`register_user` is the sign-up, which only answers web pages), and a 403 on the write: lesson 07's
+promise kept.
+
+Token #1 (`*`, lesson 02) can do everything: revoke it.
 ```bash
 docker compose exec dev-box php caligrafer.php token revoke 1
 ```
-Expected: ` Token #1 revoked` (your ids may differ). The tools/list curl of lesson 08 with `$TOKEN` now answers 401 `Unauthorized`.
+Expected: ` Token #1 revoked`. The `tools/list` of lesson 08 with `$TOKEN` now answers 401 `Unauthorized`.
 
-A token that can only read:
-```bash
-docker compose exec dev-box php caligrafer.php token create "catalog reader" --scopes books:read
-READER=cq_2_paste-the-token-it-printed
-curl -s -X POST -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $READER" -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' http://localhost:8080/mcp | grep -o '"name":"[a-z_]*"'
-```
-Expected: `get_book`, `list_authors`, `list_books`, `register_user`, `search_books` (the public ones; `register_user`
-is the framework's sign-up): an agent with this token does not even see the write tools. A write with it:
-```bash
-curl -s -X POST -H "Accept: application/json" -H "Content-Type: application/json" -H "Authorization: Bearer $READER" -d '{"title": "x", "published_year": 2000, "author_id": 1}' -w " [%{http_code}]\n" http://localhost:8080/api/books
-```
-Expected: `{"error":{"code":"forbidden","message":"This needs the scope books:write"}} [403]`.
-
-An application token that can read and write, for Claude Code:
+An **application token** for Claude Code, which reads and writes:
 ```bash
 docker compose exec dev-box php caligrafer.php token create "Claude Code" --scopes books:read,books:write
-WRITER=cq_3_paste-it-here
-curl -s -X POST -H "Accept: application/json" -H "Content-Type: application/json" -H "Authorization: Bearer $WRITER" -d '{"title": "Token test", "published_year": 2026, "author_id": 3}' -w " [%{http_code}]\n" http://localhost:8080/api/books
 ```
-Expected: `[201]` and the new book. Keep its `id` in a variable (paste the id it returned), for example:
-```bash
-BOOK_ID=12
-```
-With the reader's tools/list command above and `$WRITER`, you see
-your 7 tools, and `register_user`.
+Expected: ` Token #3 "Claude Code" created with books:read books:write`, then the token. `read -rs WRITER`, paste it.
 
-A token that acts for reader1 (`--user 1`: 1 = reader1, the first account):
+A **token for reader1** (`--user 1`: reader1 is the first account), with every books scope:
 ```bash
 docker compose exec dev-box php caligrafer.php token create "librarian agent" --scopes "books:*" --user 1
-LIBRARIAN=cq_4_paste-it-here
-curl -s -X DELETE -H "Accept: application/json" -H "Authorization: Bearer $LIBRARIAN" -w " [%{http_code}]\n" http://localhost:8080/api/books/$BOOK_ID
 ```
-Expected: `{"error":{"code":"forbidden","message":"This needs the scope books:write and permission level 1"}} [403]`:
-`books:*` includes `books:write`, but reader1 has permissions 0. Its tools/list has no `delete_book`. Now the same
-DELETE with `$WRITER`:
-```bash
-curl -s -X DELETE -H "Accept: application/json" -H "Authorization: Bearer $WRITER" -w " [%{http_code}]\n" http://localhost:8080/api/books/$BOOK_ID
-```
-Expected: `{"data":{"deleted":...}} [200]`. The application token has the scope, and no person, so no level applies.
+Expected: ` Token #4 "librarian agent" created with books:*`. `read -rs LIBRARIAN`, paste it.
 
-Connect Claude Code with its own token instead of the revoked one:
+Add a book with the application token, then try to delete it with each token (use the id the first command prints):
+```bash
+curl -s -X POST -H "Accept: application/json" -H "Content-Type: application/json" -H "Authorization: Bearer $WRITER" -d '{"title": "Token test", "published_year": 2026, "author_id": 3}' -w " [%{http_code}]\n" http://localhost:8080/api/books
+curl -s -X DELETE -H "Accept: application/json" -H "Authorization: Bearer $LIBRARIAN" -w " [%{http_code}]\n" http://localhost:8080/api/books/13
+curl -s -X DELETE -H "Accept: application/json" -H "Authorization: Bearer $WRITER" -w " [%{http_code}]\n" http://localhost:8080/api/books/13
+```
+Expected:
+```text
+{"data":{"id":13,"title":"Token test",...}} [201]
+{"error":{"code":"forbidden","message":"This needs the scope books:write and permission level 1"}} [403]
+{"data":{"deleted":13}} [200]
+```
+`books:*` includes `books:write`, but the librarian acts for reader1, who has permissions 0. The application token has
+the scope and no person, so no level applies. The librarian's `tools/list` has no `delete_book`.
+
+Connect Claude Code with its own token in place of the revoked one:
 ```bash
 claude mcp remove bookshelf
 claude mcp add --transport http bookshelf http://localhost:8080/mcp --header "Authorization: Bearer $WRITER"
 ```
 
-### Step 8 - Make reader1 an administrator
+### Step 8 - The first administrator
 
+The first administrator is set in the database, once:
 ```bash
 docker compose exec mysql mysql -uroot -proot caligrafy -e "UPDATE users SET permissions = 1 WHERE username = 'reader1'"
 ```
-(The password warning is harmless.) Reload the catalog: you are signed out. Changing the row of a user ends their
-session: **sign in again** as reader1. Now every book has **Delete**. The librarian agent's tools/list now includes
-`delete_book`, because it acts for reader1. Click **Sign out**: the book page says **Sign in to edit this book** again.
+(The password warning is harmless.) Reload the catalog: you are signed out. A change to a user's row ends their
+session: **sign in again** as reader1. Now every book has **Delete this book**, and http://localhost:8080/people lists
+`reader1`, `Administrator`. The librarian's `tools/list` now has `delete_book`: it acts for reader1.
 
-**The next administrators, without SQL.** The `UPDATE` above is only for the first one. Once someone is an
-administrator, the framework's user capabilities manage the others: `list_users`, `get_user`, `update_user` and
-`delete_user` (administrators only, never a password). To try it, uncomment the `// User Administration Routes`
-block of `web.php`, sign in as reader1 and open `/users`: a name opens its page, where you change the permissions.
-Or let an agent do it with a token of reader1 that has the `users:read` and `users:write` scopes
-(`token create "admin agent" --scopes users:read,users:write --user <id of reader1>`): "make reader2 an administrator"
-calls `update_user` with `permissions: 1`. The `--user` matters: only an administrator manages users, so a token
-without an owner (or the old shared API key) is refused, and no one can give a level above their own. The same rules, the same audit log.
+The next administrators need no SQL: `update_user`, a framework capability for administrators, changes `permissions`
+(an agent with a token of reader1 that has `users:write`, or the framework's admin pages). Nobody can give a level
+above their own, and a token without `--user` cannot manage people at all.
 
-### Step 9 - Read the audit log and the other experiences
+### Step 9 - Who did what
 
 ```bash
-docker compose exec dev-box php caligrafer.php audit --limit 10
+docker compose exec dev-box php caligrafer.php audit --limit 8
 ```
-Every refusal is there, with the channel and who: `rest  token  2  create_book  forbidden  This needs the scope books:write`,
-`rest  guest  -  create_book  unauthenticated  Sign in or send a personal access token`, `rest  user  1  create_book  ok`
-(your ids may differ).
-
-- The finder (http://localhost:8080/apps/finder) still works for visitors: it only reads.
-- The SPA (`npm run dev` in `public/bookshelf-spa`): as a visitor, **Add book** answers `Sign in or send a personal
-  access token`. Sign in on http://localhost:8080, then add a book on http://localhost:5173: it works (the cookie
-  belongs to `localhost`, and the proxy forwards it). The built SPA on 8080 shares the session too.
-- `token list` shows ` #4 active librarian agent books:* user 1 ...`, ` #3 active Claude Code books:read books:write ...`,
-  ` #2 active catalog reader books:read ...`, ` #1 revoked my agent * ...` (your ids may differ).
+Expected (your times differ):
+```text
+ 2026-11-07 23:49:23  rest  token  3            delete_book                  ok
+ 2026-11-07 23:49:23  rest  token  4            delete_book                  forbidden  This needs the scope books:write and permission level 1
+ 2026-11-07 23:49:23  rest  token  3            create_book                  ok
+ 2026-11-07 23:49:06  rest  token  2            delete_book                  forbidden  This needs the scope books:write and permission level 1
+ 2026-11-07 23:49:06  rest  token  2            create_book                  forbidden  This needs the scope books:write
+ 2026-11-07 23:48:56  web   user   1            delete_book                  forbidden  This needs the scope books:write and permission level 1
+ 2026-11-07 23:48:56  web   user   1            create_book                  ok
+ 2026-11-07 23:48:48  web   guest  -            register_user                ok
+```
+(The line `web user 1 delete_book forbidden` is there if you tried to delete as reader1 before step 8.) And the
+tokens:
+```bash
+docker compose exec dev-box php caligrafer.php token list
+```
+Expected:
+```text
+ #4    active   librarian agent                books:*  user 1  last used 2026-11-07 23:49:33
+ #3    active   Claude Code                    books:read books:write  last used 2026-11-07 23:49:23
+ #2    active   reading partner                books:read  last used 2026-11-07 23:49:06
+ #1    revoked  my agent                       *  last used 2026-11-07 23:41:55
+```
+The other experiences: the finder still works for visitors (it only reads). The SPA answers **Add book** from a
+visitor with `Sign in or send a personal access token`; sign in on http://localhost:8080, and **Add book** works on
+http://localhost:5173 too (the cookie belongs to `localhost`, and the proxy forwards it).
 
 > **If it doesn't work**
 >
 > | What you see | Cause | Fix |
 > |---|---|---|
 > | An error that ends with `Table 'caligrafy.users' doesn't exist` | Step 1 was skipped | Run the users script |
-> | After signing in you see the Caligrafy welcome page | `Route::auth()` has no `home`, so it sends people to `/` | `Route::auth(['home' => '/books']);` |
-> | `Too many failed attempts: try again in 15 minutes` (429) | 5 wrong passwords for this username within 15 minutes | Wait 15 minutes, then sign in with the right password |
-> | Signed in, but no **Sign out** and no form | A page route is not a `Route::page` (a closure does not give `authorized`), or the clients were not regenerated | Compare the routes with the checkpoint; run step 5; reload with <kbd>Shift</kbd> |
-> | The form still shows to visitors | `books.pug` has no `hidden` on the form, or `books.js` is the old one | Compare with step 4 |
+> | `Invalid credentials` on the sign-in page | A wrong username or password | Usernames are case sensitive; after 5 failures wait 15 minutes |
+> | Signed in, but no **Sign out** and no form | The view reads another variable than `$authorized` | Compare the views with step 4 |
+> | The form still shows to visitors | `if $authorized` is missing, or its indentation is wrong (Pug nests by indentation) | Compare with step 4 |
 > | No **Delete** for the administrator | You did not sign in again after the `UPDATE` | Sign out, sign in |
-> | Sign up says the inputs are invalid | A space or a dash in the username, or a passcode under 8 characters | Letters and digits; 8 to 72 characters |
-> | 401 with a token you just created | The variable is empty or cut | `echo $WRITER`; paste the whole `cq_...` value |
-> | Claude Code still answers `Unauthorized` | It uses the revoked token | Remove and add the server again (end of step 7) |
+> | Sign up says the inputs are invalid | A space or a dash in the username, or a password under 8 characters | Letters and digits; 8 to 72 characters |
+> | 401 with a token you just created | The variable is empty or cut | `echo ${#WRITER}` prints 45; paste the whole `cq_...` value again |
+> | Claude Code answers `Unauthorized` | It uses the revoked token | Remove and add the server again (end of step 7) |
 
 ---
+
+## Check
+
+- [ ] `web.php`, `people.pug`, the three services and the two views are identical to the File blocks.
+- [ ] `capabilities`: the 4 reads `public`; `create_book`, `update_book`, `delete_book` show `books:write`; `DeleteBook.php`
+      has `level: 1` and `destructive: true`.
+- [ ] As a visitor: no form, `/people` sends to `/login`, `POST /api/books` answers 401.
+- [ ] As reader1 (level 0): the form, no Delete, `/people` is notAuthorized; as administrator: Delete and `/people`.
+- [ ] Token #2 sees 5 tools and gets 403 on writes; the librarian (#4) gets 403 on delete until reader1 is an
+      administrator; the application token (#3) deletes.
+- [ ] No controller in `application/controllers/Bookshelf/`; no password, hash or token in a file.
 
 ## With Claude
 
 In `claude`, in the `bookshelf` folder:
-```
+```text
 /caligrafy-quill:db application/models/Auth/create_db.sql
 ```
 then:
-```
-Turn on people and permissions in Bookshelf. In web.php: uncomment Auth::authentication('User', 'users'); replace
-the commented "Auth Routes" block with one line, Route::auth(['home' => '/books']) (no AuthController routes; / and /books
-are already Route::page: they get authorized by themselves). Capabilities: remove
-public: true from create_book and update_book; delete_book gets level: 1 instead (only permissions >= 1); the reads
-stay public. No controller: the Route::form of the edit form already sends visitors to /login.
-book.pug: the edit form only when $authorized, else a "Sign in to edit this book" button to /login. books.pug: the
-form is hidden by default, plus a hidden p#sign-in with a "Sign in to add books" button. books.js: ask capabilities()
-once; show the form only if create_book is allowed (else #sign-in), and Delete only if delete_book is allowed.
+```text
+Turn on people and permissions in Bookshelf. In web.php: uncomment Auth::authentication('User', 'users'); replace the
+commented "Auth Routes" block with one line, Route::auth(['home' => '/books', 'signInAfterRegister' => true]) (no
+AuthController routes); add Route::page('/people', 'Bookshelf/people', ['level' => 1, 'data' => ['people' =>
+'list_users']]) after the Route::download line, and its view (title band "People", one cq-row per person: username,
+"Administrator" when permissions >= 1 else "Reader", and created_at). Capabilities: remove public: true from
+create_book and update_book; delete_book gets level: 1 in its place; the reads stay public. Views: books.pug shows its
+form only if $authorized, else a "Sign in to add books" button to /login; book.pug shows the edit form only if
+$authorized and the delete form only if $user['permissions'] >= 1, else a "Sign in to edit this book" button.
 Regenerate public/js/capabilities.js and public/bookshelf-spa/src/capabilities.js. Do not create tokens or users.
 ```
 
-**What Claude should do:** run the users script, then change `web.php`, the three services, the two
-views and `books.js` as in steps 2 to 4, and regenerate both clients.
-
 **Check** before you accept:
-- [ ] `capabilities`: the 4 reads `public`; `create_book`, `update_book`, `delete_book` show `books:write`.
-- [ ] `DeleteBook.php` has `level: 1` and still `destructive: true`; no `public` on the three writes.
-- [ ] The protection is in the services, not only in the views: the visitor curl of step 6 answers 401.
-- [ ] `books.js` uses `capabilities()`, not a hard-coded "signed in" test.
-- [ ] `web.php` has `Route::auth(['home' => '/books']);` and no `AuthController` route; `application/controllers/` has no Bookshelf file.
-- [ ] No `echo`, `view()` or `redirect()` was added to a service; nothing in `application/controllers/core` was edited.
-- [ ] No password, hash or token in the chat or in a file.
-- [ ] Steps 6 to 8 give the same results.
+- [ ] The protection is in the capabilities, not only in the views: the visitor curl of step 6 answers 401.
+- [ ] `web.php` has `Route::auth([...])` and no `AuthController` route; no new controller.
+- [ ] The views use `$authorized` and `$user`, and no PHP block that reads the session.
+- [ ] No password, hash or token in the chat or a file.
+- [ ] Steps 6 to 8 give the same results: do them yourself, they are the proof.
 
-**If Claude's result differs:** if it writes a controller that checks `guard()` or `authorized()` and leaves
-`public: true` in the services, the page is safe but REST, the agents and the SPA are not: ask it to close the
-capabilities instead, and to keep `Route::form`. If it writes the sign-in routes one by one with `AuthController`,
-ask for `Route::auth(['home' => '/books'])`: one line, with failed sign-ins limited. If it gives the "librarian" token no `--user`, `level` does not apply to it (it is an
-application token). Do steps 6 to 8 yourself: they are the proof.
+If Claude writes a controller that checks `guard()` and leaves `public: true` in the capabilities, the page is safe but
+REST, the agents and the SPA are not: ask it to close the capabilities instead. If it gives the librarian token no
+`--user`, the level does not apply to it.
 
 ---
 
@@ -403,39 +786,34 @@ git commit -m "Lesson 11: sign-in, scopes, levels and tokens"
 git tag lesson-11
 ```
 Reference: [`checkpoints/lesson-11`](https://github.com/caligrafy/caligrafy-quill-course/tree/main/checkpoints/lesson-11).
-Tokens are never in the project. Learn more: [9.1 Authentication](https://github.com/caligrafy/caligrafy-quill/wiki/9.1-Authentication)
-and the tokens section of [11. Build Once](https://github.com/caligrafy/caligrafy-quill/wiki/11.-Build-Once:-Services,-Capabilities-and-MCP).
+After copying a checkpoint, run step 1 again (the users table) and create your account. Learn more:
+[9.1 Authentication](https://github.com/caligrafy/caligrafy-quill/wiki/9.1-Authentication) and the tokens section of
+[11. Build Once](https://github.com/caligrafy/caligrafy-quill/wiki/11.-Build-Once:-Services,-Capabilities-and-MCP).
 
 ## Exercise
 
-1. The SPA still shows **Add book** to visitors and **Delete** to everyone (and gets refused). Make `BooksPage.vue`
-   show the form only when `create_book` is allowed, like the catalog page.
+1. Add a page `/mine` that only signed-in people may open, with the title "Welcome, <username>". Which option of
+   `Route::page` do you use, and where does the username come from?
 2. A token created with `--scopes books:read,books:write` and no `--user` deletes a book. reader1, signed in with
    permissions 0, cannot. Why?
 
 <details><summary>Show the solution</summary>
 
-1. In `public/bookshelf-spa/src/components/pages/BooksPage.vue`, import `capabilities` too, keep the names in
-   `data()` and ask once in `mounted()`:
-   ```js
-   import { capabilities, listBooks, searchBooks, listAuthors, createBook, CapabilityError } from '../../capabilities.js'
+1. `signedIn`, and the `$user` that every `Route::page` view gets. In `web.php`, in `// BOOKSHELF PAGES`:
+   ```php
+       Route::page('/mine', 'Bookshelf/mine', ['signedIn' => true]);
    ```
-   ```js
-     data () {
-       return { books: [], authors: [], allowed: [], query: '', form: { title: '', author_id: '', published_year: '' }, error: '', timer: null }
-     },
-     async mounted () {
-       this.allowed = (await capabilities()).map((c) => c.name)
-       this.authors = await listAuthors()
-       this.form.author_id = this.authors.length ? this.authors[0].id : ''
-       this.books = (await listBooks()).data
-     },
+   and `application/views/Bookshelf/mine.pug`:
+   ```pug
+   extends ../default/master/site
+
+   block content
+       section.cq-hero.cq-hero--page
+           h1.cq-display Welcome, #{$user['username']}
    ```
-   In the template, add `v-if="allowed.includes('create_book')"` to the
-   `<form>`, and after it `<p class="cq-auth-note" v-else>Sign in on Bookshelf to add books.</p>`. Do the same in
-   `BookPage.vue` for Delete with `delete_book`. No server change: the capabilities already say who may do what.
-   (This is not in the checkpoint: undo it with `git checkout public/bookshelf-spa` if you want to stay identical.)
-2. `level` applies to people, and to tokens created with `--user`. A token without `--user` is an application token:
+   A visitor who opens http://localhost:8080/mine goes to `/login`; reader1 sees `Welcome, reader1`. The page needs no
+   `data`: `$user` is there on every page. (Not in the checkpoint: delete both before you commit.)
+2. The level applies to people, and to tokens created with `--user`. A token without `--user` is an application token:
    only its scopes count, and it has `books:write`. reader1 is a person with permissions 0, below the `level: 1` of
    `delete_book`.
 </details>

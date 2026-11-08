@@ -1,75 +1,85 @@
 # Lesson 08 - AI agents
 
-**In this lesson** you add one new capability, `search_books`, and an AI agent (Claude Code) uses it, together with
-the six capabilities you already have, to answer questions and change the catalog. The same capability also reaches
-the REST endpoint and the JS client, without one extra line of server code.
+**In this lesson** an AI agent works with Bookshelf. You add one capability, `search_books`, and see what an agent
+sees: the address `/mcp` that quickstart added in lesson 01 serves every capability as a **tool**. You talk to it the
+way an agent does, with `curl`, over HTTP and over stdio; you see how a token's **scopes** decide which tools it gets;
+and you connect Claude Code or Cursor with a configuration that keeps the token out of the project.
 
-**Before you start:** lesson 07 is done (tag `lesson-07`), the containers run (`docker compose ps` shows
-`bookshelf-dev-box-1`, `bookshelf-mysql-1` and `bookshelf-phpmyadmin-1`), and you still have the token of
-[Lesson 02](02-Build-Once-Seen-Three-Ways) (`cq_1_...`, scope `*`). For the agent part you need Claude Code
-(`claude --version`).
+**Before you start:** lesson 07 is done (tag `lesson-07`), `docker compose ps` shows the 3 containers running, and you
+have the two tokens of lessons 02 and 07: #1 "my agent" (scope `*`) and #2 "reading partner" (scope `books:read`).
 
-**Time:** 40 minutes.
+**Time:** 45 minutes.
 
 ---
 
 ## New concepts
 
-**AI agent.** A program built on a language model (here Claude, in Claude Code) that can do more than answer with
-text: it can decide to call **tools** of other applications, read their answers and continue. Ask "which books by
-Octavia E. Butler do we have?" and the agent calls your `list_authors` and `list_books`, then answers in a sentence.
+**AI agent.** A program built on a language model (Claude in Claude Code, for example) that does more than answer with
+text: it chooses **tools** of other applications, calls them, reads their answers and goes on. Ask it "which books by
+Octavia E. Butler do we have?" and it calls `list_authors`, then `list_books`, then answers in a sentence.
 
-**MCP** (Model Context Protocol). The standard way an agent finds and calls the tools of an application. The agent
-sends small JSON messages (in the JSON-RPC format) to one address, `/mcp`: `tools/list` ("what can you do?") and
-`tools/call` ("run this tool with these inputs"). Quickstart already added that address to `web.php` in lesson 01:
-`Route::mcp('/mcp');`.
+**MCP** (Model Context Protocol). The standard way an agent finds and calls the tools of an application. The agent sends
+small JSON messages in the **JSON-RPC** format (`{"jsonrpc":"2.0","id":1,"method":...}`), and the application answers
+each one:
 
-**Tool.** What an agent sees of a capability. You never write a tool: the framework builds it from the capability.
+| Method | What the agent asks | Answer |
+|---|---|---|
+| `initialize` | "who are you, which version of MCP?" | the protocol version, `serverInfo` (with the Caligrafy version), and a short instruction |
+| `notifications/initialized` | "I am ready" (a notification: no `id`) | nothing (HTTP 202) |
+| `tools/list` | "what can you do?" | the tools this token may use |
+| `tools/call` | "run this tool with these arguments" | the capability's answer, or its refusal with `"isError":true` |
+
+`Route::mcp('/mcp');` in `web.php` (quickstart wrote it) serves these messages, one per `POST`.
+
+**Tool.** What an agent sees of a capability. You never write a tool: Caligrafy builds it from the capability.
 
 | Part of the tool | Comes from |
 |---|---|
-| name (`search_books`) | `name` of `#[Capability]` |
-| description | `description` of `#[Capability]`: the agent reads it to choose the right tool |
-| input schema (which inputs, which are required) | `$rules` and `$descriptions` |
-| `readOnlyHint: true` | `readOnly: true`: the tool changes nothing, the agent may call it freely |
-| `destructiveHint: true` | `destructive: true`: the tool deletes data, the agent asks you before calling it |
-| `openWorldHint: false` | always false: the tool works on your application only, not on the internet |
+| `name` | `name` of `#[Capability]` |
+| `description` | `description` of `#[Capability]`: the agent reads it to choose the tool, so write it for the agent |
+| `inputSchema` (the inputs, their types and limits, which are required) | `$rules` and `$descriptions` |
+| `readOnlyHint: true` | `readOnly: true`: it changes nothing, the agent may call it freely |
+| `destructiveHint: true` | `destructive: true`: it deletes data, the agent asks you first |
+| `openWorldHint: false` | always: the tool works on your application only |
 
-**Token** (a personal access token). A secret like `cq_1_9f2c...` that a program sends in the header
-`Authorization: Bearer <token>` to say who it is. Each token has a name, **scopes** (the rights it carries, such as
-`books:read` or `*` for everything) and can be revoked on its own. MCP over HTTP accepts tokens only: no token, no
-tools. Until [Lesson 11](11-People-and-Permissions) every Bookshelf capability is `public: true`, and a public
-capability ignores scopes, so the scopes do not limit anything yet. Lesson 11 closes the doors and shows scoped tokens.
+**Tokens and scopes, for agents.** Over HTTP, `/mcp` always wants a personal access token
+(`Authorization: Bearer cq_...`): without one it answers 401, even for public capabilities. The token decides the
+tools: `tools/list` lists the capabilities that are `public`, plus those whose scope the token has. A tool that is not
+listed cannot be called either (`Unknown tool`). Today every Bookshelf capability is public, so both tokens get all
+of them; lesson 11 closes the writes and the lists become different.
 
-**Two ways to connect an agent**
+**Two transports.** The same messages travel two ways:
 
 | Transport | How | When |
 |---|---|---|
-| HTTP | the agent sends its messages to `http://localhost:8080/mcp` with a token | the normal way, and the only way once the app is deployed |
-| stdio | the agent starts `php caligrafer.php mcp` itself and talks to it through its **st**andard **i**nput and **o**utput (no network) | a local agent on your own computer, for development |
+| HTTP | the agent posts each message to `http://localhost:8080/mcp` with a token | the normal way, and the only one once the app is online |
+| stdio | the agent starts `php caligrafer.php mcp` itself and writes the messages to its **st**andard **i**nput, one per line; the answers come out on its standard **o**utput | an agent on your own computer, during development |
 
-**Build once, in practice.** In this lesson you write one class. You do not touch `web.php`, the pages or a
-controller. Yet `search_books` is at once:
-- a tool for every agent connected to `/mcp`,
-- callable over HTTP at `POST /capabilities/search_books` (the generic endpoint of `Route::capabilities`),
-- a function `searchBooks()` of the JS client, ready for the Vue app of [Lesson 09](09-A-Vue-App).
+Over stdio there is no network and no token is needed: without one, the command has **full local access**, like any
+command you type. Set `CALIGRAFY_TOKEN` to make it act as a token, with that token's scopes.
+
+**Build once, in practice.** In this lesson you write one class. You do not touch `web.php`, a page or a controller,
+and `search_books` is at once a tool for agents, `POST /capabilities/search_books` for programs, and a function of the
+JS client that lesson 09 generates.
 
 ---
 
-## Manual track
+## Steps
 
-### Step 1 - Write `search_books`
+Run every command from the `bookshelf` folder.
+
+### Step 1 - A capability for searching
 
 Create the file with Caligrafer:
 ```bash
 docker compose exec dev-box php caligrafer.php service Bookshelf/SearchBooks --scope books:read --read-only
 ```
 Expected:
-```
+```text
  Created application/services/Bookshelf/SearchBooks.php: capability 'search_books' (scope books:read)
- Fill in $rules and handle(), then call it from a controller ($this->call('search_books')), REST (Route::capability) or MCP (Route::mcp)
+ Fill in $rules and handle(), then serve it: a page (Route::page data), a form (Route::form), REST (Route::capability or Route::capabilities), MCP (Route::mcp)
 ```
-Replace the content of the file:
+Replace the whole content of the file:
 
 **File `application/services/Bookshelf/SearchBooks.php`** (public, read-only, one required input):
 
@@ -80,10 +90,10 @@ use Caligrafy\Capability;
 use Caligrafy\Context;
 use Caligrafy\Service;
 
-// search_books: finds books by words of their title or summary. Anyone may read it
+// search_books: the books whose title or summary contains some words. Anyone may read it
 #[Capability(
     name: 'search_books',
-    description: 'Finds the books of the catalog whose title or summary contains some words, for example "time travel" or "magic". Returns id, title, year and summary of each book found.',
+    description: 'Finds the books of the catalog whose title or summary contains some words, for example "time travel" or "magic". Returns at most 20 books, sorted by title, each with its author (id, name, bio).',
     scope: 'books:read',
     readOnly: true,
     public: true
@@ -92,183 +102,289 @@ class SearchBooks extends Service
 {
     public $rules = array('query' => 'required|min_len,2|max_len,100');
     public $filters = array('query' => 'trim');
-    public $descriptions = array('query' => 'The words to look for');
+    public $descriptions = array('query' => 'The words to look for, for example "time travel"');
 
     public function handle(array $input, Context $context)
     {
-        // the title or the summary contains the words, as they are: % and _ in them are no wildcards
-        return Book::query()->search(['title', 'summary'], $input['query'])->orderBy('title')->get();
+        // LIKE on both columns, the words bound as they are: a % or _ in them is no wildcard
+        return Book::with('author')
+            ->search(['title', 'summary'], $input['query'])
+            ->orderBy('title')
+            ->limit(20)
+            ->get();
     }
 }
 ```
 
 What to notice:
-- `query` is `required`, at least 2 and at most 100 characters; `trim` removes the spaces around it first.
-- `Book::query()->search(['title', 'summary'], $input['query'])` (the query builder of lesson 04) finds the books
-  whose `title` or `summary` contains the words, as they are: `50%` looks for the text `50%`, the `%` is no wildcard.
-  The words are bound, never pasted into the SQL. `orderBy('title')` sorts what it finds.
-- The `description` gives two examples and says what comes back. It is written for an agent, not for you.
+- `query` is required, 2 to 100 characters; the filter `trim` removes the spaces around it first.
+- `search(['title', 'summary'], ...)` of the query builder finds the rows whose title **or** summary contains the words.
+  The words are bound, never pasted into the SQL, and a `%` or `_` in them is a plain character.
+- `with('author')` adds each book's author, as in `list_books`; `limit(20)` keeps the answer short.
+- The `description` gives two examples and says what comes back: it is written for an agent.
 
 Check that the framework found it:
 ```bash
-docker compose exec dev-box php caligrafer.php capabilities
+docker compose exec dev-box php caligrafer.php capabilities | grep search_books
 ```
-Expected: 20 capabilities (your 7 and the framework's 13), among them ` search_books   public   read   Finds the books of the catalog whose title or summary ...`.
-
-### Step 2 - Call it over HTTP
-
-```bash
-curl -s -X POST -H "Accept: application/json" -H "Content-Type: application/json" -d '{"query": "magic"}' http://localhost:8080/capabilities/search_books
+Expected:
+```text
+ search_books                 public         read      Finds the books of the catalog whose title or summary contains some words, for example "time travel" or "magic". Returns at most 20 books, sorted by title, each with its author (id, name, bio).
 ```
-Expected: one book, A Wizard of Earthsea (its summary says "learns magic"): `{"data":[{"id":1,"title":"A Wizard of Earthsea",...}]}`.
 
+Call it over HTTP, the way you called the other capabilities in lesson 04:
 ```bash
-curl -s -X POST -H "Accept: application/json" -H "Content-Type: application/json" -d '{"query": "zzzz"}' http://localhost:8080/capabilities/search_books
-```
-Expected: `{"data":[]}` (nothing found is not an error).
-
-```bash
+curl -s -X POST -H "Accept: application/json" -H "Content-Type: application/json" -d '{"query": "magic"}' -w " [%{http_code}]\n" http://localhost:8080/capabilities/search_books
+curl -s -X POST -H "Accept: application/json" -H "Content-Type: application/json" -d '{"query": "zzzz"}' -w " [%{http_code}]\n" http://localhost:8080/capabilities/search_books
 curl -s -X POST -H "Accept: application/json" -H "Content-Type: application/json" -d '{"query": "a"}' -w " [%{http_code}]\n" http://localhost:8080/capabilities/search_books
 ```
-Expected: `[422]` and `"fields":{"query":"The Query field needs to be at least 2 characters"}`. That message comes from
-`$rules`: every experience (page, app, agent) will get exactly the same one.
-
-### Step 3 - Regenerate the JS client
-
-Rule from [Lesson 06](06-Web-Pages): run it after every change to a capability.
-```bash
-docker compose exec dev-box php caligrafer.php client public/js/capabilities.js
+Expected (your dates differ):
+```text
+{"data":[{"id":1,"title":"A Wizard of Earthsea","published_year":1968,"summary":"A gifted boy learns magic and must face the shadow he set loose.","isbn":null,"author_id":1,"created_at":"2026-11-07 23:24:36","modified_at":"2026-11-07 23:24:36","author":{"id":1,"name":"Ursula K. Le Guin","bio":"American author of science fiction and fantasy, known for the Earthsea books.","created_at":"2026-11-07 23:24:20","modified_at":"2026-11-07 23:24:20"}}]} [200]
+{"data":[]} [200]
+{"error":{"code":"invalid","message":"Some of the inputs are invalid","fields":{"query":"The Query field needs to be at least 2 characters"}}} [422]
 ```
-Expected: ` public/js/capabilities.js written: 20 capabilities, calls /capabilities (Route::capabilities('/capabilities') in web.php)`.
-Check: `grep -n "searchBooks" public/js/capabilities.js` prints the line
-`export const searchBooks = (input = {}) => call('search_books', input)`.
+Nothing found is an empty list, not an error. The 422 message comes from `$rules`: every experience gets the same.
 
-### Step 4 - See what an agent sees
+### Step 2 - Talk to /mcp like an agent
 
-Put the token of lesson 02 in a variable of your terminal (it stays in this terminal window only):
+Put token #1 in a variable without showing it: run `read -rs TOKEN`, paste the token, press Enter. `echo ${#TOKEN}`
+prints its length (45), not the token.
+
+The first message of every agent, `initialize`:
 ```bash
-TOKEN=cq_1_paste-yours-here
+curl -s -X POST -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $TOKEN" -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"curl","version":"1"}}}' -w " [%{http_code}]\n" http://localhost:8080/mcp
 ```
-Ask `/mcp` for its tools, exactly as an agent does:
+Expected:
+```text
+{"jsonrpc":"2.0","id":1,"result":{"protocolVersion":"2025-06-18","capabilities":{"tools":{"listChanged":false}},"serverInfo":{"name":"caligrafy-app","title":"caligrafy-app","version":"2.19.1"},"instructions":"Tools are the capabilities of this application that your token allows. Tools marked destructive delete or overwrite data: confirm with the user first."}} [200]
+```
+The answer has the same `id` as the question: that is how an agent matches them. `serverInfo.name` is `APP_NAME`, or
+`caligrafy-app` when it is not set. Then the agent says it is ready; a notification gets no answer:
 ```bash
-curl -s -X POST -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $TOKEN" -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' http://localhost:8080/mcp
+curl -s -X POST -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $TOKEN" -d '{"jsonrpc":"2.0","method":"notifications/initialized"}' -w " [%{http_code}]\n" http://localhost:8080/mcp
 ```
-Expected: one long line of JSON with 12 tools: your 7, `create_book`, `delete_book`, `get_book`, `list_authors`,
-`list_books`, `search_books`, `update_book`, and the 5 user tools of the framework (lesson 02). Find in it:
-- your four read tools have `"readOnlyHint":true`;
-- `delete_book` has `"destructiveHint":true`; `create_book` and `update_book` have both hints `false`;
-- every tool has `"openWorldHint":false`;
-- `create_book` has the properties `title`, `published_year`, `summary`, `author_id`, and `"required"` lists
-  `title`, `published_year` and `author_id` (from its `$rules`).
+Expected: ` [202]`.
 
-Now without the token:
+The tools, one name per line (`grep -o` keeps only the names):
+```bash
+curl -s -X POST -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $TOKEN" -d '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' http://localhost:8080/mcp | grep -o '"name":"[a-z_]*"'
+```
+Expected:
+```text
+"name":"create_book"
+"name":"delete_book"
+"name":"delete_user"
+"name":"get_book"
+"name":"get_user"
+"name":"list_authors"
+"name":"list_books"
+"name":"list_users"
+"name":"register_user"
+"name":"search_books"
+"name":"update_book"
+"name":"update_user"
+```
+Your 7 capabilities and 5 of the framework's (the accounts: lesson 11). Run the same command without `| grep ...` to
+read the whole answer. The entry of `delete_book` is:
+```json
+{"name":"delete_book","title":"Delete book","description":"Deletes a book of the catalog, by its id. This cannot be undone.","inputSchema":{"type":"object","properties":{"id":{"type":"integer","description":"The id of the book to delete"}},"additionalProperties":false,"required":["id"]},"annotations":{"readOnlyHint":false,"destructiveHint":true,"openWorldHint":false}}
+```
+In `create_book`'s entry, `published_year` is `{"type":"integer","minimum":1450,"maximum":2026,...}`: the rule
+`max_numeric,current_year` became this year, and `"required":["title","published_year","author_id"]`.
+
+### Step 3 - Call tools
+
+Search, as an agent would for "a book about time":
+```bash
+curl -s -X POST -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $TOKEN" -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"search_books","arguments":{"query":"time"}}}' http://localhost:8080/mcp
+```
+Expected (shortened here at `...`):
+```text
+{"jsonrpc":"2.0","id":3,"result":{"content":[{"type":"text","text":"[{\"id\":3,\"title\":\"Kindred\",...}]"}],"structuredContent":{"result":[{"id":3,"title":"Kindred","published_year":1979,"summary":"A young woman is pulled back in time to a plantation in Maryland.",...,"author":{"id":2,"name":"Octavia E. Butler",...}}]},"isError":false}}
+```
+The answer twice: as text in `content` (every agent reads it) and as JSON in `structuredContent` (a list is put under
+`result`).
+
+Add a book, then try one without a year:
+```bash
+curl -s -X POST -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $TOKEN" -d '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"create_book","arguments":{"title":"Bloodchild","published_year":1995,"author_id":2}}}' http://localhost:8080/mcp
+curl -s -X POST -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $TOKEN" -d '{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"create_book","arguments":{"title":"Bloodchild","author_id":2}}}' http://localhost:8080/mcp
+```
+Expected: the first answers `"isError":false` with the new book (`"id":11` if you followed every lesson); the second:
+```text
+{"jsonrpc":"2.0","id":5,"result":{"content":[{"type":"text","text":"{\"error\":{\"code\":\"invalid\",\"message\":\"Some of the inputs are invalid\",\"fields\":{\"published_year\":\"The Published Year field is required\"}}}"}],"isError":true}}
+```
+A refusal is a tool result with `"isError":true`, not a protocol error: the agent reads the message and tries again
+with a year. A tool that does not exist is a protocol error:
+```bash
+curl -s -X POST -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $TOKEN" -d '{"jsonrpc":"2.0","id":6,"method":"tools/call","params":{"name":"find_books","arguments":{}}}' http://localhost:8080/mcp
+```
+Expected: `{"jsonrpc":"2.0","id":6,"error":{"code":-32602,"message":"Unknown tool: find_books"}}`.
+
+Open http://localhost:8080/books: Bloodchild is in the catalog. The agent wrote through `create_book`, with the rules
+the form uses.
+
+### Step 4 - The token decides
+
+Without a token:
 ```bash
 curl -s -X POST -H "Content-Type: application/json" -H "Accept: application/json" -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' -w " [%{http_code}]\n" http://localhost:8080/mcp
 ```
-Expected: `{"jsonrpc":"2.0","id":null,"error":{"code":-32600,"message":"Unauthorized: send Authorization: Bearer <personal access token>"}} [401]`.
-Public capabilities are open to everyone on REST, but `/mcp` itself always wants a token.
-
-### Step 5 - Let Claude Code use Bookshelf
-
-You connected Claude Code to `/mcp` in lesson 02. Check that the connection still works:
+Expected:
+```text
+{"jsonrpc":"2.0","id":null,"error":{"code":-32600,"message":"Unauthorized: send Authorization: Bearer <personal access token>"}} [401]
+```
+With token #2 of the reading partner (`read -rs PARTNER`, paste it, Enter):
 ```bash
+curl -s -X POST -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $PARTNER" -d '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' http://localhost:8080/mcp | grep -o '"name":"[a-z_]*"'
+```
+Expected:
+```text
+"name":"create_book"
+"name":"delete_book"
+"name":"get_book"
+"name":"list_authors"
+"name":"list_books"
+"name":"register_user"
+"name":"search_books"
+"name":"update_book"
+```
+8 tools, not 12: the 4 account tools need `users:read` or `users:write`, which `books:read` does not give, so they are
+not listed. The Bookshelf writes are still there because they are public; after lesson 11 this token sees only the
+reads.
+
+The audit log shows what the agent did:
+```bash
+docker compose exec dev-box php caligrafer.php audit --limit 3
+```
+Expected (your times differ):
+```text
+ 2026-11-07 23:39:38  mcp   token  1            create_book                  invalid  Some of the inputs are invalid
+ 2026-11-07 23:39:38  mcp   token  1            create_book                  ok
+ 2026-11-07 23:39:15  mcp   token  1            search_books                 invalid  Some of the inputs are invalid
+```
+The channel is `mcp`, the caller `token 1`. A read that works is not logged; a refused one is (here a search of one
+letter, if you tried it).
+
+### Step 5 - The same tools over stdio
+
+Send two messages to `php caligrafer.php mcp`, one per line, as a local agent does (`-T`: no terminal, the messages
+come from the pipe):
+```bash
+printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18"}}' '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"search_books","arguments":{"query":"cities"}}}' | docker compose exec -T dev-box php caligrafer.php mcp
+```
+Expected: first, on the error output,
+```text
+caligrafer mcp: no token, full local access (set CALIGRAFY_TOKEN to limit it)
+```
+then two lines of JSON: the `initialize` answer of step 2 and the `tools/call` answer with *Invisible Cities*. The
+command stops when the pipe ends; an agent keeps it running and writes more lines.
+
+Now as token #2: `-e CALIGRAFY_TOKEN` passes the variable of your terminal into the container.
+```bash
+export CALIGRAFY_TOKEN="$PARTNER"
+printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"list_users","arguments":{}}}' | docker compose exec -T -e CALIGRAFY_TOKEN dev-box php caligrafer.php mcp
+unset CALIGRAFY_TOKEN
+```
+Expected: `{"jsonrpc":"2.0","id":1,"error":{"code":-32602,"message":"Unknown tool: list_users"}}`: with a token, stdio
+has exactly that token's tools. With a wrong token the command prints
+`caligrafer mcp: The token is unknown, revoked or expired` and stops.
+
+### Step 6 - Connect your agent
+
+The configuration of an agent holds the token, so it lives **in your user settings, never in the project** (`git add -A`
+would commit it).
+
+**Claude Code over HTTP.** You did it in lesson 02:
+```bash
+claude mcp add --transport http bookshelf http://localhost:8080/mcp --header "Authorization: Bearer cq_..."
 claude mcp list
 ```
-Expected: a line `bookshelf ... Connected`. (If it is missing, add it again with
-`claude mcp add --transport http bookshelf http://localhost:8080/mcp --header "Authorization: Bearer $TOKEN"`.)
+`claude mcp list` shows a line for `bookshelf` that says it is connected. If it is missing, run the first
+line with your token #1 in place of `cq_...`.
 
-Start `claude` in the `bookshelf` folder (the `claude mcp add` of lesson 02 registers the server for that folder
-only) and ask:
-```
-Which books by Octavia E. Butler are in the catalog? Then add Bloodchild (1995) by her.
-```
-What happens:
-1. Claude Code asks permission before it uses each tool the first time. Approve. For the read tools you can choose
-   "don't ask again".
-2. Claude calls `list_authors` and `list_books` (to find her id and her books), then `create_book`.
-3. It answers with something like: "The catalog had two books by Octavia E. Butler: Kindred (1979) and Parable of the
-   Sower (1993). I added Bloodchild (1995) under her name ..."
-
-Check on the other experiences: open http://localhost:8080/books, click the tab **Octavia E. Butler**: Bloodchild is
-there. Then read the audit log:
-```bash
-docker compose exec dev-box php caligrafer.php audit --limit 5
-```
-Expected: a line `... mcp   token  1   create_book   ok`. (Read-only capabilities are logged only when they are
-refused, so the two reads do not appear.)
-
-Now ask Claude to `Delete Bloodchild from the catalog`. Because `delete_book` is `destructive`, Claude Code asks you
-to confirm before calling it. You can say no: the book stays.
-
-If Claude Code was already open before step 1, it may not see `search_books` yet: type `/mcp` in Claude Code to
-reconnect, or start a new session. Then ask `Find the books about time travel`: Claude calls `search_books`.
-
-### Step 6 - Look at your tokens
-
-```bash
-docker compose exec dev-box php caligrafer.php token list
-```
-Expected: ` #1    active   my agent   *  last used 2026-10-31 12:48:25` (your date and time). Only a hash of the token is
-stored: nobody can read the token back, which is why lesson 02 told you to keep it.
-
-### Step 7 - Optional: a local agent over stdio
-
-From the `bookshelf` folder:
+**Claude Code over stdio**, for this computer only:
 ```bash
 claude mcp add bookshelf-local -- docker compose exec -T dev-box php caligrafer.php mcp
 ```
-Claude Code now starts `php caligrafer.php mcp` in the container itself. On each start it prints
-`caligrafer mcp: no token, full local access (set CALIGRAFY_TOKEN to limit it)`: over stdio, without a token, the
-agent can do anything, like any command you type yourself. Ask it "list the books of author 2": it answers with
-Kindred and Parable of the Sower (and Bloodchild, if you kept it in step 5). Use stdio only on your own computer; remove it when you are done:
-`claude mcp remove bookshelf-local`.
+Claude Code starts the command itself, from the `bookshelf` folder. It has full access: remove it when you are done
+with `claude mcp remove bookshelf-local`.
+
+**Cursor, or any client that reads an `mcpServers` file** (for Cursor: `~/.cursor/mcp.json`, in your home folder). An
+HTTP server has a `url` and `headers`; a stdio server has a `command`, its `args` and an `env`. Write your token and
+the full path of your `bookshelf` folder:
+```json
+{
+  "mcpServers": {
+    "bookshelf": {
+      "url": "http://localhost:8080/mcp",
+      "headers": { "Authorization": "Bearer cq_..." }
+    },
+    "bookshelf-reader": {
+      "command": "docker",
+      "args": ["compose", "-f", "/Users/you/bookshelf/docker-compose.yaml", "exec", "-T", "-e", "CALIGRAFY_TOKEN", "dev-box", "php", "caligrafer.php", "mcp"],
+      "env": { "CALIGRAFY_TOKEN": "cq_..." }
+    }
+  }
+}
+```
+`bookshelf-reader` runs over stdio as token #2 (`books:read`): `-f` names the project, because the client does not
+start in its folder.
+
+Then start `claude` in the `bookshelf` folder (or open Cursor's chat) and ask:
+```text
+Using the bookshelf tools, which books by Octavia E. Butler are in the catalog?
+```
+The agent asks your permission the first time it uses each tool, calls `list_authors` and `list_books` (or
+`search_books`), and answers with Kindred, Parable of the Sower and Bloodchild. Ask it to
+`Delete Bloodchild from the catalog`: because `delete_book` is destructive, it asks you before calling it. Say no.
 
 > **If it doesn't work**
 >
 > | What you see | Cause | Fix |
 > |---|---|---|
-> | `capabilities` does not list `search_books` | The file is not in `application/services/Bookshelf/`, or the `#[Capability(...)]` block has a typo | Compare with the file of step 1; `docker compose exec dev-box php -l application/services/Bookshelf/SearchBooks.php` shows syntax errors |
-> | `{"error":{"code":"not_found",...}}` (404) on `/capabilities/search_books` | The name in the address differs from `name:` | Use `search_books`, all lower case |
-> | `[ERROR 3000] Security Error - Cross Site Forgery` (403) on `/mcp` | The `Accept: application/json` header is missing from curl | Add it (real MCP clients always send it) |
-> | 401 `Unauthorized: send Authorization: Bearer ...` with your token | `$TOKEN` is empty or cut (`echo $TOKEN`), or it comes from another project | Paste the whole `cq_1_...` value again; if it is lost, create a new token (lesson 02) and add the server again |
-> | `claude mcp list` does not show `bookshelf ... Connected` | The containers are stopped, or the token is wrong | `docker compose up -d dev-box`; `claude mcp remove bookshelf`, then add it again |
-> | Claude answers without calling any tool | It does not know the tools are for this question | Say "Using the bookshelf tools, ..." in your question |
+> | `capabilities` does not list `search_books` | The file is not in `application/services/Bookshelf/`, or the `#[Capability(...)]` block has a typo | Compare with step 1; `docker compose exec dev-box php -l application/services/Bookshelf/SearchBooks.php` shows a syntax error |
+> | `Unauthorized: send Authorization: Bearer ...` (401) with your token | `$TOKEN` is empty (another terminal window) or cut | `read -rs TOKEN` again and paste the whole `cq_...` value; a lost token is replaced with `token create` |
+> | `{"error":{"code":-32600,"message":"Invalid request: ..."}}` (400) | The JSON is not one JSON-RPC 2.0 message (a typo, or a list of messages) | Copy the `-d '...'` of the step; one message per request |
+> | `Unknown tool: search_books` | Claude Code or Cursor was started before step 1 | Type `/mcp` in Claude Code to reconnect, or start a new session |
+> | `claude mcp list` shows `bookshelf` as failed | The containers are stopped, or the token is wrong | `docker compose ps`; `claude mcp remove bookshelf`, then add it again |
 
 ---
+
+## Check
+
+- [ ] `application/services/Bookshelf/SearchBooks.php` is identical to the File block; no other file changed
+      (`git status --short` shows only that file).
+- [ ] `search_books` answers 1 book for `magic`, `{"data":[]}` for `zzzz`, and 422 for `a`.
+- [ ] `initialize` answers `"version":"2.19.1"`; `tools/list` gives 12 tools with token #1 and 8 with token #2.
+- [ ] A refused `tools/call` answers `"isError":true` with the field message; an unknown tool answers `-32602`.
+- [ ] Without a token, `/mcp` answers 401.
+- [ ] Over stdio, `CALIGRAFY_TOKEN` of token #2 hides `list_users`.
+- [ ] No token is written in a file of the project.
 
 ## With Claude
 
 In the `bookshelf` folder, start `claude` and type:
-```
+```text
 /caligrafy-quill:new-capability search_books books:read read-only
-Add the capability search_books in application/services/Bookshelf/SearchBooks.php (class SearchBooks, no namespace,
-like the other Bookshelf services). It is public: true and readOnly: true. Input: query, required, min_len 2,
-max_len 100, filter trim, description "The words to look for". It returns the books whose title or summary
-contains the query, with the query builder: Book::query()->search(['title', 'summary'], $input['query'])
-->orderBy('title')->get().
-Description for agents: what it finds, two examples ("time travel", "magic"), and what it returns.
-Do not add routes: /capabilities and /mcp already exist. Regenerate public/js/capabilities.js.
-Do not create a token: I already have one.
+In application/services/Bookshelf/SearchBooks.php (class SearchBooks, no namespace, like the other Bookshelf
+services): public: true, readOnly: true. Input query: required|min_len,2|max_len,100, filter trim, description
+'The words to look for, for example "time travel"'. It returns at most 20 books whose title or summary contains the
+query, sorted by title, each with its author: Book::with('author')->search(['title', 'summary'], $input['query'])
+->orderBy('title')->limit(20)->get(). Description for agents: what it finds, two examples ("time travel", "magic"),
+what it returns. Do not add routes: /capabilities and /mcp exist. Test it over REST and over /mcp
+(tools/list, tools/call) with curl, reading my token from the variable $TOKEN that I set: never ask me for it.
 ```
-
-**What Claude should do:** run `php caligrafer.php service Bookshelf/SearchBooks --scope books:read --read-only`,
-fill the file, run `capabilities` and `client`, and test with curl.
 
 **Check** before you accept:
 - [ ] `name: 'search_books'`, `scope: 'books:read'`, `readOnly: true`, `public: true`; no `destructive`.
-- [ ] `$rules` is `'query' => 'required|min_len,2|max_len,100'` and `$filters` has `trim`.
-- [ ] `handle()` only returns data: no `echo`, no `view()`, no `redirect()`, and it reads only `$input['query']`.
-- [ ] The search uses the query builder's `search()`: no SQL string, no `%` pasted around the input.
-- [ ] `web.php` did not change (`git diff application/config/routing/web.php` prints nothing).
-- [ ] The three curl calls of step 2 give 1 book, `{"data":[]}` and 422.
-- [ ] `public/js/capabilities.js` has `searchBooks` (20 capabilities).
-- [ ] No token was created or written in a file.
+- [ ] `handle()` uses the query builder's `search()`: no SQL string, no `%` pasted around the input.
+- [ ] `git diff application/config/routing/web.php` prints nothing.
+- [ ] Steps 1 to 3 give the same answers with Claude's file.
+- [ ] No token appears in the chat or in a file.
 
-**If Claude's result differs:** if Claude adds a route such as `Route::capability('GET', '/api/books/search', ...)`,
-it works, but it is not in the checkpoint: ask it to remove it (lesson 09 uses the JS client). If it puts the class in
-a namespace, ask it to remove the namespace like the other services. Then do steps 4 to 6 yourself: they are about
-what you see as a user of the agent. Descriptions in other words are fine: the `capabilities` output will show yours instead of the one in the Manual
-track.
+Then connect your agent yourself (step 6): a token never goes through the chat.
 
 ---
 
@@ -280,34 +396,27 @@ git commit -m "Lesson 08: search_books for AI agents"
 git tag lesson-08
 ```
 Reference: [`checkpoints/lesson-08`](https://github.com/caligrafy/caligrafy-quill-course/tree/main/checkpoints/lesson-08).
-The token is not in your project: never commit it. Learn more in the framework guide
-[11. Build Once](https://github.com/caligrafy/caligrafy-quill/wiki/11.-Build-Once:-Services,-Capabilities-and-MCP).
+Learn more: [Build Once: Services, Capabilities and MCP](https://github.com/caligrafy/caligrafy-quill/wiki/11.-Build-Once:-Services,-Capabilities-and-MCP).
 
 ## Exercise
 
-`search_books` returns each book with its `author_id`, but its description does not say so. Ask Claude Code (with
-the `bookshelf` server): `Using the bookshelf tools, who wrote the book about a plantation in Maryland?` and watch
-which tools it calls. Then improve the description so that an agent knows how to get the author's name, regenerate
-the client and ask again.
+An agent asks `tools/call` for `search_books` with `{"query": "Butler"}` and gets an empty list, although the catalog
+has three of her books. Why, and which tool should it call instead? Check your answer with curl, then improve the
+description of `search_books` so that an agent knows.
 
 <details><summary>Show the solution</summary>
 
-A better description says what comes back and which tool gives the rest:
-```php
-description: 'Finds the books of the catalog whose title or summary contains some words, for example "time travel" or "magic". Returns id, title, year, summary and author_id of each book found: use get_book or list_authors for the name of the author.',
-```
-Then:
+`search_books` looks in the title and the summary of the books, not in the author's name: no title or summary contains
+"Butler". The agent should call `list_authors` (it gives her id, 2), then `list_books` with `{"author_id": 2}`:
 ```bash
-docker compose exec dev-box php caligrafer.php client public/js/capabilities.js
+curl -s -X POST -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $TOKEN" -d '{"jsonrpc":"2.0","id":7,"method":"tools/call","params":{"name":"list_books","arguments":{"author_id":2}}}' http://localhost:8080/mcp
 ```
-With it, the agent searches for "plantation", then calls `get_book` (or `list_authors`) with the id it found and
-answers "Octavia E. Butler". The exact tools Claude picks can vary from one session to another: the description makes
-the right path easy to find. Rules for good descriptions: say what it does, what it returns, and which other tool
-gives a missing id.
-
-The checkpoint keeps the first description: to stay identical to it, undo the change with
-`git checkout application/services/Bookshelf/SearchBooks.php public/js/capabilities.js` (or keep yours and remember
-the difference).
+answers Bloodchild, Kindred and Parable of the Sower, `"total":3`. A better description says what it does **not** do:
+```php
+    description: 'Finds the books of the catalog whose title or summary contains some words, for example "time travel" or "magic". It does not search authors: for the books of an author, use list_authors, then list_books with author_id. Returns at most 20 books, sorted by title, each with its author (id, name, bio).',
+```
+The agent reads the new description at its next `tools/list` (in Claude Code: `/mcp`, or a new session). To stay
+identical to the checkpoint, undo it with `git checkout application/services/Bookshelf/SearchBooks.php`.
 </details>
 
 ---

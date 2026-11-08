@@ -49,9 +49,9 @@ export async function call (name, input = {}) {
   return (await request('POST', '/' + encodeURIComponent(name), input)).data
 }
 /**
- * Adds a book to the Bookshelf catalog and returns it with its id. The author must already exist: use list_authors to find author_id.
+ * Adds a book to the Bookshelf catalog and returns it with its id and its author. The author must already exist: use list_authors to find author_id. The ISBN is optional and unique.
  * Capability create_book (writes, public)
- * @param {{title: string, published_year: number, summary?: string, author_id: number}} [input]
+ * @param {{title: string, published_year: number, summary?: string, isbn?: string, author_id: number}} [input]
  */
 export const createBook = (input = {}) => call('create_book', input)
 
@@ -70,7 +70,7 @@ export const deleteBook = (input = {}) => call('delete_book', input)
 export const deleteUser = (input = {}) => call('delete_user', input)
 
 /**
- * Returns one book of the catalog (id, title, year, summary) and its author (id, name, bio), by the id of the book.
+ * Returns one book of the catalog with its author (id, name, bio), by the id of the book.
  * Capability get_book (read-only, public)
  * @param {{id: number}} [input]
  */
@@ -168,16 +168,16 @@ export const queueWork = (input = {}) => call('queue_work', input)
 export const registerUser = (input = {}) => call('register_user', input)
 
 /**
- * Finds the books of the catalog whose title or summary contains some words, for example "time travel" or "magic". Returns id, title, year and summary of each book found.
+ * Finds the books of the catalog whose title or summary contains some words, for example "time travel" or "magic". Returns at most 20 books, sorted by title, each with its author (id, name, bio).
  * Capability search_books (read-only, public)
  * @param {{query: string}} [input]
  */
 export const searchBooks = (input = {}) => call('search_books', input)
 
 /**
- * Changes the title, year, summary or author of a book of the catalog, by its id. Only the inputs given are changed. Returns the book.
+ * Changes the title, year, summary, ISBN or author of a book of the catalog, by its id. Only the inputs given are changed. Returns the book with its author.
  * Capability update_book (writes, public)
- * @param {{id: number, title?: string, published_year?: number, summary?: string, author_id?: number}} [input]
+ * @param {{id: number, title?: string, published_year?: number, summary?: string, isbn?: string, author_id?: number}} [input]
  */
 export const updateBook = (input = {}) => call('update_book', input)
 

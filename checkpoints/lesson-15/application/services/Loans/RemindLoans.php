@@ -17,8 +17,9 @@ class RemindLoans extends Service
 {
     public function handle(array $input, Context $context)
     {
+        // nobody is signed in when a job runs: the capability finds the people it works for itself
         $today = date('Y-m-d');
-        $due = Loan::whereNull('returned_at')->where('due_on', $today)->count();         // SELECT COUNT(*)
+        $due = Loan::whereNull('returned_at')->where('due_on', $today)->count();
         $late = Loan::whereNull('returned_at')->where('due_on', '<', $today)->count();
         if ($due + $late === 0) {
             return array('due' => 0, 'late' => 0, 'notified' => 0);
@@ -32,7 +33,7 @@ class RemindLoans extends Service
         );
         $notified = 0;
         foreach (Database::table('users')->where('permissions', '>=', 1)->pluck('id') as $admin) {
-            $sent = Notify::user($admin, $message);
+            $sent = Notify::user($admin, $message);   // every channel this person turned on: push, email
             if ($sent['push'] > 0 || $sent['email']) {
                 $notified++;
             }
