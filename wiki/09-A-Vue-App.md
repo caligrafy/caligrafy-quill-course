@@ -297,7 +297,7 @@ Open http://localhost:8080/apps/finder: the template already uses the client and
 
         <!-- Vue 3 (pinned by Caligrafy), then app.js, which defines loadEnvironment() and loadVue() -->
         <script src="<?php echo scripts('vue'); ?>"></script>
-        <script src="<?php echo APP_SERVICE_ROOT.'app.js'; ?>"></script>
+        <script src="<?php echo APP_SERVICE_ROOT.'app.js?v='.@filemtime(PUBLIC_PATH.'js/services/app.js'); ?>"></script>
         <!-- $env holds what the server gives the app: env.home is the address of the application -->
         <script>loadEnvironment(`<?php echo $env; ?>`);</script>
         <!-- loads scripts/main.js of this folder -->
