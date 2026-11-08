@@ -2,7 +2,13 @@
 
 **In this appendix** you look under the hood: you write routes that answer with a function, a controller that reads
 the models itself and renders a page (an author and their books), and a classic JSON route. Then you compare them
-with capabilities, to see what the other experiences (REST, the JS client, AI agents) do **not** get.
+with capabilities, to see what the other experiences (REST, the JS client, AI agents) do **not** get, and what the
+one-line routes of the lessons (`Route::page`, `Route::form`, `Route::auth`) do for you.
+
+Bookshelf has no controller of its own: since Caligrafy Quill 2.19.0 a page, a form, the sign-in pages and a download
+are each one line of `web.php`. A controller is for HTTP that none of these covers: an action that calls several
+capabilities with conditions, a response that is neither a page, a redirect, JSON nor a file, a password reset or an
+OAuth callback. You still meet controllers in older projects, and this appendix shows how they work.
 
 **Before you start:** this appendix is optional. Do it any time after lesson 06 (the checkpoint `appendix-a` is built
 on `lesson-13`, but nothing here needs loans). The containers run (`docker compose ps`).
@@ -23,10 +29,11 @@ Route::get('/about', function () { echo '...'; });
 //     └─ the HTTP method: get, post, put or delete
 ```
 You already wrote several kinds of routes: `Route::page('/books/{id}', 'Bookshelf/book', ['data' => ...])` (a page
-with data from capabilities, lesson 06), `Route::put('/books/{id}', 'Bookshelf\\BookController@update')` (a controller,
-lesson 06), `Route::capability(...)` (REST, lesson 07) and `Route::mcp('/mcp')` (agents). This appendix writes
-closures and controllers by hand, the classic way, without capabilities: useful to read older projects. In Bookshelf
-you keep `Route::page` for pages and the capabilities for the data.
+with data from capabilities, lesson 06), `Route::form('/books/{id}', 'update_book', [...])` (a form, lesson 06),
+`Route::capability(...)` and `Route::download(...)` (REST and a CSV, lesson 07), `Route::mcp('/mcp')` (agents) and
+`Route::auth(...)` (sign-in, lesson 11). This appendix writes closures and controllers by hand, the classic way,
+without capabilities: useful to read older projects. In Bookshelf you keep the one-line routes for pages and forms,
+and the capabilities for the data.
 
 **Closure.** `function () { ... }` without a name: a function written right where it is used. Fine for a tiny page.
 
@@ -39,14 +46,15 @@ The code reads it with `request()->fetch('name')`; inside a controller, `$this->
 2. **The first route that matches wins.** A route matches when the method is the same and the path has the same
    number of segments (`/authors/2` has two: `authors` and `2`). So `/authors/new` must come before
    `/authors/{id}`, or `{id}` would catch the word `new` (Appendix B).
-3. **An address that matches no route shows the first route** (`/`): Caligrafy has no automatic "404" for unknown
-   addresses. That is why `/` stays the first route.
+3. **An address that matches no route answers 404** (`[ERROR 1005] Page Not Found`), or **405** when the address
+   exists with another method (`[ERROR 1000] Invalid Http Request Method: this address answers GET, PUT`). (Before
+   Caligrafy Quill 2.16.0 it showed the first route, `/`: older guides say so.)
 
 **Controller and action.** A controller is a class that extends `Caligrafy\Controller`; each public method that
 answers a route is an **action**. The route names both: `'Bookshelf\\AuthorController@show'` (namespace, class,
-`@`, action). `BookController` (lesson 06) is one: its only action saves a form by calling a capability.
-`AuthorController` reads the models itself, the classic way. Never name an action like a method of `Controller` (`find`, `save`, `delete`, `all`,
-`search`, `check`, `validate`, `filter`, `view`, `api`, `associate`, `table`).
+`@`, action). `AuthorController` reads the models itself, the classic way. Never name an action like a method of
+`Controller` (`find`, `save`, `delete`, `all`, `search`, `check`, `validate`, `filter`, `view`, `api`, `call`,
+`associate`, `table`); `index` is the default action, made to be replaced.
 
 **Namespace.** Caligrafy finds each class of `application/` by its name (a map of the classes, built once), so two
 classes with the same name clash: only one of them is ever used. `namespace Bookshelf;` makes the full name
@@ -215,17 +223,21 @@ A `*` token may call **everything**, capabilities included. Revoke it now: `toke
 
 ### Step 4 - See the rules for yourself
 
-- Open http://localhost:8080/does/not/exist: the catalog. No route matched, so the first route (`/`) answered
-  (rule 3).
+- Open http://localhost:8080/does/not/exist: `[ERROR 1005] Page Not Found`, status 404. No route matched (rule 3).
+- Open http://localhost:8080/v1/authors/x: the same 404 (three segments: no route has three). Then, from the
+  terminal, `curl -s -X DELETE -H "Accept: application/json" http://localhost:8080/about`:
+  `{"error":{"code":1000,"message":"Invalid Http Request Method: this address answers GET"}}` (405): the address
+  exists, not with this method. (Without the `Accept` header the browser-form check comes first: a `DELETE` without
+  its CSRF token is refused with 403.)
 - Move the line `Route::run();` above the `// APPENDIX A` block, save, wait 2 seconds and open
-  http://localhost:8080/about: the catalog again, because `/about` was declared after `Route::run()` (rule 1). Move
-  `Route::run();` back just above the closing `}` of the `try`, and check that `/about` works again.
+  http://localhost:8080/about: `[ERROR 1005] Page Not Found`, because `/about` was declared after `Route::run()`
+  (rule 1). Move `Route::run();` back just above the closing `}` of the `try`, and check that `/about` works again.
 
 > **If it doesn't work**
 >
 > | What you see | Cause | Fix |
 > |---|---|---|
-> | The catalog instead of your page | The route did not match: a typo in the path, another number of segments, or the route is below `Route::run();` | Compare with steps 1 and 2 |
+> | `[ERROR 1005] Page Not Found` instead of your page | The route did not match: a typo in the path, another number of segments, or the route is below `Route::run();` | Compare with steps 1 and 2 |
 > | `[ERROR 1001] Invalid Controller or Action` (404) | The route names a class or action that does not exist: missing `Bookshelf\\`, a typo, wrong case, or the `namespace` line is missing | Compare the route and the file with step 2 |
 > | `Cannot redeclare class Bookshelf\AuthorController`, or your changes to the controller seem ignored | A copy of the file is somewhere in `application/`: each class is found by its name, so the two files clash | Delete the copy or move it out of `application/` |
 > | `[ERROR 500] syntax error, ...` | A PHP syntax error | `docker compose exec dev-box php -l application/controllers/Bookshelf/AuthorController.php` names the line |
@@ -255,7 +267,7 @@ as ul.cq-rows, links to /books/<id> with their year, and a p.cq-auth-note link t
 `caligrafy` skill knows the routing rules and the reserved action names.
 
 **Check** before you accept:
-- [ ] `Route::get('/', ...)` is still the first route and `Route::run();` the last line inside `try`.
+- [ ] `Route::run();` is still the last line inside `try`, below the new routes.
 - [ ] The name of `/hello/{name}` goes through `sanitize()`, never printed raw.
 - [ ] The file starts with `namespace Bookshelf;` and the routes say `'Bookshelf\\AuthorController@...'`.
 - [ ] No action is named `find`, `all`, `delete`, `save`, `view` or `api`.
@@ -272,7 +284,7 @@ appendix (that is the point of the comparison below). If it reads `{name}` with 
 
 | | `AuthorController` (this appendix) | A capability (lessons 04 to 13) |
 |---|---|---|
-| The author page | yes | yes, through a controller that calls it (`$this->call()`) |
+| The author page | yes | yes, with one `Route::page` line and `data` (lesson 06): no controller |
 | REST | only `/v1/authors`, with a `*` token, no `data` envelope | any route, scoped tokens, `{"data"}` / `{"error"}` everywhere |
 | The JS client (Vue apps, SPA) | no: there is no function for it | yes, after `client` |
 | AI agents (MCP) | no: no tool | yes, a tool with its description and schema |
@@ -281,6 +293,23 @@ appendix (that is the point of the comparison below). If it reads `{name}` with 
 An agent connected to `/mcp` has no tool for the author page or `/v1/authors`: everything it knows about authors comes
 from `list_authors`. Write an action by hand when it belongs to **one page** only; write a capability when anyone else
 may need it.
+
+## What the one-line routes do for you
+
+Each one-line route of the lessons is the controller action you would otherwise write, already written and checked
+by the framework. Before Caligrafy Quill 2.19.0, the edit form of lesson 06 was a `BookController` with an `update()`
+action of about twenty lines.
+
+| One line of `web.php` | What it does, that a controller would do by hand |
+|---|---|
+| `Route::page('/books/{id}', 'Bookshelf/book', ['data' => ['found' => 'get_book']])` | calls `get_book` as the visitor with `{id}`, renders the view with `$found`, `$authorized` and `$user`; a refusal renders the `notFound` view with 404, or sends a visitor to `/login` when the page needs someone signed in |
+| `Route::form('/books/{id}', 'update_book', ['method' => 'PUT', 'success' => '/books/{id}', 'flash' => 'Saved'])` | checks the CSRF token, calls `update_book` as the visitor with `{id}` and the fields of the form; on success keeps `Saved` for `flash('success')` and redirects; on a refusal keeps the messages and the typed values (never a password) for `errors()` and `old()`, and goes back to the form; sends a visitor to `/login`; a JSON caller gets `{"data"}` or `{"error"}` instead of redirects |
+| `Route::auth(['home' => '/books'])` | the sign-in, sign-out and register pages; a new session id at sign-in; 5 failed sign-ins per username and address in 15 minutes, then 429 |
+| `Route::download('/authors.csv', 'list_authors')` | calls a read-only capability with the query string, writes the CSV with its header row and quoting, and the headers that make the browser save it |
+
+None of them holds a rule: the rules stay in the capabilities, which every experience shares. A controller still calls
+capabilities the same way, with `$this->call('update_book')` (the route variables and the posted fields are its
+inputs), when its HTTP is truly its own.
 
 ---
 

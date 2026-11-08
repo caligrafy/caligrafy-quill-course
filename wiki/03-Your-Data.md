@@ -60,6 +60,12 @@ A **relationship** is a method of the model that returns related rows:
 | `Book` | `author()`: `$this->hasOne('Author', 'authors')` | the one author whose `id` is this book's `author_id` |
 | `Author` | `books()`: `$this->hasMany('Book', 'books')` | every book whose `author_id` is this author's `id` |
 
+**The model class also starts queries** (the **query builder**, Caligrafy Quill 2.19.0): `Book::find(3)` reads book 3,
+`Book::where('author_id', 2)->orderBy('title')->get()` the books of author 2, and `Book::with('author')` adds each
+book's author in one more query. The class finds its table by its name: `Book` reads `books` (the class name in lower
+case, plus an `s`). Lesson 04 uses it. Two habits keep it working: never write a method named `find()` in a model
+(`Book::find()` would then fail), and keep the `author_id` convention, which `with('author')` follows too.
+
 ### Why this matters for build once
 
 The tables and models are written once, below every experience. In lesson 04 the capabilities use them
@@ -301,7 +307,7 @@ Write the Bookshelf data layer, following the Caligrafy conventions, in applicat
    one-sentence summary.
 3. The models Author.php and Book.php: global classes (no namespace) that extend Caligrafy\Model, one public
    property per column, Book::author() with hasOne('Author', 'authors') and Author::books() with
-   hasMany('Book', 'books').
+   hasMany('Book', 'books'), and no other method (no find(): Book::find() is the query builder's).
 Then run both scripts with /caligrafy-quill:db and list the tables.
 ```
 or run the scripts yourself through the plugin:
@@ -320,6 +326,7 @@ list the tables `authors` (3 rows) and `books` (5 rows), next to the `caligrafy_
 - [ ] The seed uses `INSERT IGNORE` and the fixed ids 1 to 5, with book 3 = Kindred (later lessons rely on these ids).
 - [ ] The models have no `namespace` line, extend `Caligrafy\Model`, and have exactly one public property per column.
 - [ ] `Book` uses `hasOne('Author', 'authors')`, `Author` uses `hasMany('Book', 'books')`.
+- [ ] Neither model declares a `find()` method: `Book::find(3)` belongs to the query builder (lesson 04).
 - [ ] The query of step 4 returns the 5 books with their authors.
 - [ ] Claude dropped or emptied nothing, and did not print `.env`.
 

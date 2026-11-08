@@ -15,12 +15,12 @@ class ListLoans extends Service
 {
     public function handle(array $input, Context $context)
     {
+        // with('book'): the book of every loan in one more query, not one query per loan
         $loans = array();
-        foreach ((new Loan('loans'))->all(array('condition' => 'WHERE returned_at IS NULL', 'order' => 'ORDER BY due_on')) as $loan) {
-            $book = (new Book('books'))->find($loan->book_id);
+        foreach (Loan::with('book')->whereNull('returned_at')->orderBy('due_on')->get() as $loan) {
             $loans[] = array(
                 'book_id' => $loan->book_id,
-                'title' => $book ? $book->title : '',
+                'title' => $loan->book['title'] ?? '',
                 'borrower' => $loan->borrower,
                 'due_on' => $loan->due_on,
                 'overdue' => $loan->due_on < date('Y-m-d')

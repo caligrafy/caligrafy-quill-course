@@ -91,9 +91,9 @@ export const getUser = (input = {}) => call('get_user', input)
 export const listAuthors = (input = {}) => call('list_authors', input)
 
 /**
- * Lists the books of the Bookshelf catalog, sorted by title: id, title, year, author id and author name. Give author_id to list only the books of one author.
+ * Lists the books of the Bookshelf catalog, sorted by title, 20 per page, each with its author (id, name, bio). Give author_id to list only the books of one author, and page for the next pages. Returns data (the books), total, page, per_page and pages.
  * Capability list_books (read-only, public)
- * @param {{author_id?: number}} [input]
+ * @param {{author_id?: number, page?: number}} [input]
  */
 export const listBooks = (input = {}) => call('list_books', input)
 

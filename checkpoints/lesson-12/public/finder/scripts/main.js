@@ -12,7 +12,7 @@ const app = Vue.createApp({
   async mounted () {
     // the generated JS client: one function per capability (php caligrafer.php client public/js/capabilities.js)
     this.api = await import(env.home + 'public/js/capabilities.js')
-    this.books = await this.api.listBooks()
+    this.books = (await this.api.listBooks()).data
   },
   methods: {
     // called on every key: wait until the typing pauses, then ask search_books
@@ -20,7 +20,7 @@ const app = Vue.createApp({
       clearTimeout(this.timer)
       this.timer = setTimeout(() => this.run(async () => {
         this.books = this.query.trim().length < 2
-          ? await this.api.listBooks()
+          ? (await this.api.listBooks()).data
           : await this.api.searchBooks({ query: this.query })
       }), 250)
     },

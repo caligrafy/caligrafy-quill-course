@@ -1,8 +1,8 @@
 # Lesson 07 - The REST API
 
 **In this lesson** Bookshelf gets a REST API under `/api/...`, for other programs: a mobile app, a script, another
-website. It is six lines in `web.php`: each line maps a URL to a capability you already have. No controller, no
-rule, no SQL is written again.
+website. It is six lines in `web.php`: each line maps a URL to a capability you already have. One more line gives the
+authors as a file for a spreadsheet. No controller, no rule, no SQL is written again.
 
 **Before you start:** lesson 06 is done (tag `lesson-06`): http://localhost:8080/books shows the catalog, and
 `docker compose ps` shows the 3 containers running.
@@ -18,7 +18,7 @@ rule, no SQL is written again.
 
 | Method + URL | Capability | Action |
 |---|---|---|
-| `GET /api/books` | `list_books` | list the books (`?author_id=3` for one author) |
+| `GET /api/books` | `list_books` | list the books, 20 per page (`?author_id=3` for one author, `?page=2` for the next page) |
 | `GET /api/books/{id}` | `get_book` | read one book and its author |
 | `POST /api/books` | `create_book` | add a book |
 | `PUT /api/books/{id}` | `update_book` | change a book |
@@ -37,6 +37,10 @@ agent.
 **The envelope.** Every answer has one of two shapes, the same ones you saw in lessons 04 and 05:
 - success: `{"data": ...}`;
 - refusal: `{"error": {"code": "...", "message": "...", "fields": {...}}}` (`fields` only when inputs are wrong).
+
+**A download.** `Route::download('/authors.csv', 'list_authors')` turns a read-only capability into a file: the
+browser saves a CSV (comma-separated values, which every spreadsheet opens), one line per author, with a first line
+of column names. Same capability, same rules: one more experience.
 
 **HTTP status.** The number a program reads first, to know how the call went:
 
@@ -64,7 +68,7 @@ call (JSON answers, no CSRF form token needed).
 
 Run every command from the `bookshelf` folder.
 
-### Step 1 - Six routes
+### Step 1 - Six routes and a download
 
 In `application/config/routing/web.php`, add these lines above `// MUST NOT BE REMOVED` and `Route::run();` (below
 the `// BOOKSHELF PAGES` block of lesson 06):
@@ -77,7 +81,11 @@ the `// BOOKSHELF PAGES` block of lesson 06):
     Route::capability('DELETE', '/api/books/{id}', 'delete_book');
     Route::capability('GET', '/api/authors', 'list_authors');
 ```
-That is the whole API. The full file is in the checkpoint.
+That is the whole API. Add one more line under the last one:
+```php
+    Route::download('/authors.csv', 'list_authors');   // the same capability, as a file for a spreadsheet
+```
+The full file is in the checkpoint.
 
 `/api/books/{id}` and `/books/{id}` never clash: their first parts differ (`api`, `books`). And `GET /api/books/{id}`
 and `PUT /api/books/{id}` are the same URL with two methods: the method chooses the capability.
@@ -90,7 +98,7 @@ The books of Italo Calvino (author 3), through the query string:
 ```bash
 curl -s -H "Accept: application/json" -w " [%{http_code}]\n" "http://localhost:8080/api/books?author_id=3"
 ```
-Expected: `{"data":[{"id":5,"title":"Invisible Cities","published_year":1972,"author_id":3,"author":"Italo Calvino"}]} [200]`.
+Expected (on one line): `{"data":{"data":[{"id":5,"title":"Invisible Cities","published_year":1972,"summary":"Marco Polo describes imaginary cities to the emperor Kublai Khan.","author_id":3,...,"author":{"id":3,"name":"Italo Calvino",...}}],"total":1,"page":1,"per_page":20,"pages":1}} [200]`.
 Put the URL in quotes when it has a `?`: some terminals (zsh) give `?` a meaning of their own.
 
 One book, through the route variable `{id}`:
@@ -111,6 +119,23 @@ get_book, the same that the book page shows as its Not found page.
 curl -s -i -H "Accept: application/json" http://localhost:8080/api/authors | head -1
 ```
 Expected: `HTTP/1.1 200 OK`.
+
+The authors as a file:
+```bash
+curl -s -i http://localhost:8080/authors.csv
+```
+Expected (among the headers): `Content-Disposition: attachment; filename="list_authors.csv"` and
+`Content-Type: text/csv; charset=utf-8`, then the file (your dates differ):
+```
+id,name,bio,created_at,modified_at
+3,Italo Calvino,"Italian writer of playful, inventive novels and short stories.",2026-11-07 20:38:08,2026-11-07 20:38:08
+2,Octavia E. Butler,"American science fiction author, the first to receive a MacArthur fellowship.",2026-11-07 20:38:08,2026-11-07 20:38:08
+1,Ursula K. Le Guin,"American author of science fiction and fantasy, known for the Earthsea books.",2026-11-07 20:38:08,2026-11-07 20:38:08
+```
+`attachment` tells a browser to save it: open http://localhost:8080/authors.csv and it downloads `list_authors.csv`.
+A bio with a comma is put in quotes, so the spreadsheet keeps it in one cell. Only a read-only capability can be a
+download (opening a link must never change data); `'filename' => 'authors.csv'` in the line gives the file another
+name.
 
 ### Step 3 - Write
 
@@ -158,7 +183,7 @@ books. You changed the catalog through REST; the page and the agent read it thro
 > | What you see | Cause | Fix |
 > |---|---|---|
 > | `[ERROR 3000] Security Error - Cross Site Forgery` (403) on POST, PUT or DELETE | `-H "Accept: application/json"` is missing, so Caligrafy treats the call as a browser form without its CSRF token | Add the header |
-> | `{"error":{"code":1005,"message":"Page Not Found"}}` (404) | The URL matches no route (a typo, or step 1 is missing) | Check the URL and the six lines of step 1 |
+> | `{"error":{"code":1005,"message":"Page Not Found"}}` (404) | The URL matches no route (a typo, or step 1 is missing) | Check the URL and the lines of step 1 |
 > | `{"error":{"code":1000,"message":"Invalid Http Request Method: this address answers GET, POST"}}` (405) | The address exists, but not with this method (a `PUT` on `/api/books`) | Check the method against the table of step 1 |
 > | `zsh: no matches found: http://localhost:8080/api/books?author_id=3` | zsh reads the `?` | Put the URL in double quotes |
 > | `curl` waits with `dquote>` or `>` | A quote of the `-d` part is missing | Press Ctrl+C and copy the command again |
@@ -177,23 +202,24 @@ Add a REST API to Bookshelf on the existing capabilities, with no new controller
 application/config/routing/web.php, add a "// BOOKSHELF API: the same capabilities, for other applications (JSON)"
 block above Route::run(), below the BOOKSHELF PAGES block, with Route::capability for:
 GET /api/books list_books, GET /api/books/{id} get_book, POST /api/books create_book,
-PUT /api/books/{id} update_book, DELETE /api/books/{id} delete_book, GET /api/authors list_authors.
+PUT /api/books/{id} update_book, DELETE /api/books/{id} delete_book, GET /api/authors list_authors, and
+Route::download('/authors.csv', 'list_authors') for a CSV of the authors.
 Then test every route with curl (always -H "Accept: application/json" and -w " [%{http_code}]\n"):
-list with ?author_id=3, read book 1 and book 42, create a book with JSON and one with form fields, update the year
+list with ?author_id=3, read book 1 and book 42, download authors.csv, create a book with JSON and one with form fields, update the year
 of the first one, create a book without a year, delete the second one. Show me each command and its status.
 ```
 
-**What Claude should do:** add the six lines of step 1, nothing else, then run the calls of steps 2 and 3.
+**What Claude should do:** add the seven lines of step 1, nothing else, then run the calls of steps 2 and 3.
 
 **Check** before you accept:
-- [ ] `web.php` has exactly six new `Route::capability` lines, above `Route::run();`, with the methods, URLs and names of the table above.
+- [ ] `web.php` has exactly six new `Route::capability` lines and one `Route::download` line, above `Route::run();`, with the methods, URLs and names of the table above.
 - [ ] No new file in `application/controllers/` or `application/services/`, and no capability was changed.
 - [ ] The statuses: 200 for reads, PUT and DELETE; 201 for each POST that creates; 404 for book 42; 422 for the book without a year.
 - [ ] Every `curl` sends `Accept: application/json`; no command prints or writes your token.
 
-**If Claude's result differs:** Claude may suggest a controller with `api()` for the REST routes (the classic way,
-see [Appendix A](A-Routes-and-Controllers)). Refuse: it would copy the rules and lose the capability's checks and
-audit. If Claude adds a token to the curl commands, it is not needed yet (the capabilities are public until lesson 11),
+**If Claude's result differs:** Claude may suggest a controller with `api()` for the REST routes, or one that writes
+the CSV (the classic way, see [Appendix A](A-Routes-and-Controllers)). Refuse: it would copy the rules and lose the
+capability's checks and audit. If Claude adds a token to the curl commands, it is not needed yet (the capabilities are public until lesson 11),
 and the token must never be written into a file of the project.
 
 ---
@@ -222,7 +248,7 @@ The route variable `{author_id}` becomes the input `author_id` of list_books:
 ```bash
 curl -s -H "Accept: application/json" -w " [%{http_code}]\n" http://localhost:8080/api/authors/2/books
 ```
-returns the books of Octavia E. Butler (Kindred, Parable of the Sower, and any you added) with `[200]`.
+returns a page with the books of Octavia E. Butler (Kindred, Parable of the Sower, and any you added) with `[200]`.
 The rules are those of
 list_books (`author_id` must be an integer: `/api/authors/abc/books` is refused with 422 and
 `"fields":{"author_id":"The Author Id field must be a number without a decimal"}`). Nothing else changed:

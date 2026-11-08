@@ -20,7 +20,7 @@ class GetBook extends Service
 
     public function handle(array $input, Context $context)
     {
-        $book = (new Book('books'))->find($input['id']);
+        $book = Book::find($input['id']);
         if (!$book) {
             throw ServiceError::notFound("There is no book #{$input['id']}");
         }

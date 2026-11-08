@@ -62,7 +62,7 @@ form.addEventListener('submit', async (event) => {
 const allowed = new Set((await capabilities()).map((c) => c.name))
 if (allowed.has('list_loans')) {
   form.hidden = !allowed.has('lend_book')
-  const books = await listBooks()
+  const books = (await listBooks()).data   // the first page: 20 books
   document.getElementById('loan-book').replaceChildren(...books.map((b) => new Option(b.title, b.id)))
   await showLoans()
 } else {

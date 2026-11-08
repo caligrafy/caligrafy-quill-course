@@ -18,12 +18,16 @@ token of lesson 02 in `$TOKEN` (`TOKEN=cq_1_...`, see [Lesson 08](08-AI-Agents))
 password; a program sends a token). Authorization answers "may you do this?" (only administrators delete books).
 
 **Session.** HTTP forgets everything between two requests. PHP keeps a **session** per browser: a small storage on the
-server, found again thanks to a cookie the browser sends with every request. When a person signs in, Caligrafy
-stores the user in the session. The **CSRF** token of lesson 06 lives there too: forms (`csrf()`) and the JS client
+server, found again thanks to a cookie the browser sends with every request. A visitor gets that cookie only when a
+page needs a session (a form, the JS client, signing in: lesson 06); then the browser sends it back each time. When a
+person signs in, Caligrafy stores the user in the session, under a **new** session id (an id someone saw before the
+sign-in is worthless after it). The **CSRF** token of lesson 06 lives there too: forms (`csrf()`) and the JS client
 (`X-CSRF-Token`) send it back, so another site cannot make your browser change data.
 
-**The users table and the permission level.** Caligrafy ships an authentication module (sign-in and register pages,
-`Caligrafy\Controllers\AuthController`, the `User` model). Its table `users` has `id`, `username`, `passcode` (a
+**The users table and the permission level.** Caligrafy ships an authentication module (the sign-in and register
+pages, the `User` model). One line of `web.php`, `Route::auth()`, declares its addresses: `/login`, `/logout`,
+`/register` and `/notAuthorized`. It also limits failed sign-ins: after 5 wrong passwords for one username in 15
+minutes, that sign-in is refused (`429`) until the 15 minutes end. Its table `users` has `id`, `username`, `passcode` (a
 one-way hash, never the password), `permissions` (0 for every new account), `created_at`, `modified_at`. The number in
 `permissions` is the **permission level** of the person: 0 for a reader, 1 for an administrator in Bookshelf.
 
@@ -75,17 +79,11 @@ In `application/config/routing/web.php`:
    ```
 2. Replace the commented block `// Auth Routes - Uncomment only if AUTHENTICATION activated above` and its 7 lines with:
    ```php
-       // SIGN IN, SIGN OUT, REGISTER: the controllers of the framework; after signing in, /home is the catalog
-       Route::page('/home', 'Bookshelf/books', ['with' => ['install' => true]]);
-       Route::get('/login', 'Caligrafy\\Controllers\\AuthController');
-       Route::get('/logout', 'Caligrafy\\Controllers\\AuthController@logout');
-       Route::get('/notAuthorized', 'Caligrafy\\Controllers\\AuthController@notAuthorized');
-       Route::get('/register', 'Caligrafy\\Controllers\\AuthController@registerForm');
-       Route::post('/login', 'Caligrafy\\Controllers\\AuthController@login');
-       Route::post('/register', 'Caligrafy\\Controllers\\AuthController@register');
+       // SIGN IN, SIGN OUT, REGISTER: /login, /logout, /register and /notAuthorized; after signing in, the catalog
+       Route::auth(['home' => '/books']);
    ```
-The sign-in page sends people to `/home` after signing in and signing out: it now shows the catalog. The routes of
-`/` and `/books` do not change: a page declared with `Route::page` gets `$authorized` by itself, so the top bar of
+One line for the four addresses and their pages: `home` is where a person lands after signing in (signing out goes
+to `/`). The routes of `/` and `/books` do not change: a page declared with `Route::page` gets `$authorized` by itself, so the top bar of
 the master shows **Sign out** as soon as someone is signed in (**Sign in** and **Create account** before). The full
 file is in the checkpoint.
 
@@ -117,51 +115,12 @@ That is the whole security change. Everything below is about telling people and 
 
 ### Step 4 - The pages show what the visitor may do
 
-**File `application/controllers/Bookshelf/BookController.php`** (`update()` shows any refusal, and gives the page `authorized`):
+The edit form of lesson 06 needs no change to be safe: `update_book` now refuses visitors, and `Route::form` sends a
+visitor who saves to the sign-in page (`/login`) instead of showing an error. The page only has to hide the form from
+visitors.
 
-```php
-<?php
-
-namespace Bookshelf;
-
-use Caligrafy\Controller;
-use Caligrafy\ServiceError;
-
-// The edit form of the book page (PUT /books/{id}). Showing a page is Route::page's job; saving a form, then
-// redirecting or showing the page again with the messages, is logic of its own: a controller. It only calls capabilities.
-class BookController extends Controller
-{
-    // PUT /books/{id}: the edit form of the page is sent here
-    public function update()
-    {
-        try {
-            $book = $this->call('update_book');   // the inputs are {id} and the fields of the form
-            redirect('/books/' . $book['id']);
-            exit;
-        } catch (ServiceError $e) {
-            if ($e->kind === 'not_found') {
-                http_response_code($e->status());
-                return view('Bookshelf/notfound', array('message' => $e->getMessage(), 'authorized' => authorized()));
-            }
-            // show the page again: the form keeps what was typed, with the messages of the capability
-            http_response_code($e->status());
-            $found = $this->call('get_book');
-            return view('Bookshelf/book', array(
-                'found' => $found,
-                'authors' => $this->call('list_authors', array()),
-                'form' => array_merge($found['book'], $this->request->parameters),
-                'errors' => $e->fields ?: array($e->getMessage()),   // "Sign in or send a personal access token"
-                'authorized' => authorized()
-            ));
-        }
-    }
-}
-```
-
-- `Route::page` gives its pages `authorized` (`true` when someone is signed in): the master then shows **Sign out** in
-  the top bar. This controller renders the page itself after a refused save, so it passes `authorized()` too.
-- When `update_book` refuses a visitor, `$e->fields` is empty, so the page shows the message of the capability
-  (`Sign in or send a personal access token`) with its status.
+- `Route::page` gives its pages `$authorized` (`true` when someone is signed in): the master shows **Sign out** in
+  the top bar, and the book page uses it for its form.
 - A page that only signed-in people may open would say so on its route: `Route::page('/account', 'Account/index',
   ['signedIn' => true])` sends visitors to `/login`, and `['level' => 1]` sends people below level 1 to `/notAuthorized`.
   Bookshelf's pages stay open to visitors: they may read.
@@ -171,17 +130,15 @@ class BookController extends Controller
 ```pug
 extends ../default/master/site
 
-//- One book, rendered on the server by Route::page with the data of get_book; the form (signed in only) calls update_book
+//- One book, rendered on the server by Route::page with the data of get_book; the form (signed in only) posts to Route::form (update_book)
 
 block title
     = $found['book']['title'] . ' · Bookshelf'
 
 block content
-    //- $found: what get_book returned (Route::page data). After a refused save, the controller also gives $form and $errors
+    //- $found: what get_book returned (Route::page data). After a refused save, old() and errors() hold what Route::form sent back
     - $book = $found['book'];
     - $author = $found['author'];
-    - $form = isset($form) ? $form : $book;
-    - $errors = isset($errors) ? $errors : array();
     section.cq-hero.cq-hero--page
         h1.cq-display= $book['title']
         p.cq-lead
@@ -189,6 +146,8 @@ block content
 
     section.cq-band.cq-band--tight
         .cq-inner.cq-inner--narrow
+            if flash('success')
+                p.cq-alert(role='status')= flash('success')
             p= $book['summary'] ?: 'No summary yet.'
 
             if $authorized
@@ -198,25 +157,29 @@ block content
                     .cq-form-grid.cq-form-grid--2
                         .cq-field
                             label(for='title') * Title
-                            input#title.form-control(type='text', name='title', value=$form['title'], maxlength='200')
+                            input#title.form-control(type='text', name='title', value=old('title', $book['title']), maxlength='200')
+                            if errors('title')
+                                p.cq-field-error= errors('title')
                         .cq-field
                             label(for='author_id') * Author
                             select#author_id.form-select(name='author_id')
                                 each $a in $authors
-                                    option(value=$a['id'], selected=$a['id'] == $form['author_id'])= $a['name']
+                                    option(value=$a['id'], selected=$a['id'] == old('author_id', $book['author_id']))= $a['name']
                         .cq-field
                             label(for='published_year') * Year
-                            input#published_year.form-control(type='number', name='published_year', value=$form['published_year'])
+                            input#published_year.form-control(type='number', name='published_year', value=old('published_year', $book['published_year']))
+                            if errors('published_year')
+                                p.cq-field-error= errors('published_year')
                         .cq-field
                             label(for='summary') Summary
-                            input#summary.form-control(type='text', name='summary', value=$form['summary'], maxlength='2000')
+                            input#summary.form-control(type='text', name='summary', value=old('summary', $book['summary']), maxlength='2000')
                     button.btn.btn-primary(type='submit') Save changes
             else
                 p
                     a.btn.btn-secondary(href="{$home}login") Sign in to edit this book
 
-            if $errors
-                p.cq-field-error(role='alert')= implode(' ', $errors)
+            if flash('error')
+                p.cq-field-error(role='alert')= flash('error')
 
             p.cq-auth-note
                 a(href="{$home}books") All books
@@ -266,11 +229,11 @@ Expected: `... written: 20 capabilities ...` twice. In the comments, `create_boo
 1. Open http://localhost:8080/books: the list, **Sign in to add books**, no form, no **Delete**. Open a book: **Sign in
    to edit this book** instead of the form.
 2. Click **Sign in**, then the link to register (http://localhost:8080/register). Username `reader1`, passcode
-   `bookshelf-2026` twice. You land on the sign-in page (`/login`). Usernames are letters and digits only; passcodes
+   `bookshelf-2026` twice. You land on the sign-in page (`/login`), which says `Your account is ready: sign in`. Usernames are letters and digits only; passcodes
    8 to 72 characters.
-3. Sign in as `reader1`. You land on `/home`: the catalog, with **Sign out** in the top bar and the form. Still no
+3. Sign in as `reader1`. You land on `/books`: the catalog, with **Sign out** in the top bar and the form. Still no
    **Delete**: reader1 has permissions 0. Add a book: it works.
-4. Open a book, empty its title, **Save changes**: `The Title field is required`.
+4. Open a book, empty its title, **Save changes**: `The Title field is required` under the field.
 
 The REST API obeys the same rules:
 ```bash
@@ -381,7 +344,8 @@ Every refusal is there, with the channel and who: `rest  token  2  create_book  
 > | What you see | Cause | Fix |
 > |---|---|---|
 > | An error that ends with `Table 'caligrafy.users' doesn't exist` | Step 1 was skipped | Run the users script |
-> | After signing in you see the Caligrafy welcome page | `/home` still points to `AuthController@home` | `Route::page('/home', 'Bookshelf/books', ['with' => ['install' => true]]);` |
+> | After signing in you see the Caligrafy welcome page | `Route::auth()` has no `home`, so it sends people to `/` | `Route::auth(['home' => '/books']);` |
+> | `Too many failed attempts: try again in 15 minutes` (429) | 5 wrong passwords for this username within 15 minutes | Wait 15 minutes, then sign in with the right password |
 > | Signed in, but no **Sign out** and no form | A page route is not a `Route::page` (a closure does not give `authorized`), or the clients were not regenerated | Compare the routes with the checkpoint; run step 5; reload with <kbd>Shift</kbd> |
 > | The form still shows to visitors | `books.pug` has no `hidden` on the form, or `books.js` is the old one | Compare with step 4 |
 > | No **Delete** for the administrator | You did not sign in again after the `UPDATE` | Sign out, sign in |
@@ -400,19 +364,17 @@ In `claude`, in the `bookshelf` folder:
 then:
 ```
 Turn on people and permissions in Bookshelf. In web.php: uncomment Auth::authentication('User', 'users'); replace
-the commented "Auth Routes" block with the AuthController routes (GET /login, /logout, /notAuthorized, /register,
-POST /login, /register) and Route::page('/home', 'Bookshelf/books', ['with' => ['install' => true]]) (/ and /books
+the commented "Auth Routes" block with one line, Route::auth(['home' => '/books']) (no AuthController routes; / and /books
 are already Route::page: they get authorized by themselves). Capabilities: remove
 public: true from create_book and update_book; delete_book gets level: 1 instead (only permissions >= 1); the reads
-stay public. BookController::update(): only not_found shows the not-found page; otherwise answer $e->status() and show
-the book view with $e->fields or, when empty, the capability's message; pass 'authorized' => authorized() to both views.
+stay public. No controller: the Route::form of the edit form already sends visitors to /login.
 book.pug: the edit form only when $authorized, else a "Sign in to edit this book" button to /login. books.pug: the
 form is hidden by default, plus a hidden p#sign-in with a "Sign in to add books" button. books.js: ask capabilities()
 once; show the form only if create_book is allowed (else #sign-in), and Delete only if delete_book is allowed.
 Regenerate public/js/capabilities.js and public/bookshelf-spa/src/capabilities.js. Do not create tokens or users.
 ```
 
-**What Claude should do:** run the users script, then change `web.php`, the three services, `BookController`, the two
+**What Claude should do:** run the users script, then change `web.php`, the three services, the two
 views and `books.js` as in steps 2 to 4, and regenerate both clients.
 
 **Check** before you accept:
@@ -420,13 +382,15 @@ views and `books.js` as in steps 2 to 4, and regenerate both clients.
 - [ ] `DeleteBook.php` has `level: 1` and still `destructive: true`; no `public` on the three writes.
 - [ ] The protection is in the services, not only in the views: the visitor curl of step 6 answers 401.
 - [ ] `books.js` uses `capabilities()`, not a hard-coded "signed in" test.
-- [ ] No `echo`, `view()` or `redirect()` was added to a service; `AuthController` in `application/controllers/core` was not edited.
+- [ ] `web.php` has `Route::auth(['home' => '/books']);` and no `AuthController` route; `application/controllers/` has no Bookshelf file.
+- [ ] No `echo`, `view()` or `redirect()` was added to a service; nothing in `application/controllers/core` was edited.
 - [ ] No password, hash or token in the chat or in a file.
 - [ ] Steps 6 to 8 give the same results.
 
-**If Claude's result differs:** if it protects the actions in the controller with `guard()` or `authorized()` and
-leaves `public: true` in the services, the page is safe but REST, the agents and the SPA are not: ask it to close the
-capabilities instead. If it gives the "librarian" token no `--user`, `level` does not apply to it (it is an
+**If Claude's result differs:** if it writes a controller that checks `guard()` or `authorized()` and leaves
+`public: true` in the services, the page is safe but REST, the agents and the SPA are not: ask it to close the
+capabilities instead, and to keep `Route::form`. If it writes the sign-in routes one by one with `AuthController`,
+ask for `Route::auth(['home' => '/books'])`: one line, with failed sign-ins limited. If it gives the "librarian" token no `--user`, `level` does not apply to it (it is an
 application token). Do steps 6 to 8 yourself: they are the proof.
 
 ---
@@ -464,7 +428,7 @@ and the tokens section of [11. Build Once](https://github.com/caligrafy/caligraf
        this.allowed = (await capabilities()).map((c) => c.name)
        this.authors = await listAuthors()
        this.form.author_id = this.authors.length ? this.authors[0].id : ''
-       this.books = await listBooks()
+       this.books = (await listBooks()).data
      },
    ```
    In the template, add `v-if="allowed.includes('create_book')"` to the

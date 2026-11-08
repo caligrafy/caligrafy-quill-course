@@ -107,8 +107,7 @@ final class BookRulesTest extends TestCase
     public function testAValidBookIsTrimmedAndKeepsOnlyItsInputs(): void
     {
         // an author of its own: the test does not depend on the sample data (the transaction removes it afterwards)
-        Caligrafy\Database::execute('INSERT INTO authors (name) VALUES (?)', ['Octavia E. Butler']);
-        $author = (int) Caligrafy\Database::lastInsertId();
+        $author = Caligrafy\Database::table('authors')->insert(['name' => 'Octavia E. Butler']);   // the id of the new row
         $book = $this->call('create_book', ['title' => '  Kindred ', 'published_year' => 1979, 'author_id' => $author, 'price' => 9], $this->user(1));
         $this->assertSame('Kindred', $book['title']);
         $this->assertArrayNotHasKey('price', $book);   // only the inputs of $rules reach handle()
@@ -136,7 +135,9 @@ final class BookRulesTest extends TestCase
 - `$this->user(1)` is a signed-in person with the id 1 and permissions 0, like reader1: enough for `create_book` and
   `update_book`, which need someone signed in since lesson 11. `'guest'` is a visitor.
 - The first test checks that an empty book is refused for its three required inputs, in the order of `$rules`.
-- The third test really adds a book, and checks two promises of lesson 05: the `trim` filter removed the spaces, and
+- The third test first adds an author of its own with the query builder: `Caligrafy\Database::table('authors')`
+  works on the table directly (rows as arrays), and `insert()` returns the id of the new row. Then it really adds a
+  book, and checks two promises of lesson 05: the `trim` filter removed the spaces, and
   an input that is not in `$rules` (`price`) never reaches `handle()`. The book is gone when the test ends: the
   catalog still has its books, no more.
 - The fourth test checks the promise of lesson 11: a visitor cannot write. The caller is checked before the inputs.
@@ -244,18 +245,22 @@ echo "All checks passed."
 - `check 200 "the catalog page" "$BASE/books"` means: request `/books`, expect `200`. Everything after the
   description is passed to `curl`.
 - `-o /dev/null -w '%{http_code}'` makes `curl` throw the body away and print only the status code.
+- `a form without its token` posts the edit form of a book (lesson 06) the way another website would, without the
+  CSRF token: `403`, and nothing changes.
 - The last check needs a token that may read but not write. It is only run when the variable `READ_TOKEN` is set.
 
 Run it from the `bookshelf` folder (it runs on your computer, not in the container):
 ```bash
 bash qa/bookshelf/smoke.sh
 ```
-Expected: 8 checks.
+Expected: 10 checks.
 ```
 OK   200 the catalog page
 OK   200 the page of book 1
 OK   404 a book that does not exist
 OK   403 .env is never served
+OK   403 a form without its token
+OK   200 the authors as a CSV file
 OK   200 REST: list the books
 OK   422 REST: a search too short
 OK   401 REST: a visitor cannot write
@@ -271,7 +276,7 @@ READ_TOKEN=$(docker compose exec -T dev-box php caligrafer.php token create "smo
 - `-T` tells Docker not to open a terminal: needed when the output goes to another command instead of your screen.
 - `grep -oE 'cq_[0-9]+_[A-Za-z0-9]+'` keeps only the token from what `token create` prints.
 
-Expected: the same 8 lines, then `OK   403 REST: a read-only token cannot write`, then `All checks passed.`
+Expected: the same 10 lines, then `OK   403 REST: a read-only token cannot write`, then `All checks passed.`
 Each run creates a new "smoke test" token: `docker compose exec dev-box php caligrafer.php token list` shows them;
 they stop working after one day, and `token revoke <id>` stops one at once.
 
@@ -291,7 +296,7 @@ Run the health check:
 ```bash
 docker compose exec dev-box php caligrafer.php doctor
 ```
-It ends with `14 OK, 0 WARN, 0 FAIL, 6 SKIP` and contains this line:
+It ends with `15 OK, 0 WARN, 0 FAIL, 6 SKIP` and contains this line:
 ```
 OK    Legacy API key: allowed (every generated key is the same key: full access, no revocation); set LEGACY_API_KEY=false once clients use tokens
 ```
@@ -303,7 +308,7 @@ Save, and run `doctor` again. The line is now:
 ```
 OK    Legacy API key: off: API clients use personal access tokens
 ```
-and it still ends with `14 OK, 0 WARN, 0 FAIL, 6 SKIP`. The `SKIP` lines are the optional services you did not
+and it still ends with `15 OK, 0 WARN, 0 FAIL, 6 SKIP`. The `SKIP` lines are the optional services you did not
 configure (OpenAI, Groq, Stripe, Coinbase, Watson, mail): normal. Run the smoke test again: all checks pass, because
 no experience of Bookshelf uses the old key. `.env` is not committed, so remember to set it on every server.
 

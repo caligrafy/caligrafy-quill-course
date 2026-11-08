@@ -28,9 +28,9 @@ The plan is the one moment where you decide. Read each part with its question:
 |---|---|---|
 | **Name** | is it the address I want? | `bookshelf-<you>`: lowercase letters, digits and dashes |
 | **Tables** | does every fact of my description have a home? | `authors` (`name`) and `books` (`title`, `year`, `summary`, and `author_id`, the link to its author) |
-| **Capabilities** | can people do everything I described, and nothing else? | for each table: `list`, `get`, `create`, `update`, `delete`; and a way to filter books by author |
+| **Capabilities** | can people do everything I described, and nothing else? | for each table: `list` (a page at a time), `get`, `create`, `update`, `delete`; and a way to filter books by author |
 | **Who may do what** | is the right person allowed? | anyone reads, members change. If the plan says *everything public*, anyone online could delete your data: that is for a demo only |
-| **Pages** | can people reach it all? | `/books` with the list, the form and the filter; a page per book |
+| **Pages** | can people reach it all? | `/books` with the list, the form and the filter; a page per book; sign-in and sign-up |
 | **Sample data** | is the app useful from the start, with nothing personal? | a few real-looking books, no real people's data |
 
 A **capability** is one thing the app can do, written once. Every way of using the app (the page, the phone, other

@@ -26,14 +26,8 @@ try {
     Route::page('/', 'Bookshelf/books', ['with' => ['install' => true]]);
     Route::get('/helloworld', function() { echo "Hello World"; });
 	
-    // SIGN IN, SIGN OUT, REGISTER: the controllers of the framework; after signing in, /home is the catalog
-    Route::page('/home', 'Bookshelf/books', ['with' => ['install' => true]]);
-    Route::get('/login', 'Caligrafy\\Controllers\\AuthController');
-    Route::get('/logout', 'Caligrafy\\Controllers\\AuthController@logout');
-    Route::get('/notAuthorized', 'Caligrafy\\Controllers\\AuthController@notAuthorized');
-    Route::get('/register', 'Caligrafy\\Controllers\\AuthController@registerForm');
-    Route::post('/login', 'Caligrafy\\Controllers\\AuthController@login');
-    Route::post('/register', 'Caligrafy\\Controllers\\AuthController@register');
+    // SIGN IN, SIGN OUT, REGISTER: /login, /logout, /register and /notAuthorized; after signing in, the catalog
+    Route::auth(['home' => '/books']);
 
     // User Administration Routes - Uncomment only if AUTHENTICATION activated above
 	// Route::get('/admin', 'Caligrafy\\Controllers\\AdminController');
@@ -75,10 +69,10 @@ try {
     Route::mcp('/mcp');                     // the capabilities as tools for AI agents (personal access tokens)
     Route::notifications();                 // the pages notification emails link to (confirm, unsubscribe)
 
-    // BOOKSHELF PAGES: the catalog (public/js/books.js) and the page of one book (data: get_book and list_authors)
+    // BOOKSHELF PAGES: the catalog (public/js/books.js), the page of one book (data: get_book and list_authors) and its form
     Route::page('/books', 'Bookshelf/books', ['with' => ['install' => true]]);
     Route::page('/books/{id}', 'Bookshelf/book', ['data' => ['found' => 'get_book', 'authors' => ['list_authors', []]], 'notFound' => 'Bookshelf/notfound']);
-    Route::put('/books/{id}', 'Bookshelf\\BookController@update');   // the edit form: a page with logic of its own
+    Route::form('/books/{id}', 'update_book', ['method' => 'PUT', 'success' => '/books/{id}', 'flash' => 'Saved']);   // the edit form: no controller
 
     // BOOKSHELF API: the same capabilities, for other applications (JSON)
     Route::capability('GET', '/api/books', 'list_books');
@@ -87,6 +81,7 @@ try {
     Route::capability('PUT', '/api/books/{id}', 'update_book');
     Route::capability('DELETE', '/api/books/{id}', 'delete_book');
     Route::capability('GET', '/api/authors', 'list_authors');
+    Route::download('/authors.csv', 'list_authors');   // the same capability, as a file for a spreadsheet
 
     // MUST NOT BE REMOVED - Routes need to be run after being defined 
     Route::run(); 

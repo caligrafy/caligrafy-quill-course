@@ -18,7 +18,7 @@ your connection. Later starts take seconds.
 the framework into a new folder, and that folder becomes your project. Your code goes in `application/` and
 `public/`; the framework stays in `framework/`.
 
-**A release.** `--branch v2.18.2` gets exactly the version 2.18.2 of the framework, the one this course was written
+**A release.** `--branch v2.19.0` gets exactly the version 2.19.0 of the framework, the one this course was written
 and checked with, even after newer versions come out.
 
 **Caligrafer.** The command line tool of Caligrafy. It has two doors:
@@ -58,15 +58,15 @@ Choose the folder where you keep your projects (here `~/code`) and clone the rel
 ```bash
 mkdir -p ~/code
 cd ~/code
-git clone --branch v2.18.2 https://github.com/caligrafy/caligrafy-quill.git bookshelf
+git clone --branch v2.19.0 https://github.com/caligrafy/caligrafy-quill.git bookshelf
 cd bookshelf
 ```
-Expected: `Cloning into 'bookshelf'...`, then a line `warning: refs/tags/v2.18.2 ... is not a commit!` (with the id
+Expected: `Cloning into 'bookshelf'...`, then a line `warning: refs/tags/v2.19.0 ... is not a commit!` (with the id
 of the tag in place of `...`) and a note that you are in `'detached HEAD' state`. Both are **harmless**: a release tag
 points to a fixed version, not to a branch.
 
 > **Already have PHP, Composer and MAMP, XAMPP or LAMP?** You can start without Git or Docker: in your server's web
-> folder, `composer create-project caligrafy/caligrafy-quill:2.18.2 bookshelf`, then `cd bookshelf` and
+> folder, `composer create-project caligrafy/caligrafy-quill:2.19.0 bookshelf`, then `cd bookshelf` and
 > `.bin/caligrafer quickstart --example --local`. It asks for your MySQL settings and prints the address of the project
 > (see [Quickstart with Composer](https://github.com/caligrafy/caligrafy-quill/wiki/Quickstart#composer)). The course
 > is written for the Docker server: on your own server, type `php caligrafer.php ...` where a lesson says
@@ -148,10 +148,10 @@ Expected: `{"data":[]}` (or your tasks, if you left some on the page).
 ```bash
 docker compose exec dev-box php caligrafer.php doctor
 ```
-Expected: the first line `Caligrafy doctor (read-only): Caligrafy Quill 2.18.2`, then one line per check, and the
+Expected: the first line `Caligrafy doctor (read-only): Caligrafy Quill 2.19.0`, then one line per check, and the
 last line:
 ```
- 14 OK, 0 WARN, 0 FAIL, 6 SKIP
+ 15 OK, 0 WARN, 0 FAIL, 6 SKIP
 ```
 `SKIP` means "not configured": the 6 SKIP lines are optional services this course does not use (OpenAI, Groq,
 Stripe, Coinbase, Watson, Mail). What matters is `0 FAIL`. `doctor` never prints your secrets: it shows only the
@@ -175,7 +175,7 @@ Open the `bookshelf` folder in your editor (in VS Code: *File > Open Folder*).
 | `application/services/` | your **capabilities** (Tasks for now; Bookshelf from lesson 04), next to the framework's `Users` | yes |
 | `application/models/` | your **models** (one PHP class per table) and their SQL scripts | yes |
 | `application/views/` | your web pages, written in **Pug** (lesson 06) | yes |
-| `application/controllers/` | the logic of a page that has its own (a form that saves, lesson 06); most pages need none | yes |
+| `application/controllers/` | HTTP that is truly custom. Bookshelf needs none: pages, forms and sign-in are one line of `web.php` each (lessons 06 and 11) | rarely |
 | `public/` | files served as they are: `css/`, `js/` (`capabilities.js`), and your client apps (lessons 09, 10) | yes |
 | `tests/` | your automated tests (lesson 12) | yes |
 | `framework/` | the framework itself | no |
@@ -224,8 +224,8 @@ Two ways, both reach the same project.
 
 **A. Let Claude create the project.** In the folder where you keep your projects (`~/code`), start `claude` and ask:
 ```
-Clone the Caligrafy Quill release v2.18.2 into a new folder named bookshelf:
-git clone --branch v2.18.2 https://github.com/caligrafy/caligrafy-quill.git bookshelf
+Clone the Caligrafy Quill release v2.19.0 into a new folder named bookshelf:
+git clone --branch v2.19.0 https://github.com/caligrafy/caligrafy-quill.git bookshelf
 Then, inside bookshelf, set it up with quickstart. It deletes the .git folder of the framework: ask me first,
 and once I agree, run .bin/caligrafer quickstart --example --yes. Then run docker compose exec dev-box php caligrafer.php doctor and show me
 the summary line. Do not print the contents of .env.
@@ -247,7 +247,7 @@ script exits), so it must ask you before deleting the framework's `.git`, then r
 `.bin/caligrafer quickstart --example --yes` once you agree.
 
 **What Claude should do:** clone (A), ask you about `.git`, run `quickstart --example --yes`, show the eight `OK`
-lines, run `doctor`, and report `14 OK, 0 WARN, 0 FAIL, 6 SKIP`.
+lines, run `doctor`, and report `15 OK, 0 WARN, 0 FAIL, 6 SKIP`.
 
 **Check** before you accept:
 - [ ] Claude **asked you** before running `quickstart` with `--yes` (it deletes the framework's `.git`).
@@ -283,7 +283,7 @@ the files quickstart creates are the same for everyone, and `.env` must never be
    (`git init -b main` in step 6).
 2. Nothing breaks: quickstart only does what is missing and never overwrites files. It is also the fix when the first
    run says `Database: could not reach mysql`.
-3. `docker compose exec dev-box php caligrafer.php doctor`; the last line shows `0 FAIL` (`14 OK, 0 WARN, 0 FAIL, 6 SKIP`).
+3. `docker compose exec dev-box php caligrafer.php doctor`; the last line shows `0 FAIL` (`15 OK, 0 WARN, 0 FAIL, 6 SKIP`).
 4. `down` deletes the containers, and the `mysql` container keeps the data inside itself: your data would be lost.
 </details>
 

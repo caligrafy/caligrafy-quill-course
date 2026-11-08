@@ -2,7 +2,8 @@
 
 **In this appendix** you write a classic form, "Add an author", handled entirely by a controller: CSRF protection,
 filters and rules, a 422 with the messages, saving with the controller's database helpers and a redirect. Then you
-see what that costs (no other experience gets it), and in the exercise you turn it into a `create_author` capability.
+see what that costs (no other experience gets it), and in the exercise you turn it into a `create_author` capability
+and replace the controller with two lines of `web.php`, the way of the lessons since Caligrafy Quill 2.19.0.
 
 **Before you start:** [Appendix A](A-Routes-and-Controllers) is done (tag `appendix-a`), the containers run
 (`docker compose ps`), and you have the account `reader1` of lesson 11 (if you are before lesson 11, see the note in
@@ -15,8 +16,9 @@ step 4).
 ## New concepts
 
 **A classic form** sends the page to the server: `form(method='POST', action=".../authors")` posts the fields
-(`name=...&bio=...`) to `POST /authors`, and the server answers with a whole new page. The catalog of lesson 06 does
-it differently: JavaScript calls a capability and updates the page in place.
+(`name=...&bio=...`) to `POST /authors`, and the server answers with a whole new page. The edit form of a book
+(lesson 06) is one too, but `Route::form` handles it: this appendix writes by hand what that line does. The catalog
+of lesson 06 works differently: JavaScript calls a capability and updates the page in place.
 
 **Reading the posted fields.** In a controller, `$this->request->parameters()` returns the posted fields as an array.
 Careful: `$this->request->fetch('name')` reads **route variables** only (`{name}` of the path), not posted fields.
@@ -210,7 +212,8 @@ In the browser, sign in as `reader1` and open http://localhost:8080/authors/new:
 Bio and "Add author".
 - Click "Add author" with an empty name: the same form, with "The Name field is required" (status 422).
 - Type `N. K. Jemisin` and a bio (for example "American author of the Broken Earth trilogy."), click "Add author":
-  you land on http://localhost:8080/authors/4, her page (no books yet).
+  you land on her page, http://localhost:8080/authors/<id> (no books yet). The id is 4 or more: every run of the
+  tests of lesson 12 added an author and took it back, and MySQL never gives an id twice.
 - Open http://localhost:8080/books: the author segments (one per author, from `list_authors`) now include N. K. Jemisin. The data is shared by everyone; only
   the **form** is private to this page.
 
@@ -261,14 +264,14 @@ If it offers a `create_author` capability, keep that for the exercise.
 
 | | The form of this appendix | A `create_author` capability |
 |---|---|---|
-| The web page | yes | yes, through `$this->call('create_author')` |
+| The web page | yes | yes, with one `Route::form` line and no controller |
 | REST | no JSON route: `POST /authors` is made for a browser form and answers with a page or a redirect | `Route::capability('POST', '/api/authors', 'create_author')` |
 | The JS client | no `createAuthor()` | yes, after `client` |
 | AI agents | no tool: an agent cannot add an author | a `create_author` tool, with its description and schema |
 | Rules, scopes, audit | in this controller only, no scope, nothing audited | `$rules` once, scope `books:write`, every change and refusal audited |
 
-The classic form is fine for something only one page will ever do. For anything else, the exercise below is the
-better design.
+A classic form in a controller is for HTTP that is truly its own. For anything else, the exercise below is the
+better design: a capability, and `Route::form` for its page.
 
 ---
 
@@ -283,9 +286,10 @@ Reference: [`checkpoints/appendix-b`](https://github.com/caligrafy/caligrafy-qui
 
 ## Exercise
 
-Turn the form into a capability: write `create_author` (scope `books:write`, the same rules), make the form's
-`create()` call it, give it a REST route `POST /api/authors`, regenerate the clients, and check that an agent with the
-"Claude Code" token can add an author. (This goes beyond the checkpoint. Do it after lesson 13; earlier, skip the SPA
+Turn the form into a capability: write `create_author` (scope `books:write`, the same rules), show the form with
+`Route::page` and send it to `Route::form` (delete `createForm()` and `create()` from the controller), give it a REST
+route `POST /api/authors`, regenerate the clients, and check that an agent with the "Claude Code" token can add an
+author. (This goes beyond the checkpoint. Do it after lesson 13; earlier, skip the SPA
 client and expect fewer capabilities.)
 
 <details><summary>Show the solution</summary>
@@ -319,34 +323,34 @@ class CreateAuthor extends Service
 
     public function handle(array $input, Context $context)
     {
-        return (new Author('authors'))->create($input);
+        return Author::find(Author::insert($input));   // the new author, with its id
     }
 }
 ```
 
-In `AuthorController.php`, add `use Caligrafy\ServiceError;` below `use Caligrafy\Controller;` and replace `create()`:
+In `web.php`, replace the two routes of step 3 (keep them above `/authors/{id}`):
 ```php
-    // POST /authors: the form calls the create_author capability, like every other experience
-    public function create()
-    {
-        $this->signedInOnly();
-        try {
-            $author = $this->call('create_author');   // the inputs are the posted fields name and bio
-            redirect('/authors/' . $author['id']);
-            exit;
-        } catch (ServiceError $e) {
-            http_response_code($e->status());
-            $input = $this->request->parameters();
-            $values = array('name' => $input['name'] ?? '', 'bio' => $input['bio'] ?? '');
-            return $this->form($values, $e->fields ?: array($e->getMessage()));
-        }
-    }
+    Route::page('/authors/new', 'Bookshelf/authorform', ['signedIn' => true]);   // before /authors/{id}, or {id} would take "new"
+    Route::form('/authors', 'create_author', ['success' => '/authors/{id}']);
 ```
-
-In `web.php`, in the `// BOOKSHELF API` block:
+and, in the `// BOOKSHELF API` block:
 ```php
     Route::capability('POST', '/api/authors', 'create_author');
 ```
+In `authorform.pug`, the values and the messages now come from `Route::form`:
+```pug
+                input#name.form-control(type='text', name='name', value=old('name'), maxlength='150')
+```
+```pug
+                textarea#bio.form-control(name='bio', rows='3', maxlength='2000')= old('bio')
+```
+```pug
+        if errors()
+            p.cq-field-error(role='alert')= implode(' ', errors())
+```
+In `AuthorController.php`, delete `createForm()`, `create()`, `form()` and `signedInOnly()`: `['signedIn' => true]`
+sends visitors to `/login`, and `Route::form` checks the token, calls `create_author` as the person signed in,
+redirects to `/authors/<id>` or back to the form with the messages. `show()` and `index()` stay.
 
 Then:
 ```bash
@@ -355,9 +359,10 @@ docker compose exec dev-box php caligrafer.php client public/bookshelf-spa/src/c
 docker compose exec dev-box php caligrafer.php capabilities
 ```
 The client now has `createAuthor()` (24 capabilities), and `capabilities` lists `create_author  books:write  writes`.
-The form works as before (an empty name: "The Name field is required", 422). `POST /api/authors` answers `401` to
-a visitor, `422` with `"fields":{"name":"The Name field is required"}` for `{"name": ""}`, and `201` with the new
-author for the "Claude Code" token. Reconnect Claude Code with that token if needed and ask "Add the author Ted
+The form works as before, with a redirect instead of a 422 page: an empty name sends you back to the form with "The
+Name field is required" and the bio you typed. `POST /api/authors` answers `401` to a visitor, and with the "Claude
+Code" token `422` with `"fields":{"name":"The Name field is required"}` for `{"name": ""}`, and `201` with the new
+author for `{"name": "Becky Chambers"}`. Reconnect Claude Code with that token if needed and ask "Add the author Ted
 Chiang, then list the authors": it calls the `create_author` tool. `audit --limit 5` shows the calls, with the web
 form as channel `web`, REST as `rest` and the agent as `mcp`. One capability, every experience.
 </details>

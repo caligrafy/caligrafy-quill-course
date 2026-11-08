@@ -289,13 +289,13 @@ export default {
   async mounted () {
     this.authors = await listAuthors()
     this.form.author_id = this.authors.length ? this.authors[0].id : ''
-    this.books = await listBooks()
+    this.books = (await listBooks()).data
   },
   methods: {
     search () {
       clearTimeout(this.timer)
       this.timer = setTimeout(async () => {
-        this.books = this.query.trim().length < 2 ? await listBooks() : await searchBooks({ query: this.query })
+        this.books = this.query.trim().length < 2 ? (await listBooks()).data : await searchBooks({ query: this.query })
       }, 250)
     },
     async add () {
@@ -304,7 +304,7 @@ export default {
         await createBook(this.form)
         this.form.title = ''
         this.form.published_year = ''
-        this.books = await listBooks()
+        this.books = (await listBooks()).data
       } catch (e) {
         this.error = e instanceof CapabilityError ? Object.values(e.fields).join(' ') || e.message : 'Something went wrong. Try again.'
       }
@@ -385,6 +385,7 @@ rm public/bookshelf-spa/src/components/pages/HomePage.vue
 What to notice:
 - `import { listBooks, ... } from '../../capabilities.js'`: in a Vite app, a normal `import` works (no `import()`
   trick as in lesson 09).
+- `(await listBooks()).data`: list_books returns a page (lesson 04), its books are in `data`.
 - `props: true` in the router passes `id` from the address to `BookPage`.
 - `:key="$route.fullPath"` in `App.vue`: without it, going from `#/books/1` to `#/books/3` keeps showing book 1,
   because Vue reuses the screen that is already there and `mounted()` does not run again.
@@ -483,7 +484,7 @@ index.html: title Bookshelf. Router: createWebHashHistory, '/' named home -> Boo
 BookPage with props: true. App.vue: show-navigation (keep the template's ShowNavigation.vue and main.js), then
 <router-view :key="$route.fullPath">, then footer.cq-footer. Use Caligrafy's look of the pages (layout.css): BooksPage
 is a title band (section.cq-hero.cq-hero--page, "Bookshelf"), then .cq-split: section.cq-split-main with a search
-.cq-field (searchBooks 250 ms after typing pauses, listBooks under 2 characters) and ul.cq-rows of router-links to the
+.cq-field (searchBooks 250 ms after typing pauses, (await listBooks()).data under 2 characters) and ul.cq-rows of router-links to the
 books, and aside.cq-split-detail "Add a book" with a .cq-form-grid form (title, author select from listAuthors, year) that calls createBook and shows a CapabilityError's
 field messages in p.cq-field-error. BookPage: getBook({ id }), a title band (title, "by <author>, <year>"), the
 summary, a Delete button (confirm, deleteBook, back home); a full-screen section.cq-hero "Not found" with the error

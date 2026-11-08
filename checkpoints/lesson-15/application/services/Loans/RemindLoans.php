@@ -18,21 +18,21 @@ class RemindLoans extends Service
     public function handle(array $input, Context $context)
     {
         $today = date('Y-m-d');
-        $loans = Database::toArray(Database::execute('SELECT due_on FROM loans WHERE returned_at IS NULL AND due_on <= ?', array($today)));
-        $late = count(array_filter($loans, function ($loan) use ($today) { return $loan['due_on'] < $today; }));
-        $due = count($loans) - $late;
-        if (!$loans) {
+        $due = Loan::whereNull('returned_at')->where('due_on', $today)->count();         // SELECT COUNT(*)
+        $late = Loan::whereNull('returned_at')->where('due_on', '<', $today)->count();
+        if ($due + $late === 0) {
             return array('due' => 0, 'late' => 0, 'notified' => 0);
         }
+        $books = $due + $late;
         $message = array(
-            'title' => count($loans) === 1 ? '1 book to bring back' : count($loans) . ' books to bring back',
+            'title' => $books === 1 ? '1 book to bring back' : "$books books to bring back",
             'body' => "$due due today, $late late. Open the loans to see who has them.",
             'url' => '/loans',
             'tag' => 'loans-due'
         );
         $notified = 0;
-        foreach (Database::toArray(Database::execute('SELECT id FROM users WHERE permissions >= 1')) as $admin) {
-            $sent = Notify::user($admin['id'], $message);
+        foreach (Database::table('users')->where('permissions', '>=', 1)->pluck('id') as $admin) {
+            $sent = Notify::user($admin, $message);
             if ($sent['push'] > 0 || $sent['email']) {
                 $notified++;
             }

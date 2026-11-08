@@ -22,8 +22,7 @@ final class BookRulesTest extends TestCase
     public function testAValidBookIsTrimmedAndKeepsOnlyItsInputs(): void
     {
         // an author of its own: the test does not depend on the sample data (the transaction removes it afterwards)
-        Caligrafy\Database::execute('INSERT INTO authors (name) VALUES (?)', ['Octavia E. Butler']);
-        $author = (int) Caligrafy\Database::lastInsertId();
+        $author = Caligrafy\Database::table('authors')->insert(['name' => 'Octavia E. Butler']);   // the id of the new row
         $book = $this->call('create_book', ['title' => '  Kindred ', 'published_year' => 1979, 'author_id' => $author, 'price' => 9], $this->user(1));
         $this->assertSame('Kindred', $book['title']);
         $this->assertArrayNotHasKey('price', $book);   // only the inputs of $rules reach handle()

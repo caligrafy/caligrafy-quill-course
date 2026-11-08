@@ -20,11 +20,10 @@ class DeleteBook extends Service
 
     public function handle(array $input, Context $context)
     {
-        $books = new Book('books');
-        if (!$books->find($input['id'])) {
+        // delete() returns how many rows it deleted: 0 when there is no such book
+        if (!Book::where('id', $input['id'])->delete()) {
             throw ServiceError::notFound("There is no book #{$input['id']}");
         }
-        $books->delete($input['id']);
         return array('deleted' => (int) $input['id']);
     }
 }

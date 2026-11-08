@@ -193,7 +193,7 @@ const app = Vue.createApp({
   async mounted () {
     // the generated JS client: one function per capability (php caligrafer.php client public/js/capabilities.js)
     this.api = await import(env.home + 'public/js/capabilities.js')
-    this.books = await this.api.listBooks()
+    this.books = (await this.api.listBooks()).data
   },
   methods: {
     // called on every key: wait until the typing pauses, then ask search_books
@@ -201,7 +201,7 @@ const app = Vue.createApp({
       clearTimeout(this.timer)
       this.timer = setTimeout(() => this.run(async () => {
         this.books = this.query.trim().length < 2
-          ? await this.api.listBooks()
+          ? (await this.api.listBooks()).data
           : await this.api.searchBooks({ query: this.query })
       }), 250)
     },
@@ -224,7 +224,8 @@ app.mount('#app')
 ```
 
 What to notice:
-- `mounted()` loads the client, then fills the list with `listBooks()`.
+- `mounted()` loads the client, then fills the list with the first page of `listBooks()`: its books are in
+  `.data` (lesson 04). `searchBooks()` returns a plain list, so it needs no `.data`.
 - `search()` waits until you stop typing for 250 ms before it calls the server: one call per pause, not one per key.
   Under 2 characters it shows every book instead of calling `search_books` (whose rule asks for 2 or more).
 - `run()` wraps every call: when a capability refuses, the error is a `CapabilityError` with the same messages as the
@@ -276,7 +277,8 @@ then:
 ```
 Turn public/finder into a Vue 3 app (Vue as a library) that finds books with the Bookshelf capabilities. Do not
 use axios or the API key: in mounted(), load the JS client with this.api = await import(env.home +
-'public/js/capabilities.js'), then show listBooks(). A search field calls searchBooks({ query }) 250 ms after the
+'public/js/capabilities.js'), then show (await listBooks()).data (list_books returns a page: data, total...).
+A search field calls searchBooks({ query }) 250 ms after the
 typing pauses (listBooks() when the query has fewer than 2 characters). Each book has an Open button that calls
 getBook({ id }) and shows, in a panel beside the list, the title, "by <author>, <year>", the summary (or "No
 summary yet.") and the author's bio. Show a CapabilityError's field messages (or its message) in p.cq-field-error.
@@ -338,14 +340,14 @@ In `public/finder/scripts/main.js`, add `authors: []` and `authorId: ''` to `dat
   async mounted () {
     this.api = await import(env.home + 'public/js/capabilities.js')
     this.authors = await this.api.listAuthors()
-    this.books = await this.api.listBooks()
+    this.books = (await this.api.listBooks()).data
   },
 ```
 ```js
     filter () {
       this.query = ''
       this.run(async () => {
-        this.books = await this.api.listBooks(this.authorId ? { author_id: this.authorId } : {})
+        this.books = (await this.api.listBooks(this.authorId ? { author_id: this.authorId } : {})).data
       })
     },
 ```

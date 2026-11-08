@@ -20,7 +20,7 @@ class SearchBooks extends Service
 
     public function handle(array $input, Context $context)
     {
-        // % matches any text: '%magic%' finds "magic" anywhere in the title or the summary
-        return (new Book('books'))->search('title,summary', '%' . $input['query'] . '%');
+        // the title or the summary contains the words, as they are: % and _ in them are no wildcards
+        return Book::query()->search(['title', 'summary'], $input['query'])->orderBy('title')->get();
     }
 }

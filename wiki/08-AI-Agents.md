@@ -96,16 +96,17 @@ class SearchBooks extends Service
 
     public function handle(array $input, Context $context)
     {
-        // % matches any text: '%magic%' finds "magic" anywhere in the title or the summary
-        return (new Book('books'))->search('title,summary', '%' . $input['query'] . '%');
+        // the title or the summary contains the words, as they are: % and _ in them are no wildcards
+        return Book::query()->search(['title', 'summary'], $input['query'])->orderBy('title')->get();
     }
 }
 ```
 
 What to notice:
 - `query` is `required`, at least 2 and at most 100 characters; `trim` removes the spaces around it first.
-- `search('title,summary', '%magic%')` is a method of every Caligrafy model: it finds the rows whose `title` or
-  `summary` contains the text. `%` means "any text" (SQL `LIKE`).
+- `Book::query()->search(['title', 'summary'], $input['query'])` (the query builder of lesson 04) finds the books
+  whose `title` or `summary` contains the words, as they are: `50%` looks for the text `50%`, the `%` is no wildcard.
+  The words are bound, never pasted into the SQL. `orderBy('title')` sorts what it finds.
 - The `description` gives two examples and says what comes back. It is written for an agent, not for you.
 
 Check that the framework found it:
@@ -243,7 +244,8 @@ In the `bookshelf` folder, start `claude` and type:
 Add the capability search_books in application/services/Bookshelf/SearchBooks.php (class SearchBooks, no namespace,
 like the other Bookshelf services). It is public: true and readOnly: true. Input: query, required, min_len 2,
 max_len 100, filter trim, description "The words to look for". It returns the books whose title or summary
-contains the query, with (new Book('books'))->search('title,summary', '%' . $input['query'] . '%').
+contains the query, with the query builder: Book::query()->search(['title', 'summary'], $input['query'])
+->orderBy('title')->get().
 Description for agents: what it finds, two examples ("time travel", "magic"), and what it returns.
 Do not add routes: /capabilities and /mcp already exist. Regenerate public/js/capabilities.js.
 Do not create a token: I already have one.
@@ -256,6 +258,7 @@ fill the file, run `capabilities` and `client`, and test with curl.
 - [ ] `name: 'search_books'`, `scope: 'books:read'`, `readOnly: true`, `public: true`; no `destructive`.
 - [ ] `$rules` is `'query' => 'required|min_len,2|max_len,100'` and `$filters` has `trim`.
 - [ ] `handle()` only returns data: no `echo`, no `view()`, no `redirect()`, and it reads only `$input['query']`.
+- [ ] The search uses the query builder's `search()`: no SQL string, no `%` pasted around the input.
 - [ ] `web.php` did not change (`git diff application/config/routing/web.php` prints nothing).
 - [ ] The three curl calls of step 2 give 1 book, `{"data":[]}` and 422.
 - [ ] `public/js/capabilities.js` has `searchBooks` (20 capabilities).

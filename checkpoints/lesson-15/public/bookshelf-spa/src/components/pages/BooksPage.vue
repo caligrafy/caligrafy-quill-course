@@ -63,13 +63,13 @@ export default {
   async mounted () {
     this.authors = await listAuthors()
     this.form.author_id = this.authors.length ? this.authors[0].id : ''
-    this.books = await listBooks()
+    this.books = (await listBooks()).data
   },
   methods: {
     search () {
       clearTimeout(this.timer)
       this.timer = setTimeout(async () => {
-        this.books = this.query.trim().length < 2 ? await listBooks() : await searchBooks({ query: this.query })
+        this.books = this.query.trim().length < 2 ? (await listBooks()).data : await searchBooks({ query: this.query })
       }, 250)
     },
     async add () {
@@ -78,7 +78,7 @@ export default {
         await createBook(this.form)
         this.form.title = ''
         this.form.published_year = ''
-        this.books = await listBooks()
+        this.books = (await listBooks()).data
       } catch (e) {
         this.error = e instanceof CapabilityError ? Object.values(e.fields).join(' ') || e.message : 'Something went wrong. Try again.'
       }

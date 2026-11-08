@@ -43,14 +43,18 @@ Show me where each part of Bookshelf lives, in one short table.
 |---|---|
 | The tables | `application/models/<Folder>/create_db.sql` |
 | The capabilities, one file each | `application/services/<Folder>/` |
-| The addresses: pages, REST, MCP | `application/config/routing/web.php` |
+| The addresses: pages, forms, sign-in, REST, MCP, one line each | `application/config/routing/web.php` |
 | The page | `application/views/<Folder>/index.pug` and `public/js/` |
 | The tests | `tests/<Folder>Test.php` |
 | The later changes to the tables | `application/migrations/` |
 
 Open one capability, for example the one that creates a book. Find its **description** (what an AI agent reads), its
-**rules** (`$rules`: what a valid input is) and its **scope** (who may call it). Ask Claude to explain any line you do
-not understand.
+**rules** (`$rules`: what a valid input is) and its **scope** (who may call it). Then open the one that lists the
+books: it reads them in pages (`paginate()`), with their authors (`with()`), and has no SQL text. Ask Claude to
+explain any line you do not understand.
+
+`application/controllers/` has nothing of Bookshelf's own: a page, a form and the sign-in pages are each one line of
+`web.php` (`Route::page`, `Route::form`, `Route::auth`). If Claude wrote a controller, ask it why.
 
 ---
 
@@ -70,6 +74,7 @@ to fix what they find, then to check every experience again.
 - [ ] A visitor is refused a change everywhere: on the page, over REST and through an agent without a token.
 - [ ] An invalid input gives the same message on the page and over REST.
 - [ ] You opened one capability and understood its description, rules and scope.
+- [ ] No controller of Bookshelf's own, and no SQL text in the capabilities that list.
 - [ ] `doctor` and the reviewer found nothing left to fix.
 - [ ] `php caligrafer.php test` passes.
 

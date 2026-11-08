@@ -105,7 +105,7 @@ The service has no `namespace` line: services are global classes, like the model
 
 Replace the whole content of the file:
 
-**File `application/services/Bookshelf/ListBooks.php`** (the catalog, sorted by title, with each author's name):
+**File `application/services/Bookshelf/ListBooks.php`** (the catalog, sorted by title, 20 books per page, each with its author):
 
 ```php
 <?php
@@ -114,54 +114,47 @@ use Caligrafy\Capability;
 use Caligrafy\Context;
 use Caligrafy\Service;
 
-// list_books: the catalog, sorted by title, with the name of each author. Anyone may read it
+// list_books: the catalog, sorted by title, 20 books per page, each with its author. Anyone may read it
 #[Capability(
     name: 'list_books',
-    description: 'Lists the books of the Bookshelf catalog, sorted by title: id, title, year, author id and author name. Give author_id to list only the books of one author.',
+    description: 'Lists the books of the Bookshelf catalog, sorted by title, 20 per page, each with its author (id, name, bio). Give author_id to list only the books of one author, and page for the next pages. Returns data (the books), total, page, per_page and pages.',
     scope: 'books:read',
     readOnly: true,
     public: true
 )]
 class ListBooks extends Service
 {
-    public $rules = array('author_id' => 'integer');
-    public $descriptions = array('author_id' => 'Optional: only the books of this author');
+    public $rules = array('author_id' => 'integer', 'page' => 'integer');
+    public $descriptions = array(
+        'author_id' => 'Optional: only the books of this author',
+        'page' => 'Optional: the page, 1 by default (20 books per page)'
+    );
 
     public function handle(array $input, Context $context)
     {
-        // the name of every author, by id
-        $names = array();
-        foreach ((new Author('authors'))->all() as $author) {
-            $names[$author->id] = $author->name;
-        }
-
-        $query = array('order' => 'ORDER BY title');
+        // two queries in all: the books of the page, then all their authors at once
+        $query = Book::with('author')->orderBy('title');
         if (!empty($input['author_id'])) {
-            $query['condition'] = 'WHERE author_id = ?';   // ? is replaced by the value of bindings, safely
-            $query['bindings'] = array($input['author_id']);
+            $query->where('author_id', $input['author_id']);   // the value is bound, never pasted into the SQL
         }
-
-        $books = array();
-        foreach ((new Book('books'))->all($query) as $book) {
-            $books[] = array(
-                'id' => $book->id,
-                'title' => $book->title,
-                'published_year' => $book->published_year,
-                'author_id' => $book->author_id,
-                'author' => $names[$book->author_id] ?? ''
-            );
-        }
-        return $books;
+        return $query->paginate(20, $input['page'] ?? 1);
     }
 }
 ```
 - `public: true`: anyone may read the catalog.
-- `$rules` has one optional input, `author_id`: when a caller gives it, only the books of that author are listed.
-  It is not `required`, so a call without it is valid.
-- `all(array('order' => ..., 'condition' => ..., 'bindings' => ...))` runs one `SELECT` on the `books` table. The
-  `?` is replaced by the value of `bindings`, safely: never paste an input into SQL yourself.
-- The names of the authors are read once into `$names`, then each book gets its author's name. The result is a
-  plain list of arrays with exactly the fields an agent or a page needs.
+- `$rules` has two optional inputs. `author_id`: when a caller gives it, only the books of that author are listed.
+  `page`: the page to return (the first one when it is missing). Neither is `required`, so a call without them is
+  valid.
+- `Book::with('author')->orderBy('title')` is the **query builder** of lesson 03: it writes one `SELECT` on the
+  `books` table, sorted by title. `with('author')` adds each book's author (found by `author_id`) with **one** more
+  query for all of them. Reading the author of each book in a loop would cost one query per book: 21 queries for 20
+  books, the classic **N+1 problem**. While you develop, Caligrafy writes "Probable N+1 query" in the PHP error log
+  when the same query runs 10 times in one request.
+- `where('author_id', $input['author_id'])` adds a condition. The value is **bound**: it travels apart from the
+  SQL, so what a caller sends can never change the query. Never paste an input into SQL yourself.
+- `paginate(20, $input['page'] ?? 1)` reads one page of 20 books and counts them all. It returns `data` (the books
+  of the page), `total`, `page`, `per_page` and `pages`. The capability passes the page of its input: a REST call,
+  an agent or the command line has no address bar to read `?page=2` from.
 
 ### Step 2 - Create get_book and list_authors
 
@@ -197,7 +190,7 @@ class GetBook extends Service
 
     public function handle(array $input, Context $context)
     {
-        $book = (new Book('books'))->find($input['id']);
+        $book = Book::find($input['id']);
         if (!$book) {
             throw ServiceError::notFound("There is no book #{$input['id']}");
         }
@@ -206,7 +199,8 @@ class GetBook extends Service
 }
 ```
 - `'id' => 'required|integer'`: a call without an id, or with `"abc"`, is refused before `handle()` runs.
-- `find($input['id'])` returns the book, or nothing. Nothing becomes a `ServiceError::notFound(...)`: a 404 everywhere.
+- `Book::find($input['id'])` returns the book (a `Book`), or nothing. Nothing becomes a
+  `ServiceError::notFound(...)`: a 404 everywhere.
 - `$book->author()` is the relationship you wrote in lesson 03.
 
 **File `application/services/Bookshelf/ListAuthors.php`** (no inputs, so no `$rules`):
@@ -230,10 +224,11 @@ class ListAuthors extends Service
 {
     public function handle(array $input, Context $context)
     {
-        return (new Author('authors'))->all(array('order' => 'ORDER BY name'));
+        return Author::query()->orderBy('name')->get();
     }
 }
 ```
+`Author::query()` starts a query on the `authors` table; `get()` runs it and returns every row, as `Author` models.
 
 ### Step 3 - List what Bookshelf offers
 
@@ -245,7 +240,7 @@ framework (lesson 02) and, among them, your three:
 ```
  get_book                     public         read      Returns one book of the catalog (id, title, year, summary) and its author (id, name, bio), by the id of the book.
  list_authors                 public         read      Lists the authors of the Bookshelf catalog, sorted by name: id, name and bio.
- list_books                   public         read      Lists the books of the Bookshelf catalog, sorted by title: id, title, year, author id and author name. Give author_id to list only the books of one author.
+ list_books                   public         read      Lists the books of the Bookshelf catalog, sorted by title, 20 per page, each with its author (id, name, bio). Give author_id to list only the books of one author, and page for the next pages. Returns data (the books), total, page, per_page and pages.
 ```
 You wrote no route. The command found the three capabilities in `application/services/Bookshelf`.
 
@@ -253,27 +248,53 @@ Try one right away with `call`: it runs a capability and prints its answer in JS
 ```bash
 docker compose exec dev-box php caligrafer.php call list_books author_id=2
 ```
-Expected:
+Expected (your dates differ):
 ```
 {
-    "data": [
-        {
-            "id": 3,
-            "title": "Kindred",
-            "published_year": 1979,
-            "author_id": 2,
-            "author": "Octavia E. Butler"
-        },
-        {
-            "id": 4,
-            "title": "Parable of the Sower",
-            "published_year": 1993,
-            "author_id": 2,
-            "author": "Octavia E. Butler"
-        }
-    ]
+    "data": {
+        "data": [
+            {
+                "id": 3,
+                "title": "Kindred",
+                "published_year": 1979,
+                "summary": "A young woman is pulled back in time to a plantation in Maryland.",
+                "author_id": 2,
+                "created_at": "2026-11-07 20:38:08",
+                "modified_at": "2026-11-07 20:38:08",
+                "author": {
+                    "id": 2,
+                    "name": "Octavia E. Butler",
+                    "bio": "American science fiction author, the first to receive a MacArthur fellowship.",
+                    "created_at": "2026-11-07 20:38:08",
+                    "modified_at": "2026-11-07 20:38:08"
+                }
+            },
+            {
+                "id": 4,
+                "title": "Parable of the Sower",
+                "published_year": 1993,
+                "summary": "In a collapsing California, a teenager starts a new belief system.",
+                "author_id": 2,
+                "created_at": "2026-11-07 20:38:08",
+                "modified_at": "2026-11-07 20:38:08",
+                "author": {
+                    "id": 2,
+                    "name": "Octavia E. Butler",
+                    "bio": "American science fiction author, the first to receive a MacArthur fellowship.",
+                    "created_at": "2026-11-07 20:38:08",
+                    "modified_at": "2026-11-07 20:38:08"
+                }
+            }
+        ],
+        "total": 2,
+        "page": 1,
+        "per_page": 20,
+        "pages": 1
+    }
 }
 ```
+The outer `data` is the answer of every capability (step 4); inside it is the page of `paginate()`: its own `data`
+(the two books, each with its `author`), `total` (2 books in all), `page`, `per_page` and `pages`.
 And a book that does not exist, `call get_book id=99`:
 ```
 {
@@ -295,13 +316,15 @@ the browser; here you use `curl`.
 ```bash
 curl -s -X POST -H "Accept: application/json" -H "Content-Type: application/json" -d '{}' http://localhost:8080/capabilities/list_books
 ```
-Expected (on one line, cut here): `{"data":[{"id":1,"title":"A Wizard of Earthsea","published_year":1968,"author_id":1,"author":"Ursula K. Le Guin"},{"id":5,"title":"Invisible Cities",...` with the 5 books, sorted by title.
+Expected (on one line, cut here): `{"data":{"data":[{"id":1,"title":"A Wizard of Earthsea","published_year":1968,"summary":"A gifted boy learns magic and must face the shadow he set loose.","author_id":1,...,"author":{"id":1,"name":"Ursula K. Le Guin",...}},...],"total":5,"page":1,"per_page":20,"pages":1}}`: the 5 books, sorted by title.
 
 Every successful answer is `{"data": ...}`. Now only the books of author 2:
 ```bash
 curl -s -X POST -H "Accept: application/json" -H "Content-Type: application/json" -d '{"author_id": 2}' http://localhost:8080/capabilities/list_books
 ```
-Expected: Kindred (1979) and Parable of the Sower (1993), by Octavia E. Butler.
+Expected: Kindred (1979) and Parable of the Sower (1993), by Octavia E. Butler, and `"total":2`. The second page of
+the catalog, `-d '{"page": 2}'`, answers `{"data":{"data":[],"total":5,"page":2,"per_page":20,"pages":1}}`: a page
+past the last one has no books, and is not an error.
 
 One book:
 ```bash
@@ -341,7 +364,8 @@ Expected: a JSON list of the capabilities you may call, each with its input sche
 > | An error that names the class `Book` or `Author` | The model file of lesson 03 is missing or misnamed | `ls application/models/Bookshelf`: `Book.php` and `Author.php` must be there |
 > | An HTML page instead of JSON | The `Accept: application/json` header is missing | Copy the whole command |
 > | `curl: (7) Failed to connect to localhost port 8080` | The server is stopped | `docker compose up -d dev-box` |
-> | The list is empty (`{"data":[]}`) | The seed of lesson 03 was not run | `docker compose exec dev-box php caligrafer.php sql application/models/Bookshelf/seed.sql` |
+> | The list is empty (`{"data":{"data":[],"total":0,...}}`) | The seed of lesson 03 was not run | `docker compose exec dev-box php caligrafer.php sql application/models/Bookshelf/seed.sql` |
+> | `Call to undefined method Book::with()` (or `::find()`, `::query()`) | The project is older than Caligrafy Quill 2.19.0, which brings the query builder | `docker compose exec dev-box php caligrafer.php version`; update the project (lesson 14, step 1) |
 > | `Permission denied` or `EACCES` when you save or create a file (Linux, or WSL) | The container writes the files it creates as root | In the `bookshelf` folder run `sudo chown -R "$USER": .`, then retry (again after a `caligrafer` command that creates files) |
 
 ### Step 5 - The AI agent already has them
@@ -391,22 +415,24 @@ once per capability, with a precise description:
 ```
 /caligrafy-quill:new-capability list_books books:read read-only
 Put it in application/services/Bookshelf/ListBooks.php (caligrafer service Bookshelf/ListBooks). public: true.
-It lists every book of the books table sorted by title, as a list of arrays with id, title, published_year,
-author_id and author (the author's name, read from the authors table once, not one query per book). One optional
-input author_id (rule 'integer', description 'Optional: only the books of this author'): when given, only the books
-of that author (bound query with ?). Description: 'Lists the books of the Bookshelf catalog, sorted by title: id,
-title, year, author id and author name. Give author_id to list only the books of one author.' Do not add routes.
+It lists the books sorted by title, 20 per page, each with its author, with the query builder:
+Book::with('author')->orderBy('title'), then ->where('author_id', ...) when author_id is given, and
+->paginate(20, $input['page'] ?? 1). No SQL string and no loop over the authors. Two optional inputs: author_id
+(rule 'integer', description 'Optional: only the books of this author') and page (rule 'integer', description
+'Optional: the page, 1 by default (20 books per page)'). Description: 'Lists the books of the Bookshelf catalog,
+sorted by title, 20 per page, each with its author (id, name, bio). Give author_id to list only the books of one
+author, and page for the next pages. Returns data (the books), total, page, per_page and pages.' Do not add routes.
 ```
 ```
 /caligrafy-quill:new-capability get_book books:read read-only
 In application/services/Bookshelf/GetBook.php, public: true. One input id (required|integer, 'The id of the
-book'). Returns array('book' => the book, 'author' => $book->author()). When the book does not exist, throw
-ServiceError::notFound("There is no book #<id>"). Do not add routes.
+book'). Reads it with Book::find($input['id']) and returns array('book' => the book, 'author' => $book->author()).
+When the book does not exist, throw ServiceError::notFound("There is no book #<id>"). Do not add routes.
 ```
 ```
 /caligrafy-quill:new-capability list_authors books:read read-only
-In application/services/Bookshelf/ListAuthors.php, public: true, no inputs. Returns every author sorted by name.
-Do not add routes.
+In application/services/Bookshelf/ListAuthors.php, public: true, no inputs. Returns every author sorted by name:
+Author::query()->orderBy('name')->get(). Do not add routes.
 ```
 
 **What Claude should do:** run the `service` command three times, write the three files of steps 1 and 2, then run
@@ -417,13 +443,13 @@ Do not add routes.
 - [ ] The files are in `application/services/Bookshelf/` and have no `namespace` line.
 - [ ] `handle()` only returns data: no `echo`, `view()`, `redirect()` or `api()`.
 - [ ] Every input that `handle()` reads is in `$rules` (`author_id` for list_books, `id` for get_book).
-- [ ] The SQL of list_books uses `?` and `bindings`, never the input pasted in the string.
+- [ ] list_books uses the query builder (`Book::with('author')`, `where()`, `paginate(20, ...)`): no SQL string, no input pasted into SQL, no query per book.
 - [ ] No new line in `web.php` (the channels already exist).
 - [ ] The `curl` calls of step 4 give the expected answers, and the agent question of step 5 works.
 
-**If Claude's result differs:** Claude may return the models of `all()` directly from list_books (each book without
-the author's name), or build the names with one query per book. Both work, but the pages of lesson 06 show
-`book.author`: ask for the `author` field and a single query on `authors`. If Claude adds `Route::capability` lines
+**If Claude's result differs:** Claude may write list_books with `all()` and a SQL condition, read each author in a
+loop (one query per book), or return `get()` instead of a page. They work, but the pages of lesson 06 read a page
+(`data`, `total`) and `book.author.name`: ask for `with('author')` and `paginate(20, ...)`. If Claude adds `Route::capability` lines
 to `web.php`, remove them: the REST routes come in lesson 07. If Claude proposes to create a token, say no: you
 already have the one of lesson 02. Descriptions in other words are fine: the `capabilities` output will show yours instead of the one in the Manual
 track.
@@ -445,6 +471,8 @@ Reference: [`checkpoints/lesson-04`](https://github.com/caligrafy/caligrafy-quil
 2. Why does `get_book` throw `ServiceError::notFound(...)` instead of returning `null` or calling `echo "Not found"`?
 3. You wrote no MCP code. How did Claude know that `list_books` accepts an `author_id`?
 4. What would change if `list_books` had no `public: true`?
+5. A page of list_books shows 20 books with their authors. How many queries does it run, and how many would a loop
+   that reads the author of each book run?
 
 <details><summary>Show the solution</summary>
 
@@ -456,6 +484,8 @@ Reference: [`checkpoints/lesson-04`](https://github.com/caligrafy/caligrafy-quil
    tells the agent what the tool does. Changing a description changes what every agent reads.
 4. Callers would need to sign in, or send a token whose scopes include `books:read`. Visitors would get a 401.
    Lesson 11 does this for the capabilities that change data.
+5. Three: the 20 books of the page, the count of all the books (`paginate()` needs it for `total`), and all their
+   authors at once (`with('author')`). With a loop, one query per book: 22. That is the N+1 problem.
 </details>
 
 ---

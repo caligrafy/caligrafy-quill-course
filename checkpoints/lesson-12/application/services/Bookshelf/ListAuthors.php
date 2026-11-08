@@ -16,6 +16,6 @@ class ListAuthors extends Service
 {
     public function handle(array $input, Context $context)
     {
-        return (new Author('authors'))->all(array('order' => 'ORDER BY name'));
+        return Author::query()->orderBy('name')->get();
     }
 }

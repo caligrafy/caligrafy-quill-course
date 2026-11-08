@@ -8,7 +8,7 @@ capability, schedule it, turn on notifications, and add a **Turn on reminders** 
 > with a Turn on reminders button on the loans page" - the `new-capability` skill writes the same.
 
 **Before you start:** lesson 14 is done (tag `lesson-14`), the containers run (`docker compose ps`), and you can sign in
-as `reader1`, an administrator since lesson 11. Caligrafy Quill 2.16.0 or later (`php caligrafer.php version`).
+as `reader1`, an administrator since lesson 11. Caligrafy Quill 2.19.0 or later (`php caligrafer.php version`).
 
 **Time:** 40 minutes.
 
@@ -60,21 +60,21 @@ class RemindLoans extends Service
     public function handle(array $input, Context $context)
     {
         $today = date('Y-m-d');
-        $loans = Database::toArray(Database::execute('SELECT due_on FROM loans WHERE returned_at IS NULL AND due_on <= ?', array($today)));
-        $late = count(array_filter($loans, function ($loan) use ($today) { return $loan['due_on'] < $today; }));
-        $due = count($loans) - $late;
-        if (!$loans) {
+        $due = Loan::whereNull('returned_at')->where('due_on', $today)->count();         // SELECT COUNT(*)
+        $late = Loan::whereNull('returned_at')->where('due_on', '<', $today)->count();
+        if ($due + $late === 0) {
             return array('due' => 0, 'late' => 0, 'notified' => 0);
         }
+        $books = $due + $late;
         $message = array(
-            'title' => count($loans) === 1 ? '1 book to bring back' : count($loans) . ' books to bring back',
+            'title' => $books === 1 ? '1 book to bring back' : "$books books to bring back",
             'body' => "$due due today, $late late. Open the loans to see who has them.",
             'url' => '/loans',
             'tag' => 'loans-due'
         );
         $notified = 0;
-        foreach (Database::toArray(Database::execute('SELECT id FROM users WHERE permissions >= 1')) as $admin) {
-            $sent = Notify::user($admin['id'], $message);
+        foreach (Database::table('users')->where('permissions', '>=', 1)->pluck('id') as $admin) {
+            $sent = Notify::user($admin, $message);
             if ($sent['push'] > 0 || $sent['email']) {
                 $notified++;
             }
@@ -84,7 +84,10 @@ class RemindLoans extends Service
 }
 ```
 
-`level: 1`: only administrators may call it from a page or with their token. The job calls it with full access.
+- `level: 1`: only administrators may call it from a page or with their token. The job calls it with full access.
+- `count()` asks MySQL for the number (`SELECT COUNT(*)`) instead of reading the loans: the query builder of lesson 04.
+- `Database::table('users')` works on a table that has no model of yours; `pluck('id')` keeps one column: the ids
+  of the administrators.
 
 ### Step 2 - The schedule
 
@@ -107,7 +110,7 @@ docker compose exec dev-box php caligrafer.php schedule run remind-loans
 docker compose exec dev-box php caligrafer.php schedule history
 ```
 
-Expected: the list shows `remind-loans  0 8 * * *  remind_loans  America/New_York`, the run prints
+Expected: the list shows `remind-loans  0 8 * * *  remind_loans  America/New_York, timeout 55s`, the run prints
 `remind-loans: ok`, and the history has the run. Nobody is notified yet: nobody turned notifications on.
 
 ### Step 3 - Notifications
@@ -201,7 +204,8 @@ Expected: `remind-loans  0 8 * * *  America/New_York  last not run yet  next <to
 Then: "Every morning at 8 New York time, notify the administrators of the loans due today or late, by push and email.
 Add a Turn on reminders button to the loans page for administrators."
 
-**What Claude should do:** the capability with `level: 1` and `Notify::user`, the schedule file, `platform install`,
+**What Claude should do:** the capability with `level: 1`, the counts with the query builder (`count()`, no SQL
+text) and `Notify::user`, the schedule file, `platform install`,
 `notify keys`, `Route::notifications()`, the button with `notify.js`, then `schedule run remind-loans` with `ok`.
 
 **Check** before you accept:

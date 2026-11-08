@@ -31,14 +31,13 @@ class UpdateBook extends Service
 
     public function handle(array $input, Context $context)
     {
-        $books = new Book('books');
-        if (!$books->find($input['id'])) {
+        if (!Book::find($input['id'])) {
             throw ServiceError::notFound("There is no book #{$input['id']}");
         }
         if (isset($input['title']) && $input['title'] === '') {
             throw ServiceError::invalid(array('title' => 'The Title field is required'));
         }
-        if (isset($input['author_id']) && !(new Author('authors'))->find($input['author_id'])) {
+        if (isset($input['author_id']) && !Author::find($input['author_id'])) {
             throw ServiceError::invalid(array('author_id' => 'There is no such author'));
         }
 
@@ -49,6 +48,9 @@ class UpdateBook extends Service
                 $changes[$field] = $input[$field];
             }
         }
-        return $changes ? $books->update($changes, $input['id']) : $books->find($input['id']);
+        if ($changes) {
+            Book::where('id', $input['id'])->update($changes);   // only this book: an update needs a where
+        }
+        return Book::find($input['id']);
     }
 }

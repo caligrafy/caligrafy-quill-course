@@ -115,15 +115,19 @@ class CreateBook extends Service
 
     public function handle(array $input, Context $context)
     {
-        if (!(new Author('authors'))->find($input['author_id'])) {
+        if (!Author::find($input['author_id'])) {
             throw ServiceError::invalid(array('author_id' => 'There is no such author'));
         }
-        return (new Book('books'))->create($input);
+        $id = Book::insert($input);   // one INSERT, every value bound; returns the id of the new book
+        return Book::find($id);
     }
 }
 ```
 - `summary` has `max_len,2000` but no `required`: it is optional.
-- `create($input)` inserts the row and returns the new book, with its id.
+- `Author::find(...)` (the query builder of lesson 04) returns the author, or nothing.
+- `Book::insert($input)` writes one `INSERT` with every value bound, and returns the id of the new row; `$input`
+  holds only the inputs of `$rules`, so a caller cannot fill another column. `Book::find($id)` reads the new book
+  back, with the dates MySQL filled in.
 
 ### Step 2 - update_book and delete_book
 
@@ -169,14 +173,13 @@ class UpdateBook extends Service
 
     public function handle(array $input, Context $context)
     {
-        $books = new Book('books');
-        if (!$books->find($input['id'])) {
+        if (!Book::find($input['id'])) {
             throw ServiceError::notFound("There is no book #{$input['id']}");
         }
         if (isset($input['title']) && $input['title'] === '') {
             throw ServiceError::invalid(array('title' => 'The Title field is required'));
         }
-        if (isset($input['author_id']) && !(new Author('authors'))->find($input['author_id'])) {
+        if (isset($input['author_id']) && !Author::find($input['author_id'])) {
             throw ServiceError::invalid(array('author_id' => 'There is no such author'));
         }
 
@@ -187,13 +190,18 @@ class UpdateBook extends Service
                 $changes[$field] = $input[$field];
             }
         }
-        return $changes ? $books->update($changes, $input['id']) : $books->find($input['id']);
+        if ($changes) {
+            Book::where('id', $input['id'])->update($changes);   // only this book: an update needs a where
+        }
+        return Book::find($input['id']);
     }
 }
 ```
 - Only `id` is `required`: a caller may change just the summary. That is also why `title` has no `required` rule,
   and why `handle()` refuses an empty title itself, with the same message as the rule.
 - `$changes` keeps only the inputs that were sent, so a missing input never erases a column.
+- `Book::where('id', $input['id'])->update($changes)` changes that one book. A builder's `update()` (and `delete()`)
+  refuses to run without a `where`: a forgotten condition never changes the whole table.
 
 **File `application/services/Bookshelf/DeleteBook.php`** (destructive, so AI agents ask before calling it):
 
@@ -220,15 +228,16 @@ class DeleteBook extends Service
 
     public function handle(array $input, Context $context)
     {
-        $books = new Book('books');
-        if (!$books->find($input['id'])) {
+        // delete() returns how many rows it deleted: 0 when there is no such book
+        if (!Book::where('id', $input['id'])->delete()) {
             throw ServiceError::notFound("There is no book #{$input['id']}");
         }
-        $books->delete($input['id']);
         return array('deleted' => (int) $input['id']);
     }
 }
 ```
+- `delete()` returns how many rows it deleted: `0` means there was no such book, so one query both checks and
+  deletes.
 
 Check:
 ```bash
@@ -347,8 +356,9 @@ comment "// for now: lesson 11 closes it". Rules: title required|max_len,200; pu
 required|integer|min_numeric,1450|max_numeric,2100; summary max_len,2000; author_id required|integer. Filters: trim
 on title and summary. A description for every input (author_id: 'The id of its author (list_authors)'). handle():
 if the author does not exist, throw ServiceError::invalid(array('author_id' => 'There is no such author')), else
-create the book and return it. Description: 'Adds a book to the Bookshelf catalog and returns it with its id. The
-author must already exist: use list_authors to find author_id.' No routes.
+create the book with Book::insert($input) and return Book::find() of the new id (the query builder: no SQL
+string). Description: 'Adds a book to the Bookshelf catalog and returns it with its id. The author must already
+exist: use list_authors to find author_id.' No routes.
 ```
 ```
 /caligrafy-quill:new-capability update_book books:write
@@ -356,13 +366,14 @@ In application/services/Bookshelf/UpdateBook.php, public: true (same comment). I
 max_len,200, published_year integer|min_numeric,1450|max_numeric,2100, summary max_len,2000, author_id integer, all
 optional; trim title and summary. 404 "There is no book #<id>" when the book does not exist; an empty title is
 refused with ServiceError::invalid(array('title' => 'The Title field is required')); an unknown author_id with
-'There is no such author'. Change only the inputs that are given and return the book. No routes.
+'There is no such author'. Change only the inputs that are given, with Book::where('id', ...)->update($changes),
+and return Book::find() of the book. No routes.
 ```
 ```
 /caligrafy-quill:new-capability delete_book books:write destructive
 In application/services/Bookshelf/DeleteBook.php, public: true (same comment), destructive: true. Input id
-required|integer. 404 "There is no book #<id>" when it does not exist; otherwise delete it and return
-array('deleted' => (int) id). Description: 'Deletes a book of the catalog, by its id. This cannot be undone.'
+required|integer. Delete it with Book::where('id', ...)->delete(); when that deleted no row, 404 "There is no book
+#<id>"; otherwise return array('deleted' => (int) id). Description: 'Deletes a book of the catalog, by its id. This cannot be undone.'
 No routes.
 ```
 
@@ -373,6 +384,7 @@ No routes.
 - [ ] None of them has `readOnly: true`; only `delete_book` has `destructive: true`.
 - [ ] Every input `handle()` reads is in `$rules`; in update_book only `id` is `required`.
 - [ ] The author check and the empty-title check throw `ServiceError::invalid(...)` with a message per field, never `echo`.
+- [ ] The reads and writes use the query builder (`Book::find()`, `Book::insert()`, `Book::where(...)->update()` / `->delete()`): no SQL string.
 - [ ] `capabilities` shows `writes`, `destroys`, `writes`.
 - [ ] The calls of steps 3 to 5 give the expected answers (the ids may differ: use yours).
 
@@ -400,7 +412,7 @@ refused with the message `The year cannot be in the future`, for `curl` and for 
 
 <details><summary>Show the solution</summary>
 
-A rule like `max_numeric` needs a fixed number, so check it in `handle()`, before `create()`:
+A rule like `max_numeric` needs a fixed number, so check it in `handle()`, before `insert()`:
 ```php
 if ($input['published_year'] > (int) date('Y')) {
     throw ServiceError::invalid(array('published_year' => 'The year cannot be in the future'));

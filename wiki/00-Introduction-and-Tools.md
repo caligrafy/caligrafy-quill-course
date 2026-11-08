@@ -18,7 +18,7 @@ will be at the end (online, used everywhere), learn how the lessons work, and in
 
 Caligrafy Quill is a **PHP framework**: a set of PHP files that already solve what every web application needs
 (reading the address, talking to a database, showing pages, checking forms, signing people in), so that you only
-write what is specific to your application. The course uses the release **Caligrafy Quill 2.18.2**.
+write what is specific to your application. The course uses the release **Caligrafy Quill 2.19.0**.
 
 ### Build once, experience everywhere
 
@@ -67,7 +67,7 @@ message everywhere.
 | Part 2 - Experience everywhere | 06 to 10 | Web pages, the REST API, AI agents, a Vue app, phones and tablets |
 | Part 3 - People and trust | 11 | Sign-in, permission levels, tokens with limited scopes |
 | Part 4 - Ship it | 12 to 14 | Tests, review, `doctor`; a last feature (loans) built everywhere on your own; Bookshelf online |
-| Appendix (optional) | A, B | Under the hood: routes, controllers and classic forms by hand (any time after lesson 06; the exercise of B after lesson 13) |
+| Appendix (optional) | A, B | Under the hood: what the one-line routes replace, routes, controllers and classic forms by hand (any time after lesson 06; the exercise of B after lesson 13) |
 
 ## How the course works
 

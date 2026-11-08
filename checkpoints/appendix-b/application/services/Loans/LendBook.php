@@ -23,18 +23,19 @@ class LendBook extends Service
 
     public function handle(array $input, Context $context)
     {
-        if (!(new Book('books'))->find($input['book_id'])) {
+        if (!Book::find($input['book_id'])) {
             throw ServiceError::notFound("There is no book #{$input['book_id']}");
         }
-        $open = (new Loan('loans'))->all(array('condition' => 'WHERE book_id = ? AND returned_at IS NULL', 'bindings' => array($input['book_id'])));
+        $open = Loan::where('book_id', $input['book_id'])->whereNull('returned_at')->first();
         if ($open) {
-            throw ServiceError::conflict("This book is already lent to {$open[0]->borrower}");
+            throw ServiceError::conflict("This book is already lent to {$open->borrower}");
         }
         $days = (int) ($input['days'] ?? 14);
-        return (new Loan('loans'))->create(array(
+        $id = Loan::insert(array(
             'book_id' => $input['book_id'],
             'borrower' => $input['borrower'],
             'due_on' => date('Y-m-d', strtotime("+$days days"))
         ));
+        return Loan::find($id);
     }
 }

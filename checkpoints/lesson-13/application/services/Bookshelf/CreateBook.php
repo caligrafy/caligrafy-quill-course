@@ -29,9 +29,10 @@ class CreateBook extends Service
 
     public function handle(array $input, Context $context)
     {
-        if (!(new Author('authors'))->find($input['author_id'])) {
+        if (!Author::find($input['author_id'])) {
             throw ServiceError::invalid(array('author_id' => 'There is no such author'));
         }
-        return (new Book('books'))->create($input);
+        $id = Book::insert($input);   // one INSERT, every value bound; returns the id of the new book
+        return Book::find($id);
     }
 }

@@ -35,7 +35,7 @@ inputs are wrong) and `404` (that thing does not exist).
 **A computed value.** The caller gives a number of `days` (1 to 60, 14 when empty); the capability computes the due
 date, `due_on`. The rule lives in one place, so a page, a script and an agent all get the same due date.
 
-**What experiences you get for free.** You write no new controller and no new API code: `Route::capability()` gives
+**What experiences you get for free.** You write no controller and no new API code: `Route::capability()` gives
 REST, `Route::mcp('/mcp')` (there since lesson 01) gives agents the new tools at once, and regenerating the client
 gives the Vue apps three new functions.
 
@@ -143,19 +143,20 @@ class LendBook extends Service
 
     public function handle(array $input, Context $context)
     {
-        if (!(new Book('books'))->find($input['book_id'])) {
+        if (!Book::find($input['book_id'])) {
             throw ServiceError::notFound("There is no book #{$input['book_id']}");
         }
-        $open = (new Loan('loans'))->all(array('condition' => 'WHERE book_id = ? AND returned_at IS NULL', 'bindings' => array($input['book_id'])));
+        $open = Loan::where('book_id', $input['book_id'])->whereNull('returned_at')->first();
         if ($open) {
-            throw ServiceError::conflict("This book is already lent to {$open[0]->borrower}");
+            throw ServiceError::conflict("This book is already lent to {$open->borrower}");
         }
         $days = (int) ($input['days'] ?? 14);
-        return (new Loan('loans'))->create(array(
+        $id = Loan::insert(array(
             'book_id' => $input['book_id'],
             'borrower' => $input['borrower'],
             'due_on' => date('Y-m-d', strtotime("+$days days"))
         ));
+        return Loan::find($id);
     }
 }
 ```
@@ -163,8 +164,11 @@ class LendBook extends Service
 - No `public` and no `level`: a visitor is refused (401), a signed-in user or a token with `loans:write` may lend.
 - `days` has no `required`: when it is missing, `$input['days'] ?? 14` gives 14 days.
 - The checks in `handle()` need the database, so they come after the rules: the book must exist (404), and must not
-  have an open loan (409, with the name of the borrower). The query uses `?` and `bindings`: never put an input
-  inside SQL text.
+  have an open loan (409, with the name of the borrower). `Loan::where('book_id', ...)->whereNull('returned_at')->first()`
+  is the query builder of lesson 04: the open loan of that book (`returned_at IS NULL`), or `null`. Every value is
+  bound: never put an input inside SQL text.
+- `Loan::insert(...)` returns the id of the new loan, and `Loan::find($id)` reads it back. `Loan::query()` works on
+  the table `loans`: the class name in lower case, plus an `s`.
 
 **File `application/services/Loans/ReturnBook.php`**:
 
@@ -189,17 +193,18 @@ class ReturnBook extends Service
 
     public function handle(array $input, Context $context)
     {
-        $loans = new Loan('loans');
-        $open = $loans->all(array('condition' => 'WHERE book_id = ? AND returned_at IS NULL', 'bindings' => array($input['book_id'])));
+        $open = Loan::where('book_id', $input['book_id'])->whereNull('returned_at')->first();
         if (!$open) {
             throw ServiceError::notFound("Book #{$input['book_id']} is not lent");
         }
-        return $loans->update(array('returned_at' => date('Y-m-d H:i:s')), $open[0]->id);
+        Loan::where('id', $open->id)->update(array('returned_at' => date('Y-m-d H:i:s')));
+        return Loan::find($open->id);
     }
 }
 ```
 
-- It takes the id of the **book** (what a librarian has in hand), finds its open loan, and sets `returned_at`.
+- It takes the id of the **book** (what a librarian has in hand), finds its open loan, and sets `returned_at` on
+  that loan only: `Loan::where('id', $open->id)->update(...)`.
 - The REST route of step 4 is `/api/books/{book_id}/return`: the route variable is `{book_id}`, the name of the
   input, so it reaches `handle()`.
 
@@ -223,12 +228,12 @@ class ListLoans extends Service
 {
     public function handle(array $input, Context $context)
     {
+        // with('book'): the book of every loan in one more query, not one query per loan
         $loans = array();
-        foreach ((new Loan('loans'))->all(array('condition' => 'WHERE returned_at IS NULL', 'order' => 'ORDER BY due_on')) as $loan) {
-            $book = (new Book('books'))->find($loan->book_id);
+        foreach (Loan::with('book')->whereNull('returned_at')->orderBy('due_on')->get() as $loan) {
             $loans[] = array(
                 'book_id' => $loan->book_id,
-                'title' => $book ? $book->title : '',
+                'title' => $loan->book['title'] ?? '',
                 'borrower' => $loan->borrower,
                 'due_on' => $loan->due_on,
                 'overdue' => $loan->due_on < date('Y-m-d')
@@ -240,6 +245,9 @@ class ListLoans extends Service
 ```
 
 - `readOnly: true`: agents may call it freely, and a successful call is not written to the audit log.
+- `Loan::with('book')` reads the book of every loan in **one** more query (the singular `book` follows `book_id`, as
+  `with('author')` followed `author_id` in lesson 04). `$loan->book` is that book as an array: `$loan->book['title']`.
+  Reading each book with `Book::find()` inside the loop would cost one query per loan.
 - `overdue` compares two `Y-m-d` dates as text, which works because the format sorts like the dates.
 
 Check:
@@ -294,8 +302,8 @@ Lend Kindred (book 3) to Sam for 7 days:
 ```bash
 curl -s -X POST -H "Accept: application/json" -H "Content-Type: application/json" -H "Authorization: Bearer $LOANS_TOKEN" -d '{"book_id": 3, "borrower": "Sam", "days": 7}' -w " [%{http_code}]\n" http://localhost:8080/api/loans
 ```
-Expected: `{"data":{"id":1,"book_id":3,"borrower":"Sam","due_on":"2026-11-07","returned_at":null,...}} [201]`.
-`due_on` is today plus 7 days: the test run was on 2026-10-31, yours shows your date.
+Expected: `{"data":{"id":1,"book_id":3,"borrower":"Sam","due_on":"2026-11-14","returned_at":null,...}} [201]`.
+`due_on` is today plus 7 days: the test run was on 2026-11-07, yours shows your date.
 
 Run the same command with `"borrower": "Alex"`: `{"error":{"code":"conflict","message":"This book is already lent to Sam"}} [409]`.
 
@@ -308,8 +316,9 @@ curl -s -H "Accept: application/json" -H "Authorization: Bearer $LOANS_TOKEN" ht
 curl -s -X POST -H "Accept: application/json" -H "Authorization: Bearer $LOANS_TOKEN" -w " [%{http_code}]\n" http://localhost:8080/api/books/3/return
 curl -s -X POST -H "Accept: application/json" -H "Authorization: Bearer $LOANS_TOKEN" -w " [%{http_code}]\n" http://localhost:8080/api/books/3/return
 ```
-Expected: `{"data":[{"book_id":3,"title":"Kindred","borrower":"Sam","due_on":"2026-11-07","overdue":false}]}`, then
-the loan with a `returned_at` date `[200]`, then `{"error":{"code":"not_found","message":"Book #3 is not lent"}} [404]`.
+Expected: `{"data":[{"book_id":3,"title":"Kindred","borrower":"Sam","due_on":"2026-11-14","overdue":false}]}`, then
+the loan with a `returned_at` date `[201]` (a POST that changes data), then
+`{"error":{"code":"not_found","message":"Book #3 is not lent"}} [404]`.
 
 ### Step 6 - The page
 
@@ -421,7 +430,7 @@ form.addEventListener('submit', async (event) => {
 const allowed = new Set((await capabilities()).map((c) => c.name))
 if (allowed.has('list_loans')) {
   form.hidden = !allowed.has('lend_book')
-  const books = await listBooks()
+  const books = (await listBooks()).data   // the first page: 20 books
   document.getElementById('loan-book').replaceChildren(...books.map((b) => new Option(b.title, b.id)))
   await showLoans()
 } else {
@@ -432,6 +441,8 @@ if (allowed.has('list_loans')) {
 - `capabilities()` asks the server what this visitor may call (lesson 11). A visitor gets the sign-in button; a
   signed-in user gets the form and the list.
 - `showError()` shows the field messages, or the message of a refusal such as the 409.
+- `(await listBooks()).data` fills the Book list with the first page of list_books: 20 books, enough for this club.
+  A bigger catalog would ask for the next pages (`listBooks({ page: 2 })`) or use `searchBooks()`.
 
 Regenerate both clients (rule of lesson 06: after every change to a capability):
 ```bash
@@ -461,16 +472,16 @@ only; a new session sees the new tools) and ask:
 ```
 Which books are lent right now? Then lend Kindred to Ana for 3 days.
 ```
-Claude calls `list_loans`, finds the id of Kindred (`list_books` or `search_books`) and calls `lend_book`. In the test
-run it answered: "Before this loan, only Invisible Cities was out: Sam has it, due 2026-11-07, not overdue. I lent
-Kindred to Ana for 3 days, and it's due back on 2026-11-03." Reload http://localhost:8080/loans: Kindred is there.
+Claude calls `list_loans`, finds the id of Kindred (`list_books` or `search_books`) and calls `lend_book`. It
+answers something like: "Before this loan, only Invisible Cities was out: Sam has it, due 2026-11-14, not overdue. I
+lent Kindred to Ana for 3 days, and it's due back on 2026-11-10." (with your dates). Reload http://localhost:8080/loans: Kindred is there.
 
 Check the audit log:
 ```bash
 docker compose exec dev-box php caligrafer.php audit --limit 5
 ```
-Expected, among the lines: `mcp   token  6   lend_book   ok` (6 is the id of the loans desk token in the test run;
-yours may differ). The successful `list_loans` call is not there: read-only successes are not audited.
+Expected, among the lines: `mcp   token  <id>   lend_book   ok`, where `<id>` is the number `token create` printed for
+the loans desk token (it depends on the tokens you made before). The successful `list_loans` call is not there: read-only successes are not audited.
 
 > **If it doesn't work**
 >
@@ -520,7 +531,9 @@ not public, no level:
   that book and returns the loan; no open loan: ServiceError::notFound "Book #<id> is not lent".
 - list_loans (ListLoans, scope loans:read, readOnly): the open loans sorted by due_on, each with book_id, title,
   borrower, due_on and overdue (true when due_on is before today).
-Write descriptions for AI agents (say where book_id comes from: list_books, search_books). Bound queries only.
+Write descriptions for AI agents (say where book_id comes from: list_books, search_books). Use the query builder
+(Loan::where(...)->whereNull('returned_at'), Loan::insert, Loan::with('book') for the titles of list_loans): no SQL
+strings, no query per loan.
 
 Experiences:
 - REST in web.php, in a "// LOANS" block above "// MUST NOT BE REMOVED": GET /api/loans list_loans,
@@ -546,7 +559,7 @@ then `LOANS_TOKEN=cq_...`. Never let a secret go into the chat.
 - [ ] `capabilities` shows `lend_book loans:write writes`, `list_loans loans:read read`, `return_book loans:write writes`, and **none** of them `public`.
 - [ ] `list_loans` has `readOnly: true`; `lend_book` and `return_book` have no `destructive` (they change, they do not delete) and no `level`.
 - [ ] `handle()` has no `echo`, `view()`, `redirect()` or `$_POST`/`$_SESSION`: it returns data or throws `ServiceError`.
-- [ ] The queries use `?` and `bindings`, never an input inside the SQL text.
+- [ ] The queries use the query builder (`Loan::where()`, `whereNull()`, `with('book')`): no SQL string, no input inside SQL text, no `Book::find()` inside a loop.
 - [ ] The conflict is a `ServiceError::conflict` (409), not `invalid` (422).
 - [ ] The routes are in web.php above `// MUST NOT BE REMOVED`, and the return route uses `{book_id}`.
 - [ ] Both clients were regenerated (`public/js/capabilities.js` has `lendBook`, `listLoans`, `returnBook`).
@@ -614,16 +627,11 @@ class OverdueLoans extends Service
     public function handle(array $input, Context $context)
     {
         $late = array();
-        $loans = (new Loan('loans'))->all(array(
-            'condition' => 'WHERE returned_at IS NULL AND due_on < ?',
-            'bindings' => array(date('Y-m-d')),
-            'order' => 'ORDER BY due_on'
-        ));
+        $loans = Loan::with('book')->whereNull('returned_at')->where('due_on', '<', date('Y-m-d'))->orderBy('due_on')->get();
         foreach ($loans as $loan) {
-            $book = (new Book('books'))->find($loan->book_id);
             $late[] = array(
                 'book_id' => $loan->book_id,
-                'title' => $book ? $book->title : '',
+                'title' => $loan->book['title'] ?? '',
                 'borrower' => $loan->borrower,
                 'due_on' => $loan->due_on
             );

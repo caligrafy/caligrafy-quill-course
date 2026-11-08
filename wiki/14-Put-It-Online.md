@@ -44,6 +44,8 @@ server:
 4. it runs the migrations of `application/migrations` that never ran on this database, in the order of their numbers,
    and records each one in `caligrafy_migrations` (lesson 03).
 
+Since Caligrafy Quill 2.19.0 it also compiles `.env` to `.env.php` first, which every page then reads faster.
+
 A script that drops, deletes or truncates is never run a second time, even if it changed: that would destroy data. And
 `seed.sql` is never run: sample data is not production data. So the database online starts with your tables and no
 rows. This lesson shows how data you need online gets in: a script of its own.
@@ -83,13 +85,13 @@ free on Caligrafy Cloud.
 
 ### Step 1 - Check that the project is on Caligrafy Quill 2.4.0 or later
 
-The production image and the deploy step come with Caligrafy Quill 2.4.0; the release of lesson 01, 2.18.2, has them. Check it:
+The production image and the deploy step come with Caligrafy Quill 2.4.0; the release of lesson 01, 2.19.0, has them. Check it:
 ```bash
 docker compose exec dev-box php caligrafer.php version
 ```
-Expected: `Caligrafy Quill 2.18.2`. Then `ls Dockerfile` shows the file, and you can go to step 2.
+Expected: `Caligrafy Quill 2.19.0`. Then `ls Dockerfile` shows the file, and you can go to step 2.
 
-**Only if it says an older version** (you started the course before 2.18.2 was released): 2.4.0 has the image and the
+**Only if it says an older version** (you started the course before 2.19.0 was released): 2.4.0 has the image and the
 deploy step, and 2.7.0 adds the browser sign-in of step 7 and the `ship` skill. (2.11.0 also brings Caligrafy's look
 of lesson 06, and 2.12.0 the side by side of lessons 09 and 10: the pages you wrote on `layoutblocks.pug` keep
 working as they are.) Update the project to the course's
@@ -102,29 +104,29 @@ curl -fsSL https://raw.githubusercontent.com/caligrafy/caligrafy-quill/master/fr
 ```
 Then, with 2.9.0 or later:
 ```bash
-docker compose exec dev-box php caligrafer.php update 2.18.2
+docker compose exec dev-box php caligrafer.php update 2.19.0
 ```
 or, before 2.9.0:
 ```bash
-docker compose exec dev-box php -r "require 'framework/core/Updater.php'; exit((new Caligrafy\Updater('.'))->run('2.18.2'));"
+docker compose exec dev-box php -r "require 'framework/core/Updater.php'; exit((new Caligrafy\Updater('.'))->run('2.19.0'));"
 ```
 - `framework/` and `claude-plugin/` belong to the framework: the new ones replace them. `claude-plugin/` brings the
   `/caligrafy-quill:deploy` and `/caligrafy-quill:ship` skills.
 - The framework files you never changed (`caligrafer.php`, `public/css/tokens.css`...) are replaced, and the new ones
-  (`Dockerfile`, `Dockerfile.dockerignore`) are added. `.gitignore` gets its new line, `/.caligrafy/` (step 7), and
-  `.env` the new settings with their defaults.
+  (`Dockerfile`, `Dockerfile.dockerignore`) are added. `.gitignore` gets its new lines, `/.caligrafy/` (step 7) and
+  `.env.php` (step 2), and `.env` the new settings with their defaults.
 - A file you changed is kept, with the new version next to it as `<file>.caligrafy-new`: merge what you need, then
   delete it. Everything replaced is copied first to `backups/`.
 - It ends with `upgrade --apply` for `application/` (lesson 12, step 5). `web.php` is yours: never replaced.
 
-With Claude Code, `/caligrafy-quill:update 2.18.2` does the same and merges the `.caligrafy-new` files with you.
+With Claude Code, `/caligrafy-quill:update 2.19.0` does the same and merges the `.caligrafy-new` files with you.
 
 Check the version and the new command:
 ```bash
 docker compose exec dev-box php caligrafer.php doctor
 docker compose exec dev-box php caligrafer.php help
 ```
-Expected: the first line of `doctor` is `Caligrafy doctor (read-only): Caligrafy Quill 2.18.2`, and `help` lists
+Expected: the first line of `doctor` is `Caligrafy doctor (read-only): Caligrafy Quill 2.19.0`, and `help` lists
 `deploy` and `cloud`. Run the tests (`php caligrafer.php test`) and the smoke test of lesson 12: they still pass.
 Commit the update.
 
@@ -173,8 +175,22 @@ Check what `deploy` would do, on your computer:
 ```bash
 docker compose exec dev-box php caligrafer.php deploy
 ```
-Expected: `Caligrafy deploy`, then `OK` lines for the framework tables and each script: `run` the first time,
-`up to date` when you run it again.
+Expected: `Caligrafy deploy`, then `OK` lines: the settings (`.env compiled to .env.php`, see below), the framework
+tables and each script, `run` the first time and `up to date` when you run it again. A second run gives:
+```
+ Caligrafy deploy
+ caligrafy-schedule {"version":1,"jobs":[]}
+  OK    Settings: .env compiled to .env.php (read without parsing on every request)
+  OK    Framework tables: tokens, audit log, job runs, jobs, cache, migrations, scripts
+  OK    application/models/Auth/create_db.sql: up to date
+  OK    application/models/Bookshelf/create_db.sql: up to date
+  OK    application/models/Loans/create_db.sql: up to date
+  OK    application/models/Online/create_db.sql: up to date
+  OK    Migrations: up to date
+```
+`.env.php` is `.env` compiled to PHP (since Caligrafy Quill 2.19.0): pages read it without reading `.env` again on
+every request, and only while `.env` has not changed. Online the deploy step writes it at every start; `.gitignore`
+keeps it out of git, like `.env`. Never commit it.
 
 > **If it doesn't work**
 >
@@ -284,8 +300,8 @@ Open https://bookshelf-sam.caligrafy.com/books: the catalog with its five books,
 curl -s https://bookshelf-sam.caligrafy.com/api/books | head -c 300
 bash qa/bookshelf/smoke.sh https://bookshelf-sam.caligrafy.com
 ```
-The first command prints the start of `{"data":[...` with the five books: the REST API of lesson 07, online. The smoke
-test of lesson 12 runs against the server: the same 8 checks pass, including `.env is never served`. And the card of
+The first command prints the start of `{"data":{"data":[...` with the five books: the REST API of lesson 07, online.
+The smoke test of lesson 12 runs against the server: the same 10 checks pass, including `.env is never served`. And the card of
 step 3:
 ```bash
 curl -s https://bookshelf-sam.caligrafy.com/books | grep -o 'og:[a-z_]*" content="[^"]*'
@@ -469,8 +485,8 @@ would happen.
 
 ## With Claude
 
-Start Claude Code in the `bookshelf` folder (`claude`). The update of step 1 brought the plugin's skills (plugin 1.30.2
-with Caligrafy Quill 2.18.2).
+Start Claude Code in the `bookshelf` folder (`claude`). The update of step 1 brought the plugin's skills (plugin 1.31.0
+with Caligrafy Quill 2.19.0).
 
 ### Ship with the plugin
 
@@ -569,8 +585,8 @@ Reference: [`checkpoints/lesson-14`](https://github.com/caligrafy/caligrafy-quil
 You have finished the course: Bookshelf has ten capabilities, five experiences, people with permissions, tokens with
 scopes, tests, an audit log, and an address on the internet. The
 [Caligrafy Quill wiki](https://github.com/caligrafy/caligrafy-quill/wiki) documents the modules the course did not
-cover (file uploads, payments, social cards, the AI and machine learning modules). The appendix shows what is under
-the hood: routes, controllers and forms written by hand.
+cover (file uploads, payments, webhooks, the AI and machine learning modules). The appendix shows what is under
+the hood: what `Route::page`, `Route::form` and the capability routes replace, written by hand.
 
 ## Quiz
 

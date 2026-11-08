@@ -43,7 +43,7 @@ function row (book) {
   const link = li.querySelector('a')
   link.href = 'books/' + book.id
   link.textContent = book.title
-  li.querySelector('.cq-row-meta').textContent = book.author + ', ' + book.published_year
+  li.querySelector('.cq-row-meta').textContent = book.author.name + ', ' + book.published_year
 
   if (!allowed.has('delete_book')) return li   // only administrators see Delete
   const remove = document.createElement('button')
@@ -64,9 +64,9 @@ function row (book) {
 }
 
 async function showBooks () {
-  const books = await listBooks(authorId ? { author_id: authorId } : {})
-  list.replaceChildren(...books.map(row))
-  empty.hidden = books.length > 0
+  const page = await listBooks(authorId ? { author_id: authorId } : {})   // a page: data, total, page, per_page, pages
+  list.replaceChildren(...page.data.map(row))
+  empty.hidden = page.total > 0
 }
 
 form.addEventListener('submit', async (event) => {

@@ -18,11 +18,11 @@ class ReturnBook extends Service
 
     public function handle(array $input, Context $context)
     {
-        $loans = new Loan('loans');
-        $open = $loans->all(array('condition' => 'WHERE book_id = ? AND returned_at IS NULL', 'bindings' => array($input['book_id'])));
+        $open = Loan::where('book_id', $input['book_id'])->whereNull('returned_at')->first();
         if (!$open) {
             throw ServiceError::notFound("Book #{$input['book_id']} is not lent");
         }
-        return $loans->update(array('returned_at' => date('Y-m-d H:i:s')), $open[0]->id);
+        Loan::where('id', $open->id)->update(array('returned_at' => date('Y-m-d H:i:s')));
+        return Loan::find($open->id);
     }
 }
