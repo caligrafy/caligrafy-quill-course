@@ -171,11 +171,11 @@ with ` Signed in as <your email> (0 credits). The token is in .caligrafy/cloud.j
 ### Step 5 - Create the app and deploy it
 
 ```bash
-docker compose exec dev-box php caligrafer.php cloud create bookshelf-sam
+docker compose exec dev-box php caligrafer.php cloud create bookshelf-sam --repo https://github.com/sam/bookshelf
 ```
-It reads the repository from `git remote get-url origin` (or give `--repo https://github.com/sam/bookshelf`, and
-`--branch` when it is not `main`). It answers ` Created https://bookshelf-sam.caligrafy.com from
-https://github.com/sam/bookshelf (main).`, and, because the repository is private, the deploy key (a line that starts
+`--repo` names the repository, because the `dev-box` container has no `git` to read your `origin` (with PHP on your
+computer, `php caligrafer.php cloud create bookshelf-sam` reads it for you). Add `--branch` when it is not `main`. It
+answers ` Created https://bookshelf-sam.caligrafy.com from https://github.com/sam/bookshelf (main).`, and, because the repository is private, the deploy key (a line that starts
 with `ssh-ed25519`), saved in `.caligrafy/bookshelf-sam-deploy-key.pub`. Add it on GitHub: the repository >
 **Settings** > **Deploy keys** > **Add deploy key**, title `Caligrafy Cloud`, the line in **Key**, **Allow write access**
 off. With the [GitHub CLI](https://cli.github.com/) it is one command:
@@ -196,7 +196,7 @@ time; the logs start with the deploy step of step 2.
 > | What you see | Cause | Fix |
 > |---|---|---|
 > | `remote origin already exists` | A remote was added before | `git remote set-url origin https://github.com/sam/bookshelf.git` |
-> | `Usage: php caligrafer.php cloud create <name> [--repo ...]` | No GitHub `origin` remote | Add it (step 3), or give `--repo` |
+> | `Usage: php caligrafer.php cloud create <name> [--repo ...]` | No `--repo`, in the `dev-box` container (it has no `git`) or without a GitHub `origin` remote | Give `--repo https://github.com/sam/bookshelf` |
 > | The name is refused as taken or reserved | Someone has it, or it is kept for the service | Choose another one, such as `bookshelf-sam-2` |
 > | `The deployment failed` and `Permission denied (publickey)` in the log | The deploy key is not on the repository | Add it, then `cloud deploy` again |
 > | `The deployment failed` with a composer or PHP error | The build itself failed | Build the image on your computer (step 2): the same error shows there |

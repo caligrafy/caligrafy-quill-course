@@ -484,7 +484,8 @@ docker compose logs scheduler
 Expected: ` Running the scheduled jobs every minute (Ctrl-C to stop)`. From now on the queue empties itself within a
 minute, and tomorrow at 8:00 New York time the reminders go out. Online, deploy (lesson 14): Caligrafy Cloud reads the
 two jobs from the deploy step's `caligrafy-schedule` line, and `cloud jobs bookshelf-sam` shows their last and next
-runs; `cloud secret set` gives the online app its own `VAPID_*` keys if you want push online (never commit `.env`).
+runs. Caligrafy Cloud also gives the online app its own `VAPID_*` keys (`cloud secret list bookshelf-sam` shows their
+names), so there is nothing to set for push online; your local keys stay in `.env`, never in git.
 
 > **If it doesn't work**
 >
