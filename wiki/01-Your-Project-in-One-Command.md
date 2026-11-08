@@ -67,7 +67,7 @@ cd bookshelf
 Expected: `Cloning into 'bookshelf'...`, then
 ```text
 warning: refs/tags/v2.21.2 f2b1127933128dffb062d2480e3c29f990c0635a is not a commit!
-Note: switching to 'c00811d6ddc6c126a4b8c76abd81a10eb52ed1ce'.
+Note: switching to 'c00811de989209a88521b212e994bc926764fc8d'.
 
 You are in 'detached HEAD' state. You can look around, make experimental
 ...
