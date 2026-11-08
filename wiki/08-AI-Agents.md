@@ -58,8 +58,7 @@ of them; lesson 11 closes the writes and the lists become different.
 Over stdio there is no network and no token is needed: without one, the command has **full local access**, like any
 command you type. Set `CALIGRAFY_TOKEN` to make it act as a token, with that token's scopes.
 
-**Build once, in practice.** In this lesson you write one class. You do not touch `web.php`, a page or a controller,
-and `search_books` is at once a tool for agents, `POST /capabilities/search_books` for programs, and a function of the
+**Build once, in practice.** In this lesson you write one class. You do not touch `web.php` or a page, and `search_books` is at once a tool for agents, `POST /capabilities/search_books` for programs, and a function of the
 JS client that lesson 09 generates.
 
 ---
@@ -157,7 +156,7 @@ curl -s -X POST -H "Content-Type: application/json" -H "Accept: application/json
 ```
 Expected:
 ```text
-{"jsonrpc":"2.0","id":1,"result":{"protocolVersion":"2025-06-18","capabilities":{"tools":{"listChanged":false}},"serverInfo":{"name":"caligrafy-app","title":"caligrafy-app","version":"2.21.0"},"instructions":"Tools are the capabilities of this application that your token allows. Tools marked destructive delete or overwrite data: confirm with the user first."}} [200]
+{"jsonrpc":"2.0","id":1,"result":{"protocolVersion":"2025-06-18","capabilities":{"tools":{"listChanged":false}},"serverInfo":{"name":"caligrafy-app","title":"caligrafy-app","version":"2.21.2"},"instructions":"Tools are the capabilities of this application that your token allows. Tools marked destructive delete or overwrite data: confirm with the user first."}} [200]
 ```
 The answer has the same `id` as the question: that is how an agent matches them. `serverInfo.name` is `APP_NAME`, or
 `caligrafy-app` when it is not set. Then the agent says it is ready; a notification gets no answer:
@@ -357,7 +356,7 @@ The agent asks your permission the first time it uses each tool, calls `list_aut
 - [ ] `application/services/Bookshelf/SearchBooks.php` is identical to the File block; no other file changed
       (`git status --short` shows only that file).
 - [ ] `search_books` answers 1 book for `magic`, `{"data":[]}` for `zzzz`, and 422 for `a`.
-- [ ] `initialize` answers `"version":"2.21.0"`; `tools/list` gives 12 tools with token #1 and 8 with token #2.
+- [ ] `initialize` answers `"version":"2.21.2"`; `tools/list` gives 12 tools with token #1 and 8 with token #2.
 - [ ] A refused `tools/call` answers `"isError":true` with the field message; an unknown tool answers `-32602`.
 - [ ] Without a token, `/mcp` answers 401.
 - [ ] Over stdio, `CALIGRAFY_TOKEN` of token #2 hides `list_users`.

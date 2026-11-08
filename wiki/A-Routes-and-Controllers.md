@@ -1,19 +1,18 @@
 # Appendix A - Routes and controllers by hand
 
-**In this appendix** you look under the hood of the routes of the lessons. You write routes that answer with a
-function, a controller for HTTP that no declarative route gives (an RSS feed) which calls a capability with
-`$this->call()`, and then, the classic way, a controller that reads the tables itself and a JSON route. Then you compare
-them with capabilities, and see what the one-line routes (`Route::page`, `Route::form`, `Route::auth`,
-`Route::download`) do for you.
+**In this appendix** you look under the hood of the routes of the lessons, and at the way applications were written
+before every request could be declared. You write routes that answer with a function, the feed of lesson 16 again as a
+controller that calls a capability with `$this->call()`, and a classic controller that reads the tables itself and a
+JSON route. Then you compare them with capabilities, and see what the one-line routes (`Route::page`, `Route::form`,
+`Route::auth`, `Route::download`, `Route::action`) do for you.
 
-> **This is another way, not the course's way.** Bookshelf's pages, forms, sign-in, exports, REST and agents are each
-> one line of `web.php` on capabilities. A controller is right only for HTTP that none of them covers: a response that
-> is neither a page, a redirect, JSON nor a file (an RSS feed, an image made on the fly), an action that calls several
-> capabilities with conditions, an OAuth callback. Even then it holds no rule: it calls capabilities. The classic
-> controller of step 3 is shown so that you can read older projects.
+> **This is the older way, not the course's way.** Since Caligrafy Quill 2.21 an application needs no controller: every
+> request is one line of `web.php` on a capability, and what a page or a form cannot say is a `Route::action` (lesson
+> 16). Controllers still work, and existing ones can stay. Read this appendix to understand a project that has them, and
+> to move one to a declaration. Do not start a new one.
 
-**Before you start:** this appendix is optional. Do it any time after lesson 11; its checkpoint is built on
-`lesson-15`. The containers run (`docker compose ps`).
+**Before you start:** this appendix is optional. Do it any time after lesson 16; its checkpoint is built on
+`lesson-16`. The containers run (`docker compose ps`).
 
 **Time:** 45 minutes.
 
@@ -31,7 +30,8 @@ Route::get('/about', function () { echo '...'; });
 //     └─ the HTTP method: get, post, put or delete
 ```
 
-**Closure.** `function () { ... }` without a name, written where it is used. Fine for a tiny text answer.
+**Closure.** `function () { ... }` without a name, written where it is used. Fine for a tiny text answer. Never write
+data in one: a closure has no permission rules, no audit and no CSRF check for JSON calls.
 
 **Route variable.** `{name}` in `/hello/{name}` matches any value in that position. A closure reads it with
 `request()->fetch('name')`, a controller with `$this->request->fetch('name')`.
@@ -104,45 +104,13 @@ try {
     
     // ROUTE DEFINITION: get, post, put and delete
     Route::redirect('/', '/books');   // the home of Bookshelf is its catalog
-    Route::get('/helloworld', function() { echo "Hello World"; });
-	
-    // SIGN IN, SIGN OUT, SIGN UP: /login, /logout, /register and /notAuthorized; after signing in or up, the catalog
-    Route::auth(['home' => '/books', 'signInAfterRegister' => true]);
+    Route::redirect('/catalog', '/books', 301, ['keepQuery' => true]);   // the catalog's old address: the filter of its address goes along
 
-    // User Administration Routes - Uncomment only if AUTHENTICATION activated above
-	// Route::get('/admin', 'Caligrafy\\Controllers\\AdminController');
-	// Route::get('/users', 'Caligrafy\\Controllers\\AdminController');
-	// Route::get('/users/{id}/edit', 'Caligrafy\\Controllers\\AdminController@editUserForm');
-	// Route::put('/users/{id}/edit', 'Caligrafy\\Controllers\\AdminController@updateUser');
-	// Route::delete('/users/{id}/edit', 'Caligrafy\\Controllers\\AdminController@deleteUser');
-
-    // GPT AI controller
-    // Route::get('/ai', 'Caligrafy\\Controllers\\AIController');
-    // Route::post('/ai', 'Caligrafy\\Controllers\\AIController@query');
+    // SIGN IN, SIGN OUT: /login, /logout and /notAuthorized; after signing in, /login?return=<page>, else the catalog
+    Route::auth(['home' => '/books', 'register' => false]);   // no /register: people join with the form of /join
 
     // ROUTING TO JAVASCRIPT APPS
-    // Make sure you create a JS app or a Vue app in Caligrafer first
-    Route::get('/apps/{appName}', 'Caligrafy\\Controllers\\ClientController'); // you can specify any path as long as it ends with appName
-
-    
-    // BOT PAGE ROUTES
-    Route::get('/bot/{appName}', 'Caligrafy\\Controllers\\ClientController');  // A botSkillId needs to be provided in the URL. For Example: ?botSkillId=62196ce3-0b22-4aea-b2f2-d39730c03797
-    
-    // BOT DATA ROUTES
-    // routes need to start with reserved path __bots__ 
-    Route::post('/__bots__/{appName}/communicate', 'Caligrafy\\Controllers\\WatsonController@communicate');
-    Route::post('/__bots__/{appName}/{appId}', 'Caligrafy\\Controllers\\WatsonController@connect');
-    Route::delete('/__bots__/{appName}', 'Caligrafy\\Controllers\\WatsonController@end');   
-
-    /* ML Routes
-     *
-     * If you don't specify an up, it will go to the face, body detector.
-     * Specify an app as a URI Parameter ?app=<name of app>
-     * 
-     * There are 3 possible apps: featureextractor, neuralnetwork and posedetector
-    */
-    Route::get('/ml/{appName}', 'Caligrafy\\Controllers\\ClientController'); 
-    
+    Route::page('/apps/{appName}', 'Client/app', ['query' => ['app' => 'index']]);   // public/<appName>/index.php, or ?app=<file>
 
     // BUILD ONCE: every capability, for the JS client and AI agents
     Route::capabilities('/capabilities');   // the capabilities for the JS client of the Vue apps
@@ -150,13 +118,24 @@ try {
     Route::notifications();                 // the pages notification emails link to (confirm, unsubscribe)
 
     // BOOKSHELF PAGES: rendered on the server with the data of the capabilities; each form calls one capability
-    Route::page('/books', 'Bookshelf/books', ['data' => ['books' => 'list_books', 'authors' => 'list_authors'], 'with' => ['install' => true]]);   // install: offer to add it to the home screen
+    Route::page('/books', 'Bookshelf/books', ['query' => ['author_id'], 'data' => ['books' => 'list_books', 'authors' => 'list_authors'], 'with' => ['install' => true]]);   // install: offer to add it to the home screen
     Route::form('/books', 'create_book', ['success' => '/books/{id}', 'flash' => 'Book added']);
     Route::page('/books/{id}', 'Bookshelf/book', ['data' => ['book' => 'get_book', 'authors' => 'list_authors'], 'notFound' => 'Bookshelf/notfound']);
     Route::form('/books/{id}', 'update_book', ['method' => 'PUT', 'success' => '/books/{id}', 'flash' => 'Saved']);
     Route::form('/books/{id}', 'delete_book', ['method' => 'DELETE', 'success' => '/books', 'flash' => 'Book deleted']);
     Route::download('/authors.csv', 'list_authors', ['filename' => 'authors.csv']);   // the same capability, as a file
-    Route::page('/people', 'Bookshelf/people', ['level' => 1, 'data' => ['people' => 'list_users']]);   // administrators only
+    Route::page('/people', 'Bookshelf/people', ['level' => 1, 'comeBack' => true, 'data' => ['people' => 'list_users']]);   // administrators only
+
+    // JOIN THE CLUB: the only way to create an account; people already signed in go to the catalog
+    Route::page('/join', 'Bookshelf/join', ['visitorsOnly' => '/books']);
+    Route::form('/join', 'register_user', [
+        'visitorsOnly' => '/books',
+        'same' => ['passcode_again' => ['passcode', 'The two passwords are not the same']],
+        'accepted' => ['rules' => 'Accept the rules of the club to join'],
+        'signsIn' => 'id',
+        'success' => '/books',
+        'flash' => 'Welcome to the club, {username}'
+    ]);
 
     // BOOKSHELF API: the same capabilities, for other applications (JSON)
     Route::capability('GET', '/api/books', 'list_books');
@@ -167,13 +146,19 @@ try {
     Route::capability('GET', '/api/authors', 'list_authors');
 
     // LOANS: one more feature, every experience: a page and its forms, REST, the JS clients and AI agents
-    Route::page('/loans', 'Loans/index', ['signedIn' => true, 'data' => ['loans' => 'list_loans', 'books' => 'list_books']]);
+    Route::page('/loans', 'Loans/index', ['signedIn' => true, 'comeBack' => true, 'data' => ['loans' => 'list_loans', 'books' => 'list_books']]);
     Route::form('/loans', 'lend_book', ['success' => '/loans', 'flash' => 'Lent to {borrower} until {due_on}']);
     Route::form('/loans/{book_id}/return', 'return_book', ['success' => '/loans', 'flash' => 'Returned by {borrower}']);
+    Route::form('/books/{book_id}/borrow', 'lend_book', ['inputs' => function () { return ['borrower' => Auth::user()->username ?? '', 'days' => 14]; }, 'success' => '/loans', 'flash' => 'It is yours until {due_on}']);   // the server says who borrows
     Route::form('/loans/remind', 'send_reminders', ['success' => '/loans', 'flash' => 'The reminders are on their way (job {job})']);   // administrators
     Route::capability('GET', '/api/loans', 'list_loans');
     Route::capability('POST', '/api/loans', 'lend_book');
     Route::capability('POST', '/api/books/{book_id}/return', 'return_book');
+
+    // WHAT A PAGE OR A FORM CANNOT SAY: each answered by a capability declared webOnly: true
+    Route::action('/surprise', 'surprise_me');                 // a request that decides where to go
+    Route::action('/feed', 'books_feed');                      // an answer that is XML
+    Route::action('/loans/{book_id}/renew', 'renew_loan', ['signedIn' => true, 'comeBack' => true]);   // a link that changes data
 
     // APPENDIX A: routes and controllers written by hand
     Route::get('/about', function () {
@@ -183,7 +168,7 @@ try {
         $name = request()->fetch('name');        // the {name} part of the address
         echo 'Hello ' . sanitize($name) . '!';   // sanitize: never print what a visitor typed as is
     });
-    Route::get('/feed', 'Bookshelf\\FeedController@books');        // custom HTTP: a controller that calls a capability
+    Route::get('/classic/feed', 'Bookshelf\\FeedController@books');   // the older way of lesson 16's /feed: a controller that calls a capability
     Route::get('/authors/{id}', 'Bookshelf\\AuthorController@show');   // under the hood: the classic way
     Route::get('/v1/authors', 'Bookshelf\\AuthorController@index');
 
@@ -212,7 +197,9 @@ Hello &lt;script&gt;!
 `sanitize()` turns `<`, `>`, `&` and quotes into HTML entities: an address with a `<script>` shows text instead of
 running it. Always escape what comes from an address or a form before you print it (Pug does it for you).
 
-### Step 2 - A controller that calls a capability
+### Step 2 - The older way of the feed: a controller that calls a capability
+
+Lesson 16 declared the feed: `Route::action('/feed', 'books_feed')`. The same answer, as a controller:
 
 **File `application/controllers/Bookshelf/FeedController.php`** (an RSS feed from list_books):
 
@@ -247,8 +234,8 @@ class FeedController extends Controller
 ```
 
 ```bash
-curl -s -i http://localhost:8080/feed | grep -i "HTTP/\|content-type"
-curl -s http://localhost:8080/feed | head -c 300
+curl -s -i http://localhost:8080/classic/feed | grep -i "HTTP/\|content-type"
+curl -s http://localhost:8080/classic/feed | head -c 300
 ```
 Expected:
 ```text
@@ -257,8 +244,9 @@ Content-Type: application/rss+xml; charset=utf-8
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0"><channel><title>Bookshelf</title><link>http://localhost:8080/books</link><description>The books we love</description><item><title>A Wizard of Earthsea</title><link>http://localhost:8080/books/1</link>
 ```
-The feed has the books of `list_books`, sorted and paged by its rules; if `list_books` were closed to visitors, the
-feed would be too. Add `http://localhost:8080/feed` to a feed reader: each book is an item with its link.
+The feed is the one `/feed` answers, with the books of `list_books`, sorted and paged by its rules. The difference is
+what you must remember: this class sets its own header and prints, it is not audited as a capability, and its address
+is only known to `web.php`. `books_feed` is declared like everything else, and tested with `$this->action()`.
 
 ### Step 3 - Under the hood: the classic controller
 
@@ -343,7 +331,7 @@ curl -s -H "Accept: application/json" -H "Authorization: Bearer $WRITER" -w " [%
 Expected (`$WRITER` is the "Claude Code" token of lesson 11, `books:read books:write`):
 ```text
 {"error":{"code":1004,"message":"Access Denied: send the page's CSRF token in an X-CSRF-Token header (pages, with the session cookie) or Authorization: Bearer <personal access token> (programs and agents)"}} [401]
-{"error":{"code":1004,"message":"Access Denied: this personal access token is unknown, expired or revoked, or does not grant everything (*) as controller routes need: call capabilities with scoped tokens"}} [401]
+{"error":{"code":1004,"message":"Access Denied: this personal access token is unknown, expired or revoked, or does not grant everything (*) as this route needs: call capabilities with scoped tokens"}} [401]
 ```
 A controller route accepts only a token with `*`. Create one, call, and revoke it at once (a `*` token may call
 everything):
@@ -375,7 +363,7 @@ envelope, and each author has a `table` field: the classic `api()` output of a m
 > | `[ERROR 1001] Invalid Controller or Action` (404) | The route names a class or action that does not exist: `Bookshelf\\` missing, a typo, or no `namespace` line | Compare the route and the file |
 > | `Cannot redeclare class Bookshelf\AuthorController` | A copy of the file is elsewhere in `application/` | Delete the copy |
 > | Apache's own `404 Not Found` for `/hello/a%2Fb` | Apache refuses an encoded `/` in a path | Do not put `/` in a route variable |
-> | The feed is an HTML error page | `list_books` refused (a rule), or a PHP error | Call `list_books` with `curl` (lesson 04) and read the answer |
+> | `/classic/feed` is an HTML error page | `list_books` refused (a rule), or a PHP error | Call `list_books` with `curl` (lesson 04) and read the answer |
 
 ---
 
@@ -383,17 +371,17 @@ envelope, and each author has a `table` field: the classic `api()` output of a m
 
 - [ ] `web.php`, the two controllers and `author.pug` are identical to the File blocks.
 - [ ] `/about`, `/hello/Ursula` and `/hello/%3Cscript%3E` answer as in step 1.
-- [ ] `/feed` is `application/rss+xml` and lists the books of `list_books`.
+- [ ] `/classic/feed` is `application/rss+xml` and answers the same feed as `/feed`.
 - [ ] `/authors/99` answers 404; `/v1/authors` answers 401 to the `books:*` token and the JSON to a `*` token, which
       you revoked.
 
 ## With Claude
 
 ```text
-In application/config/routing/web.php, in a block "// APPENDIX A: routes and controllers written by hand" above
-"// MUST NOT BE REMOVED": GET /about (a closure echoing "Bookshelf: a small catalog of the books we love."), GET
-/hello/{name} (request()->fetch('name') through sanitize()), GET /feed -> Bookshelf\FeedController@books. The feed
-controller (namespace Bookshelf, extends Caligrafy\Controller) calls $this->call('list_books', ['page' => 1]) and
+The older way, for this appendix only. In application/config/routing/web.php, in a block "// APPENDIX A: routes and
+controllers written by hand" above "// MUST NOT BE REMOVED": GET /about (a closure echoing "Bookshelf: a small catalog
+of the books we love."), GET /hello/{name} (request()->fetch('name') through sanitize()), GET /classic/feed ->
+Bookshelf\FeedController@books. The feed controller (namespace Bookshelf, extends Caligrafy\Controller) calls $this->call('list_books', ['page' => 1]) and
 echoes an RSS 2.0 document (Content-Type application/rss+xml; charset=utf-8) with one item per book: title, link
 <home>books/<id>, description "<author name>, <year>", every text escaped with htmlspecialchars(..., ENT_XML1). It
 reads no model and holds no rule.
@@ -405,7 +393,7 @@ reads no model and holds no rule.
 - [ ] The checks of steps 1 and 2 give the same answers.
 
 If Claude writes the feed with `Book::...` in the controller, ask it to call `list_books`: the rules and the rights
-stay in one place.
+stay in one place. In a project of your own, ask for a `Route::action` instead of a controller.
 
 ---
 
@@ -421,6 +409,21 @@ stay in one place.
 
 `FeedController` sits between the two: its HTTP is its own, its data and rights come from `list_books`.
 
+## Moving a controller to a declaration
+
+| A controller action that | Becomes |
+|---|---|
+| renders a view with data | a read-only capability and `Route::page` with `data` |
+| reads `$_GET` for a view | `Route::page` with `query` |
+| handles a form | a capability and `Route::form` |
+| checks a confirmation field or a box | `same`, `accepted` on the `Route::form` |
+| redirects when someone is or is not signed in | `visitorsOnly`, `signedIn`, `comeBack` |
+| signs someone in after creating them | `signsIn` on the `Route::form` |
+| answers something else: a redirect that it decides, XML, a payment page, a sign-in between two sites | a capability with `webOnly: true` and `Route::action` |
+| calls a capability with `$this->call()` | a web-only capability that calls `$this->capability()` |
+
+Each move is optional. Do one at a time, and run your tests after each.
+
 ## What the one-line routes do for you
 
 | One line of `web.php` | What a controller would do by hand |
@@ -429,6 +432,7 @@ stay in one place.
 | `Route::form('/books/{id}', 'update_book', ['method' => 'PUT', ...])` | checks the CSRF token, calls `update_book` with `{id}` and the fields; on success a flash message and a redirect; on a refusal the messages and the typed values (never a password) for `errors()` and `old()`, back to the form; a visitor to `/login`; JSON for a JSON caller |
 | `Route::auth([...])` | the sign-in, sign-out and sign-up pages, a new session id at sign-in, 5 failed sign-ins per username in 15 minutes |
 | `Route::download('/authors.csv', 'list_authors')` | calls a read-only capability with the query string, writes the CSV with its header row and quoting, and the headers that make the browser save it |
+| `Route::action('/surprise', 'surprise_me')` | admits the person, calls the web-only capability with its rules and audit, sends its answer; a JSON call needs the CSRF token or a `*` token |
 
 Appendix B writes a form by hand, to see what `Route::form` replaces.
 
@@ -449,7 +453,7 @@ Learn more: [2. Routing](https://github.com/caligrafy/caligrafy-quill/wiki/2.-Ro
 
 1. You add `Route::get('/authors/top', ...)` below `/authors/{id}`. What does `/authors/top` show, and why?
 2. Why does `/v1/authors` answer 401 to the "Claude Code" token, while `/api/authors` answers 200 to anyone?
-3. When is a controller the right choice, and what does it call?
+3. You are starting a new feature that answers XML. Do you write a controller? And in a project that already has one?
 
 <details><summary>Answers</summary>
 
@@ -457,9 +461,8 @@ Learn more: [2. Routing](https://github.com/caligrafy/caligrafy-quill/wiki/2.-Ro
    `/authors/top` above it.
 2. `/v1/authors` is a controller route: an API call needs a token with `*`. `/api/authors` is the capability
    `list_authors`, which is public.
-3. For HTTP that `Route::page`, `Route::form`, `Route::auth`, `Route::download`, `Route::webhook`, `Route::redirect`
-   and `Route::capability` do not give, such as an RSS feed. It calls capabilities with `$this->call()` and holds no
-   rule.
+3. No: a capability with `webOnly: true` that returns `Web::text($xml)->header(...)`, and one `Route::action`. An existing
+   controller keeps working and can stay; if it holds rules, move them to a capability it calls with `$this->call()`.
 </details>
 
 ---

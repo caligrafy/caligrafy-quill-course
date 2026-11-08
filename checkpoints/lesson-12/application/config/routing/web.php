@@ -24,10 +24,11 @@ try {
     
     // ROUTE DEFINITION: get, post, put and delete
     Route::redirect('/', '/books');   // the home of Bookshelf is its catalog
+    Route::redirect('/catalog', '/books', 301, ['keepQuery' => true]);   // the catalog's old address: the filter of its address goes along
     Route::get('/helloworld', function() { echo "Hello World"; });
 	
-    // SIGN IN, SIGN OUT, SIGN UP: /login, /logout, /register and /notAuthorized; after signing in or up, the catalog
-    Route::auth(['home' => '/books', 'signInAfterRegister' => true]);
+    // SIGN IN, SIGN OUT: /login, /logout and /notAuthorized; after signing in, /login?return=<page>, else the catalog
+    Route::auth(['home' => '/books', 'register' => false]);   // no /register: people join with the form of /join
 
     // User Administration Routes - Uncomment only if AUTHENTICATION activated above
 	// Route::get('/admin', 'Caligrafy\\Controllers\\AdminController');
@@ -42,7 +43,7 @@ try {
 
     // ROUTING TO JAVASCRIPT APPS
     // Make sure you create a JS app or a Vue app in Caligrafer first
-    Route::get('/apps/{appName}', 'Caligrafy\\Controllers\\ClientController'); // you can specify any path as long as it ends with appName
+    Route::page('/apps/{appName}', 'Client/app', ['query' => ['app' => 'index']]);   // public/<appName>/index.php, or ?app=<file>
 
     
     // BOT PAGE ROUTES
@@ -70,13 +71,24 @@ try {
     Route::notifications();                 // the pages notification emails link to (confirm, unsubscribe)
 
     // BOOKSHELF PAGES: rendered on the server with the data of the capabilities; each form calls one capability
-    Route::page('/books', 'Bookshelf/books', ['data' => ['books' => 'list_books', 'authors' => 'list_authors'], 'with' => ['install' => true]]);   // install: offer to add it to the home screen
+    Route::page('/books', 'Bookshelf/books', ['query' => ['author_id'], 'data' => ['books' => 'list_books', 'authors' => 'list_authors'], 'with' => ['install' => true]]);   // install: offer to add it to the home screen
     Route::form('/books', 'create_book', ['success' => '/books/{id}', 'flash' => 'Book added']);
     Route::page('/books/{id}', 'Bookshelf/book', ['data' => ['book' => 'get_book', 'authors' => 'list_authors'], 'notFound' => 'Bookshelf/notfound']);
     Route::form('/books/{id}', 'update_book', ['method' => 'PUT', 'success' => '/books/{id}', 'flash' => 'Saved']);
     Route::form('/books/{id}', 'delete_book', ['method' => 'DELETE', 'success' => '/books', 'flash' => 'Book deleted']);
     Route::download('/authors.csv', 'list_authors', ['filename' => 'authors.csv']);   // the same capability, as a file
-    Route::page('/people', 'Bookshelf/people', ['level' => 1, 'data' => ['people' => 'list_users']]);   // administrators only
+    Route::page('/people', 'Bookshelf/people', ['level' => 1, 'comeBack' => true, 'data' => ['people' => 'list_users']]);   // administrators only
+
+    // JOIN THE CLUB: the only way to create an account; people already signed in go to the catalog
+    Route::page('/join', 'Bookshelf/join', ['visitorsOnly' => '/books']);
+    Route::form('/join', 'register_user', [
+        'visitorsOnly' => '/books',
+        'same' => ['passcode_again' => ['passcode', 'The two passwords are not the same']],
+        'accepted' => ['rules' => 'Accept the rules of the club to join'],
+        'signsIn' => 'id',
+        'success' => '/books',
+        'flash' => 'Welcome to the club, {username}'
+    ]);
 
     // BOOKSHELF API: the same capabilities, for other applications (JSON)
     Route::capability('GET', '/api/books', 'list_books');

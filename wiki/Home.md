@@ -6,7 +6,7 @@
 teaches you to do it well: describe what you want clearly, approve with confidence, and ship. You build **Bookshelf**,
 a catalog of books for a book club, then an app of your own.
 
-Nine short lessons, on Caligrafy Quill 2.19. No code to write: Claude writes it, and you learn what to look for, and
+Nine short lessons, on Caligrafy Quill 2.21. No code to write: Claude writes it, and you learn what to look for, and
 where, before you say OK.
 
 ## What you need
@@ -41,7 +41,7 @@ Every lesson ends with a **Check** list: go through it before you accept what Cl
 
 Everything Claude does is plain Caligrafy you can write yourself. The **By hand** track builds Bookshelf again, every
 file typed by you, so that you understand every line Claude writes. Take it after the main lessons, or whenever a
-lesson's **By hand** link makes you curious. It uses Caligrafy Quill 2.21.0, and needs a little HTML, CSS, JavaScript,
+lesson's **By hand** link makes you curious. It uses Caligrafy Quill 2.21.2, and needs a little HTML, CSS, JavaScript,
 PHP and SQL.
 
 **Start:** [00 Your tools](00-Introduction-and-Tools) · [01 Your project in one command](01-Your-Project-in-One-Command) · [02 Build once, seen three ways](02-Build-Once-Seen-Three-Ways)  
@@ -49,4 +49,5 @@ PHP and SQL.
 **Experience everywhere:** [06 Web pages](06-Web-Pages) · [07 The REST API](07-The-REST-API) · [08 AI agents](08-AI-Agents) · [09 A Vue app](09-A-Vue-App) · [10 Phones and tablets](10-Phones-and-Tablets)  
 **People and trust:** [11 People and permissions](11-People-and-Permissions)  
 **Ship it:** [12 Tests, review, doctor](12-Ship-It) · [13 Capstone: Loans](13-Capstone-Loans) · [14 Put it online](14-Put-It-Online) · [15 Reminders: a job and notifications](15-Reminders)  
-**Under the hood:** [A Routes and controllers](A-Routes-and-Controllers) · [B Classic forms](B-Classic-Forms)
+**Every request declared:** [16 What a page or a form cannot say](16-Every-Request-Declared)  
+**Under the hood (the older ways):** [A Routes and controllers](A-Routes-and-Controllers) · [B Classic forms](B-Classic-Forms)

@@ -24,45 +24,13 @@ try {
     
     // ROUTE DEFINITION: get, post, put and delete
     Route::redirect('/', '/books');   // the home of Bookshelf is its catalog
-    Route::get('/helloworld', function() { echo "Hello World"; });
-	
-    // SIGN IN, SIGN OUT, SIGN UP: /login, /logout, /register and /notAuthorized; after signing in or up, the catalog
-    Route::auth(['home' => '/books', 'signInAfterRegister' => true]);
+    Route::redirect('/catalog', '/books', 301, ['keepQuery' => true]);   // the catalog's old address: the filter of its address goes along
 
-    // User Administration Routes - Uncomment only if AUTHENTICATION activated above
-	// Route::get('/admin', 'Caligrafy\\Controllers\\AdminController');
-	// Route::get('/users', 'Caligrafy\\Controllers\\AdminController');
-	// Route::get('/users/{id}/edit', 'Caligrafy\\Controllers\\AdminController@editUserForm');
-	// Route::put('/users/{id}/edit', 'Caligrafy\\Controllers\\AdminController@updateUser');
-	// Route::delete('/users/{id}/edit', 'Caligrafy\\Controllers\\AdminController@deleteUser');
-
-    // GPT AI controller
-    // Route::get('/ai', 'Caligrafy\\Controllers\\AIController');
-    // Route::post('/ai', 'Caligrafy\\Controllers\\AIController@query');
+    // SIGN IN, SIGN OUT: /login, /logout and /notAuthorized; after signing in, /login?return=<page>, else the catalog
+    Route::auth(['home' => '/books', 'register' => false]);   // no /register: people join with the form of /join
 
     // ROUTING TO JAVASCRIPT APPS
-    // Make sure you create a JS app or a Vue app in Caligrafer first
-    Route::get('/apps/{appName}', 'Caligrafy\\Controllers\\ClientController'); // you can specify any path as long as it ends with appName
-
-    
-    // BOT PAGE ROUTES
-    Route::get('/bot/{appName}', 'Caligrafy\\Controllers\\ClientController');  // A botSkillId needs to be provided in the URL. For Example: ?botSkillId=62196ce3-0b22-4aea-b2f2-d39730c03797
-    
-    // BOT DATA ROUTES
-    // routes need to start with reserved path __bots__ 
-    Route::post('/__bots__/{appName}/communicate', 'Caligrafy\\Controllers\\WatsonController@communicate');
-    Route::post('/__bots__/{appName}/{appId}', 'Caligrafy\\Controllers\\WatsonController@connect');
-    Route::delete('/__bots__/{appName}', 'Caligrafy\\Controllers\\WatsonController@end');   
-
-    /* ML Routes
-     *
-     * If you don't specify an up, it will go to the face, body detector.
-     * Specify an app as a URI Parameter ?app=<name of app>
-     * 
-     * There are 3 possible apps: featureextractor, neuralnetwork and posedetector
-    */
-    Route::get('/ml/{appName}', 'Caligrafy\\Controllers\\ClientController'); 
-    
+    Route::page('/apps/{appName}', 'Client/app', ['query' => ['app' => 'index']]);   // public/<appName>/index.php, or ?app=<file>
 
     // BUILD ONCE: every capability, for the JS client and AI agents
     Route::capabilities('/capabilities');   // the capabilities for the JS client of the Vue apps
@@ -70,13 +38,24 @@ try {
     Route::notifications();                 // the pages notification emails link to (confirm, unsubscribe)
 
     // BOOKSHELF PAGES: rendered on the server with the data of the capabilities; each form calls one capability
-    Route::page('/books', 'Bookshelf/books', ['data' => ['books' => 'list_books', 'authors' => 'list_authors'], 'with' => ['install' => true]]);   // install: offer to add it to the home screen
+    Route::page('/books', 'Bookshelf/books', ['query' => ['author_id'], 'data' => ['books' => 'list_books', 'authors' => 'list_authors'], 'with' => ['install' => true]]);   // install: offer to add it to the home screen
     Route::form('/books', 'create_book', ['success' => '/books/{id}', 'flash' => 'Book added']);
     Route::page('/books/{id}', 'Bookshelf/book', ['data' => ['book' => 'get_book', 'authors' => 'list_authors'], 'notFound' => 'Bookshelf/notfound']);
     Route::form('/books/{id}', 'update_book', ['method' => 'PUT', 'success' => '/books/{id}', 'flash' => 'Saved']);
     Route::form('/books/{id}', 'delete_book', ['method' => 'DELETE', 'success' => '/books', 'flash' => 'Book deleted']);
     Route::download('/authors.csv', 'list_authors', ['filename' => 'authors.csv']);   // the same capability, as a file
-    Route::page('/people', 'Bookshelf/people', ['level' => 1, 'data' => ['people' => 'list_users']]);   // administrators only
+    Route::page('/people', 'Bookshelf/people', ['level' => 1, 'comeBack' => true, 'data' => ['people' => 'list_users']]);   // administrators only
+
+    // JOIN THE CLUB: the only way to create an account; people already signed in go to the catalog
+    Route::page('/join', 'Bookshelf/join', ['visitorsOnly' => '/books']);
+    Route::form('/join', 'register_user', [
+        'visitorsOnly' => '/books',
+        'same' => ['passcode_again' => ['passcode', 'The two passwords are not the same']],
+        'accepted' => ['rules' => 'Accept the rules of the club to join'],
+        'signsIn' => 'id',
+        'success' => '/books',
+        'flash' => 'Welcome to the club, {username}'
+    ]);
 
     // BOOKSHELF API: the same capabilities, for other applications (JSON)
     Route::capability('GET', '/api/books', 'list_books');
@@ -87,13 +66,19 @@ try {
     Route::capability('GET', '/api/authors', 'list_authors');
 
     // LOANS: one more feature, every experience: a page and its forms, REST, the JS clients and AI agents
-    Route::page('/loans', 'Loans/index', ['signedIn' => true, 'data' => ['loans' => 'list_loans', 'books' => 'list_books']]);
+    Route::page('/loans', 'Loans/index', ['signedIn' => true, 'comeBack' => true, 'data' => ['loans' => 'list_loans', 'books' => 'list_books']]);
     Route::form('/loans', 'lend_book', ['success' => '/loans', 'flash' => 'Lent to {borrower} until {due_on}']);
     Route::form('/loans/{book_id}/return', 'return_book', ['success' => '/loans', 'flash' => 'Returned by {borrower}']);
+    Route::form('/books/{book_id}/borrow', 'lend_book', ['inputs' => function () { return ['borrower' => Auth::user()->username ?? '', 'days' => 14]; }, 'success' => '/loans', 'flash' => 'It is yours until {due_on}']);   // the server says who borrows
     Route::form('/loans/remind', 'send_reminders', ['success' => '/loans', 'flash' => 'The reminders are on their way (job {job})']);   // administrators
     Route::capability('GET', '/api/loans', 'list_loans');
     Route::capability('POST', '/api/loans', 'lend_book');
     Route::capability('POST', '/api/books/{book_id}/return', 'return_book');
+
+    // WHAT A PAGE OR A FORM CANNOT SAY: each answered by a capability declared webOnly: true
+    Route::action('/surprise', 'surprise_me');                 // a request that decides where to go
+    Route::action('/feed', 'books_feed');                      // an answer that is XML
+    Route::action('/loans/{book_id}/renew', 'renew_loan', ['signedIn' => true, 'comeBack' => true]);   // a link that changes data
 
     // APPENDIX A: routes and controllers written by hand
     Route::get('/about', function () {
@@ -103,7 +88,7 @@ try {
         $name = request()->fetch('name');        // the {name} part of the address
         echo 'Hello ' . sanitize($name) . '!';   // sanitize: never print what a visitor typed as is
     });
-    Route::get('/feed', 'Bookshelf\\FeedController@books');        // custom HTTP: a controller that calls a capability
+    Route::get('/classic/feed', 'Bookshelf\\FeedController@books');   // the older way of lesson 16's /feed: a controller that calls a capability
     Route::get('/authors/{id}', 'Bookshelf\\AuthorController@show');   // under the hood: the classic way
     Route::get('/v1/authors', 'Bookshelf\\AuthorController@index');
 

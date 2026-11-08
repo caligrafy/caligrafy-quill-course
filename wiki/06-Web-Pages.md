@@ -3,7 +3,8 @@
 **In this lesson** Bookshelf gets its first experience for people: a catalog page (the books, page by page, filtered by
 author, and a form to add one) and a page per book (edit it, delete it), both rendered on the server. Each is one line
 of `web.php`: **`Route::page`** shows a view with the data of a capability, **`Route::form`** sends a form to a
-capability, **`Route::download`** offers its result as a file. You write the views, and no controller.
+capability, **`Route::download`** offers its result as a file, **`Route::redirect`** moves an address. You write the
+views. Nothing else answers these requests.
 
 **Before you start:** lesson 05 is done (tag `lesson-05`): `capabilities` lists 19 capabilities, and
 `docker compose ps` shows the 3 containers running.
@@ -59,6 +60,11 @@ changes data. When the capability refuses, the page does not render: a missing b
 named in `notFound` (it gets `$message`, the capability's message). **Pages never read the models**: the data of a page
 comes from capabilities.
 
+**`query`: what the view reads from the address.** The capabilities of a page get the query string as inputs; the view
+does not. `'query' => ['author_id']` gives the view `$author_id`: the value of `?author_id=` as a string, `''` when it
+is absent. A view never reads `$_GET`, and the address cannot set any other variable of the view. A default is written
+`'query' => ['app' => 'index']` (lesson 09 uses one).
+
 **`Route::form`.** `Route::form('/books', 'create_book', ['success' => '/books/{id}', 'flash' => 'Book added'])`
 receives the form's POST and calls `create_book` as the visitor, with the fields of the form (and the route
 variables) as inputs, then:
@@ -70,6 +76,9 @@ variables) as inputs, then:
 | finds no such book | the error page, 404 | |
 
 These three helpers last **one request**: the page right after the redirect.
+
+`success` is usually a path of the site. It can also be a full address (`https://...`, a payment page for example), or
+a function that gets the capability's answer and returns the address (lesson 13, exercise).
 
 **CSRF, PUT and DELETE.** Caligrafy refuses a browser POST that does not carry the CSRF token of the visitor's session
 (`[ERROR 3000] Security Error - Cross Site Forgery`, 403): it proves the form came from your site. `=csrf()` writes that
@@ -84,7 +93,10 @@ every POST, PUT or DELETE; a visit that only reads gets no cookie.
 read-only capability into a file: a CSV (comma-separated values, which every spreadsheet opens), one line per row, with
 a first line of column names.
 
-**`Route::redirect`.** `Route::redirect('/', '/books')` sends the visitors of `/` to the catalog.
+**`Route::redirect`.** `Route::redirect('/', '/books')` sends the visitors of `/` to the catalog. An address that moved
+for good answers 301, and its query string goes along with `keepQuery`:
+`Route::redirect('/catalog', '/books', 301, ['keepQuery' => true])` sends `/catalog?author_id=2` to `/books?author_id=2`.
+Without `keepQuery` the query string is dropped.
 
 ---
 
@@ -95,9 +107,10 @@ Run every command from the `bookshelf` folder.
 ### Step 1 - The routes
 
 In `application/config/routing/web.php`, replace the first route, `Route::page('/', 'default/index');` and its
-comment, with the redirect, and add the `// BOOKSHELF PAGES` block above `// MUST NOT BE REMOVED`. The file is then:
+comment, with the two redirects, and add the `// BOOKSHELF PAGES` block above `// MUST NOT BE REMOVED`. The file is
+then:
 
-**File `application/config/routing/web.php`** (the redirect of `/` and the six lines of the Bookshelf pages):
+**File `application/config/routing/web.php`** (the two redirects and the six lines of the Bookshelf pages):
 
 ```php
 <?php
@@ -126,6 +139,7 @@ try {
     
     // ROUTE DEFINITION: get, post, put and delete
     Route::redirect('/', '/books');   // the home of Bookshelf is its catalog
+    Route::redirect('/catalog', '/books', 301, ['keepQuery' => true]);   // the catalog's old address: the filter of its address goes along
     Route::get('/helloworld', function() { echo "Hello World"; });
 	
     // Auth Routes - Uncomment only if AUTHENTICATION activated above
@@ -178,7 +192,7 @@ try {
     Route::notifications();                 // the pages notification emails link to (confirm, unsubscribe)
 
     // BOOKSHELF PAGES: rendered on the server with the data of the capabilities; each form calls one capability
-    Route::page('/books', 'Bookshelf/books', ['data' => ['books' => 'list_books', 'authors' => 'list_authors']]);
+    Route::page('/books', 'Bookshelf/books', ['query' => ['author_id'], 'data' => ['books' => 'list_books', 'authors' => 'list_authors']]);
     Route::form('/books', 'create_book', ['success' => '/books/{id}', 'flash' => 'Book added']);
     Route::page('/books/{id}', 'Bookshelf/book', ['data' => ['book' => 'get_book', 'authors' => 'list_authors'], 'notFound' => 'Bookshelf/notfound']);
     Route::form('/books/{id}', 'update_book', ['method' => 'PUT', 'success' => '/books/{id}', 'flash' => 'Saved']);
@@ -195,8 +209,10 @@ catch (Exception $e) {
 }
 ```
 
+- `/catalog` is the address Bookshelf used to have: a bookmark of it still works, with its filter.
 - `/books` gets two pieces of data: `$books` (a page of `list_books`: it reads `?author_id=` and `?page=` from the
-  address) and `$authors` (`list_authors`, for the form's list of authors).
+  address) and `$authors` (`list_authors`, for the form's list of authors). With `'query' => ['author_id']` the view
+  gets `$author_id` too.
 - `POST /books` is the add form: on success, the new book's page.
 - `/books/{id}` gets `$book` from `get_book` (with the `{id}` of the address) and `$authors`; a missing book shows
   `Bookshelf/notfound`, status 404.
@@ -212,7 +228,8 @@ Create the folder `application/views/Bookshelf` and:
 ```pug
 extends ../default/master/site
 
-//- The catalog: Route::page gives it $books (list_books: a page of books) and $authors (list_authors).
+//- The catalog: Route::page gives it $books (list_books: a page of books), $authors (list_authors) and $author_id
+//- (the author of the address, ?author_id=2, as a string; '' when there is none).
 //- The form posts to Route::form('/books', 'create_book'): a refusal comes back here with errors(), old() and flash('error')
 
 block title
@@ -240,7 +257,7 @@ block content
                         label(for='author_id') * Author
                         select#author_id.form-select(name='author_id')
                             each $a in $authors
-                                option(value=$a['id'], selected=$a['id'] == old('author_id'))= $a['name']
+                                option(value=$a['id'], selected=$a['id'] == old('author_id', $author_id))= $a['name']
                         if errors('author_id')
                             p.cq-field-error= errors('author_id')
                     .cq-field
@@ -276,7 +293,7 @@ block content
                                     a(href="{$home}books?author_id={$b['author_id']}")= $b['author']['name']
                                     | , #{$b['published_year']}
                 //- the next and previous pages keep the author of the address (?author_id=2)
-                - $filter = isset($_GET['author_id']) ? '&author_id=' . (int) $_GET['author_id'] : '';
+                - $filter = $author_id !== '' ? '&author_id=' . (int) $author_id : '';
                 p.cq-auth-note
                     | Page #{$books['page']} of #{$books['pages']}, #{$books['total']} books
                     if $books['page'] > 1
@@ -295,7 +312,8 @@ block content
   `errors(...)` when `Route::form` sent the form back.
 - `$books['data']` holds the books of the page, each with its `author`; `$books['total']`, `['page']` and `['pages']`
   are the rest of the page of lesson 04. The name of the author is a link to `?author_id=<id>`: the same page, filtered.
-- `Previous` and `Next` show only when there is another page; they keep the author of the address.
+- `Previous` and `Next` show only when there is another page; they keep the author of the address, from `$author_id`.
+- On `/books?author_id=2` the form's list of authors starts on that author: `old('author_id', $author_id)`.
 
 ### Step 3 - Try the catalog
 
@@ -309,18 +327,20 @@ with the 3 authors, Year, ISBN, Summary, **Add book**), then **Books**: the 5 bo
    the messages of lesson 05: the same rules, now on a page. Reload: the messages are gone (they last one request).
 2. Add **The Dispossessed**, author Ursula K. Le Guin, year 1974, ISBN `978-0-06-051275-0`. The browser goes to its
    page, `/books/7` (7 if you followed every step: ids are never reused), with `Book added` above the summary.
-3. Back on the catalog, click **Octavia E. Butler** under Kindred: the address is `/books?author_id=2`, and only Kindred
-   and Parable of the Sower are listed. **All books** brings the whole list back.
+3. Back on the catalog, click **Octavia E. Butler** under Kindred: the address is `/books?author_id=2`, only Kindred
+   and Parable of the Sower are listed, and the form's **Author** is on Octavia E. Butler. **All books** brings the whole
+   list back.
 
-The same from the terminal: the first command shows where `/` sends visitors, the second the titles of the filtered
-page.
+The same from the terminal: where `/` and the old address send visitors, then the titles of the filtered page.
 ```bash
 curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' http://localhost:8080/
+curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' "http://localhost:8080/catalog?author_id=2"
 curl -s "http://localhost:8080/books?author_id=2" | grep -oE 'books/[0-9]+">[^<]*'
 ```
 Expected:
 ```text
 302 http://localhost:8080/books
+301 http://localhost:8080/books?author_id=2
 books/3">Kindred
 books/4">Parable of the Sower
 ```
@@ -333,6 +353,8 @@ books/4">Parable of the Sower
 > | `[ERROR 3000] Security Error - Cross Site Forgery` when you add a book | `=csrf()` is missing from the form | Add it under `form(...)`, as in the File block |
 > | `Route::page('Bookshelf/books'): no capability named ...` | A capability name in the `Route::page` line is wrong | Compare with step 1: `'books' => 'list_books'` |
 > | `http://localhost:8080/` still shows the Caligrafy welcome page | The first route still shows `default/index` | Step 1: `Route::redirect('/', '/books');` |
+> | `Undefined variable $author_id` on the catalog | `'query' => ['author_id']` is missing from the route | Compare with step 1 |
+> | `/catalog?author_id=2` goes to `/books`, without the author | `['keepQuery' => true]` is missing | Compare with step 1 |
 > | The messages never show under the fields | The view reads a variable `$errors` instead of the helper `errors('title')` | Compare with the File block |
 
 ### Step 4 - The book page
@@ -491,6 +513,7 @@ in its order: the same capability as the form's list of authors, as one more exp
 
 - [ ] `web.php` and the three views are identical to the File blocks; `application/controllers/` has no Bookshelf file.
 - [ ] `/` redirects to `/books`; the catalog lists the books with `Page 1 of 1`; `?author_id=2` filters it.
+- [ ] `/catalog?author_id=2` answers 301 to `/books?author_id=2`; `books.pug` has no `$_GET`.
 - [ ] A refused form comes back with the messages under the fields and what you typed; a reload clears them.
 - [ ] Adding goes to the new book's page with `Book added`; saving shows `Saved`; deleting goes to the catalog with
       `Book deleted`.
@@ -502,8 +525,9 @@ in its order: the same capability as the form's list of authors, as one more exp
 ```text
 Add the Bookshelf web pages on the existing capabilities, rendered on the server, with no controller and no
 JavaScript of our own. In application/config/routing/web.php replace Route::page('/', 'default/index') with
-Route::redirect('/', '/books') and add a "// BOOKSHELF PAGES" block above Route::run():
-Route::page('/books', 'Bookshelf/books', ['data' => ['books' => 'list_books', 'authors' => 'list_authors']]);
+Route::redirect('/', '/books') and Route::redirect('/catalog', '/books', 301, ['keepQuery' => true]), and add a
+"// BOOKSHELF PAGES" block above Route::run():
+Route::page('/books', 'Bookshelf/books', ['query' => ['author_id'], 'data' => ['books' => 'list_books', 'authors' => 'list_authors']]);
 Route::form('/books', 'create_book', ['success' => '/books/{id}', 'flash' => 'Book added']);
 Route::page('/books/{id}', 'Bookshelf/book', ['data' => ['book' => 'get_book', 'authors' => 'list_authors'], 'notFound' => 'Bookshelf/notfound']);
 Route::form('/books/{id}', 'update_book', ['method' => 'PUT', 'success' => '/books/{id}', 'flash' => 'Saved']);
@@ -511,8 +535,8 @@ Route::form('/books/{id}', 'delete_book', ['method' => 'DELETE', 'success' => '/
 Route::download('/authors.csv', 'list_authors', ['filename' => 'authors.csv']);
 Then the views in application/views/Bookshelf/ (extends ../default/master/site, Caligrafy's look, 4-space indents):
 books.pug (flash('success'), the add form with =csrf(), each field with old() and errors(), flash('error'); the rows of
-$books['data'] with the author's name linking to ?author_id=; "Page x of y, n books" with Previous/Next; links to all
-books and authors.csv), book.pug (the book, an edit form with =csrf() and =methodField('PUT'), a delete form with
+$books['data'] with the author's name linking to ?author_id=; "Page x of y, n books" with Previous/Next that keep
+$author_id, never $_GET; the Author list starting on old('author_id', $author_id); links to all books and authors.csv), book.pug (the book, an edit form with =csrf() and =methodField('PUT'), a delete form with
 =methodField('DELETE') and a confirm), notfound.pug ($message and an All books button).
 ```
 
@@ -520,7 +544,7 @@ books and authors.csv), book.pug (the book, an edit form with =csrf() and =metho
 - [ ] No file in `application/controllers/`; no rule repeated in a view; the views read `errors()`, `old()` and
       `flash()`, never a `$errors` variable.
 - [ ] Every form has `=csrf()`; the edit and delete forms have `methodField('PUT')` and `methodField('DELETE')`.
-- [ ] String joins in the views use `.`, not `+`.
+- [ ] String joins in the views use `.`, not `+`; no view reads `$_GET`.
 - [ ] The checks of steps 3, 6 and 7 give what the lesson describes, at desktop width and at 375 px.
 
 ---
@@ -540,6 +564,7 @@ Reference: [`checkpoints/lesson-06`](https://github.com/caligrafy/caligrafy-quil
 2. After a refused save, the title band shows the saved title but the Title field is empty. Where does each come from?
 3. You save with an empty title, then open the catalog and come back. Is the message still there? Why?
 4. Why can `list_books` feed a page and a download, but `create_book` cannot?
+5. `$books` already holds the page for `?author_id=2`. Why does the route also have `'query' => ['author_id']`?
 
 <details><summary>Show the solution</summary>
 
@@ -550,6 +575,8 @@ Reference: [`checkpoints/lesson-06`](https://github.com/caligrafy/caligrafy-quil
 3. No. `errors()`, `old()` and `flash()` last one request: the page right after the redirect of `Route::form`.
 4. Opening a page or a link must never change data: `Route::page` and `Route::download` accept only `readOnly`
    capabilities. A change goes through a form, `Route::form`, with its CSRF token.
+5. The capability gets the query string, the view does not. The view needs the value too: for its Previous and Next
+   links and to start the form on that author. `query` hands it over, as a string; a view never reads `$_GET`.
 </details>
 
 ---

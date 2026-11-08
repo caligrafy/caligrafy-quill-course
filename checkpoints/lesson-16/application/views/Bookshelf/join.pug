@@ -1,0 +1,42 @@
+extends ../default/master/site
+
+//- Join the club: Route::form('/join', 'register_user') checks the two passwords and the box, calls the capability,
+//- signs the new member in and goes to the catalog. A refusal comes back here with errors(), old() and flash('error').
+//- Passwords are never kept for old()
+
+block title
+    | Join the club · Bookshelf
+
+block content
+    main.cq-auth
+        h1 Join the club
+
+        form(method='POST', action="{$home}join", novalidate)
+            =csrf()
+            .cq-field
+                label(for='username') * Username
+                input#username.form-control(type='text', name='username', value=old('username'), maxlength='100', autocomplete='username', autocapitalize='none')
+                if errors('username')
+                    p.cq-field-error= errors('username')
+            .cq-field
+                label(for='passcode') * Password
+                input#passcode.form-control(type='password', name='passcode', maxlength='72', autocomplete='new-password')
+                if errors('passcode')
+                    p.cq-field-error= errors('passcode')
+            .cq-field
+                label(for='passcode_again') * The same password again
+                input#passcode_again.form-control(type='password', name='passcode_again', maxlength='72', autocomplete='new-password')
+                if errors('passcode_again')
+                    p.cq-field-error= errors('passcode_again')
+            .cq-field
+                label(for='rules')
+                    input#rules(type='checkbox', name='rules', value='1', checked=old('rules') == '1')
+                    |  I accept the rules of the club: be kind, and bring the books back
+                if errors('rules')
+                    p.cq-field-error= errors('rules')
+            button.btn.btn-primary(type='submit') Join
+        if flash('error')
+            p.cq-field-error(role='alert')= flash('error')
+
+        p.cq-auth-note
+            a(href="{$home}login") Already a member? Sign in

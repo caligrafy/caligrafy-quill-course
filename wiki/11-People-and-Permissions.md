@@ -2,9 +2,10 @@
 
 **In this lesson** Bookshelf gets accounts and rules: everyone can still read the catalog, signed-in people can add and
 edit books, only administrators can delete them or see who has an account, and each program or agent gets a token
-with just the rights it needs. One line of `web.php` (`Route::auth`) gives the sign-in and sign-up pages; you close the
-doors once, in three capabilities, and every experience obeys at once: the pages, REST, the agents, the finder and the
-SPA. The pages show only what the visitor may use.
+with just the rights it needs. One line of `web.php` (`Route::auth`) gives the sign-in pages and brings people back to
+the page they were on; a **join form**, one `Route::page` and one `Route::form`, creates the account and signs the new
+member in. You close the doors once, in three capabilities, and every experience obeys at once: the pages, REST, the
+agents, the finder and the SPA. The pages show only what the visitor may use.
 
 **Before you start:** lesson 10 is done (tag `lesson-10`), `docker compose ps` shows the 3 containers running, and you
 have token #2 "reading partner" of lesson 07.
@@ -28,13 +29,17 @@ cookie the browser sends with every request. When a person signs in, Caligrafy k
 |---|---|
 | `GET /login`, `POST /login` | the sign-in page and its form; after 5 wrong passwords for one username in 15 minutes, that sign-in is refused until the 15 minutes end |
 | `GET /logout`, `POST /logout` | signs out, then goes to `/` |
-| `GET /register`, `POST /register` | the sign-up page; the form calls the framework capability `register_user` (permissions 0) |
+| `GET /register`, `POST /register` | a ready-made sign-up page, whose form calls the framework capability `register_user` (permissions 0). Bookshelf has no use for it: `'register' => false` removes it |
 | `GET /notAuthorized` | the page (403) of a signed-in person whose level is too low |
 
-Options: `home` (where a person lands after signing in, default `/`), `signInAfterRegister` (`true`: a new account is
-signed in at once and goes to `home`; default `false`: it goes to the sign-in page), and others listed in
+Options: `home` (where a person lands after signing in, default `/`), `register` (`false`: no sign-up page, and no link
+to it in the top bar or on the sign-in page), and others listed in
 [Declarative routes](https://github.com/caligrafy/caligrafy-quill/wiki/Declarative-Routes). It needs
 `Auth::authentication('User', 'users')` above it: the model and the table of the people.
+
+**Coming back after signing in.** `/login?return=/books/3` signs the person in, then goes to `/books/3` instead of
+`home`. Only a path of this site is accepted: `?return=https://elsewhere.example` is ignored, so nobody can use your
+sign-in page to send people to another site.
 
 **The users table and the permission level.** The table `users` has `id`, `username`, `passcode` (a one-way hash,
 never the password), `permissions` (0 for every new account), `created_at`, `modified_at`. The number in `permissions`
@@ -60,11 +65,32 @@ And who is calling:
 Read the last two lines twice. A token with `books:write` and no `--user` can delete books; a token for reader1 can
 delete only once reader1 is an administrator. Give write scopes with care.
 
-**Pages for some people only.** `Route::page` takes `signedIn` and `level`:
-`['signedIn' => true]` sends visitors to `/login`, `['level' => 1]` sends visitors to `/login` and people below level 1
-to `/notAuthorized`. Every page of `Route::page` also gets `$authorized` (true when someone is signed in) and `$user`
-(`id`, `username`, `permissions`, or null): the views use them to show only what the visitor may use. Hiding a button
-is for comfort; the protection is in the capability, which refuses on every channel.
+**Pages for some people only.** `Route::page` takes four options:
+
+| Option | Who it stops | Where they go |
+|---|---|---|
+| `'signedIn' => true` | visitors | `/login` |
+| `'level' => 1` | visitors; people below level 1 | `/login`; `/notAuthorized` |
+| `'comeBack' => true`, with one of the two above | visitors | `/login?return=<this page>`, and back here once signed in |
+| `'visitorsOnly' => '/books'` | people who are signed in | that path: a join page means nothing to a member |
+
+Every page of `Route::page` also gets `$authorized` (true when someone is signed in) and `$user` (`id`, `username`,
+`permissions`, or null): the views use them to show only what the visitor may use. Hiding a button is for comfort; the
+protection is in the capability, which refuses on every channel.
+
+**A form that creates an account.** Four more options of `Route::form` make a form that needs no code of its own:
+
+| Option | What it does | In the join form |
+|---|---|---|
+| `same` | two fields must be the same, with the message to show under the first | `'same' => ['passcode_again' => ['passcode', 'The two passwords are not the same']]` |
+| `accepted` | a box must be ticked, with the message to show under it | `'accepted' => ['rules' => 'Accept the rules of the club to join']` |
+| `visitorsOnly` | people who are signed in are sent to that path, as for a page | `'visitorsOnly' => '/books'` |
+| `signsIn` | names the field of the capability's answer that holds the id of the person to sign in, under a new session id | `'signsIn' => 'id'` |
+
+`same` and `accepted` are checked **before** the capability: when one refuses, the capability is not called, so the
+messages of its rules only come after those two pass. They belong to the form: the rules every experience must obey stay
+in `$rules`. The form calls `register_user`, the framework's capability that answers only web pages and the command line,
+and that returns `id`, `username` and `permissions`.
 
 **The audit log.** Every write and every refusal is a line: when, through which channel (`web`, `rest`, `mcp`, `cli`),
 who (`guest`, `user 1`, `token 3`), which capability, and the outcome.
@@ -84,17 +110,18 @@ docker compose exec dev-box php caligrafer.php sql application/models/Auth/creat
 Expected: ` application/models/Auth/create_db.sql run on caligrafy`. It creates the table only if it is missing:
 running it again never deletes anyone.
 
-### Step 2 - Sign-in, sign-up, and a page for administrators
+### Step 2 - Sign-in, a page for administrators, and the join form
 
-Three changes in `application/config/routing/web.php`:
+Four changes in `application/config/routing/web.php`:
 1. Uncomment `Auth::authentication('User', 'users');` (remove the `//`).
 2. Replace the commented block `// Auth Routes - Uncomment only if AUTHENTICATION activated above` and its 7 lines with
-   the `// SIGN IN, SIGN OUT, SIGN UP` comment and `Route::auth(...)`.
-3. In `// BOOKSHELF PAGES`, after the `Route::download` line, add the page `/people` with `'level' => 1`.
+   the `// SIGN IN, SIGN OUT` comment and `Route::auth(...)`.
+3. In `// BOOKSHELF PAGES`, after the `Route::download` line, add the page `/people`, with `'level' => 1` and `'comeBack' => true`.
+4. Below it, add the `// JOIN THE CLUB` block: the page and the form.
 
 The file is then:
 
-**File `application/config/routing/web.php`** (`Auth::authentication`, `Route::auth` and the `/people` page):
+**File `application/config/routing/web.php`** (`Auth::authentication`, `Route::auth`, the `/people` page and the `/join` page and form):
 
 ```php
 <?php
@@ -123,10 +150,11 @@ try {
     
     // ROUTE DEFINITION: get, post, put and delete
     Route::redirect('/', '/books');   // the home of Bookshelf is its catalog
+    Route::redirect('/catalog', '/books', 301, ['keepQuery' => true]);   // the catalog's old address: the filter of its address goes along
     Route::get('/helloworld', function() { echo "Hello World"; });
 	
-    // SIGN IN, SIGN OUT, SIGN UP: /login, /logout, /register and /notAuthorized; after signing in or up, the catalog
-    Route::auth(['home' => '/books', 'signInAfterRegister' => true]);
+    // SIGN IN, SIGN OUT: /login, /logout and /notAuthorized; after signing in, /login?return=<page>, else the catalog
+    Route::auth(['home' => '/books', 'register' => false]);   // no /register: people join with the form of /join
 
     // User Administration Routes - Uncomment only if AUTHENTICATION activated above
 	// Route::get('/admin', 'Caligrafy\\Controllers\\AdminController');
@@ -141,7 +169,7 @@ try {
 
     // ROUTING TO JAVASCRIPT APPS
     // Make sure you create a JS app or a Vue app in Caligrafer first
-    Route::get('/apps/{appName}', 'Caligrafy\\Controllers\\ClientController'); // you can specify any path as long as it ends with appName
+    Route::page('/apps/{appName}', 'Client/app', ['query' => ['app' => 'index']]);   // public/<appName>/index.php, or ?app=<file>
 
     
     // BOT PAGE ROUTES
@@ -169,13 +197,24 @@ try {
     Route::notifications();                 // the pages notification emails link to (confirm, unsubscribe)
 
     // BOOKSHELF PAGES: rendered on the server with the data of the capabilities; each form calls one capability
-    Route::page('/books', 'Bookshelf/books', ['data' => ['books' => 'list_books', 'authors' => 'list_authors'], 'with' => ['install' => true]]);   // install: offer to add it to the home screen
+    Route::page('/books', 'Bookshelf/books', ['query' => ['author_id'], 'data' => ['books' => 'list_books', 'authors' => 'list_authors'], 'with' => ['install' => true]]);   // install: offer to add it to the home screen
     Route::form('/books', 'create_book', ['success' => '/books/{id}', 'flash' => 'Book added']);
     Route::page('/books/{id}', 'Bookshelf/book', ['data' => ['book' => 'get_book', 'authors' => 'list_authors'], 'notFound' => 'Bookshelf/notfound']);
     Route::form('/books/{id}', 'update_book', ['method' => 'PUT', 'success' => '/books/{id}', 'flash' => 'Saved']);
     Route::form('/books/{id}', 'delete_book', ['method' => 'DELETE', 'success' => '/books', 'flash' => 'Book deleted']);
     Route::download('/authors.csv', 'list_authors', ['filename' => 'authors.csv']);   // the same capability, as a file
-    Route::page('/people', 'Bookshelf/people', ['level' => 1, 'data' => ['people' => 'list_users']]);   // administrators only
+    Route::page('/people', 'Bookshelf/people', ['level' => 1, 'comeBack' => true, 'data' => ['people' => 'list_users']]);   // administrators only
+
+    // JOIN THE CLUB: the only way to create an account; people already signed in go to the catalog
+    Route::page('/join', 'Bookshelf/join', ['visitorsOnly' => '/books']);
+    Route::form('/join', 'register_user', [
+        'visitorsOnly' => '/books',
+        'same' => ['passcode_again' => ['passcode', 'The two passwords are not the same']],
+        'accepted' => ['rules' => 'Accept the rules of the club to join'],
+        'signsIn' => 'id',
+        'success' => '/books',
+        'flash' => 'Welcome to the club, {username}'
+    ]);
 
     // BOOKSHELF API: the same capabilities, for other applications (JSON)
     Route::capability('GET', '/api/books', 'list_books');
@@ -195,8 +234,13 @@ catch (Exception $e) {
 }
 ```
 
-`/people` gets its data from `list_users`, a capability of the framework (`users:read`, level 1, never a password).
-Write its view:
+- `Route::auth` has `'register' => false`: the join form is now the only way to create an account, so no door skips the
+  rules of the club.
+- `/people` gets its data from `list_users`, a capability of the framework (`users:read`, level 1, never a password).
+- `Route::form('/join', 'register_user', ...)` answers the same address as the page, with POST. `{username}` in `flash`
+  comes from the capability's answer, like `{id}` in lesson 06.
+
+Write the two views:
 
 **File `application/views/Bookshelf/people.pug`**:
 
@@ -227,12 +271,62 @@ block content
                 a(href="{$home}books") All books
 ```
 
+**File `application/views/Bookshelf/join.pug`** (a page that is only a form: the narrow column of the sign-in page):
+
+```pug
+extends ../default/master/site
+
+//- Join the club: Route::form('/join', 'register_user') checks the two passwords and the box, calls the capability,
+//- signs the new member in and goes to the catalog. A refusal comes back here with errors(), old() and flash('error').
+//- Passwords are never kept for old()
+
+block title
+    | Join the club · Bookshelf
+
+block content
+    main.cq-auth
+        h1 Join the club
+
+        form(method='POST', action="{$home}join", novalidate)
+            =csrf()
+            .cq-field
+                label(for='username') * Username
+                input#username.form-control(type='text', name='username', value=old('username'), maxlength='100', autocomplete='username', autocapitalize='none')
+                if errors('username')
+                    p.cq-field-error= errors('username')
+            .cq-field
+                label(for='passcode') * Password
+                input#passcode.form-control(type='password', name='passcode', maxlength='72', autocomplete='new-password')
+                if errors('passcode')
+                    p.cq-field-error= errors('passcode')
+            .cq-field
+                label(for='passcode_again') * The same password again
+                input#passcode_again.form-control(type='password', name='passcode_again', maxlength='72', autocomplete='new-password')
+                if errors('passcode_again')
+                    p.cq-field-error= errors('passcode_again')
+            .cq-field
+                label(for='rules')
+                    input#rules(type='checkbox', name='rules', value='1', checked=old('rules') == '1')
+                    |  I accept the rules of the club: be kind, and bring the books back
+                if errors('rules')
+                    p.cq-field-error= errors('rules')
+            button.btn.btn-primary(type='submit') Join
+        if flash('error')
+            p.cq-field-error(role='alert')= flash('error')
+
+        p.cq-auth-note
+            a(href="{$home}login") Already a member? Sign in
+```
+
 Try it as a visitor:
 ```bash
 curl -s -o /dev/null -w "%{http_code} %{redirect_url}\n" http://localhost:8080/people
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/join
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/register
 ```
-Expected: `302 http://localhost:8080/login`. The **Sign in** and **Create account** links of the top bar now lead to
-real pages.
+Expected: `302 http://localhost:8080/login?return=%2Fpeople` (`%2F` is a `/` written safely in an address), `200`,
+`404`. The **Sign in** link of the top bar now leads to a real page, and **Create account** is gone: there is no
+`/register`.
 
 ### Step 3 - Close the doors, once
 
@@ -404,14 +498,17 @@ That is the whole security change. Everything below tells people and programs wh
 ### Step 4 - The pages show what the visitor may do
 
 The forms need no change to be safe: `Route::form` sends a visitor who submits to `/login`, and a reader who deletes
-gets the 403 page. The views only hide what the visitor may not use.
+gets the 403 page. The views only hide what the visitor may not use, and give visitors the way in: **Join the club** on
+the catalog, and on a book **Sign in to edit this book**, whose link is `login?return=/books/<id>`: the person comes back
+to that book.
 
-**File `application/views/Bookshelf/books.pug`** (the form for people signed in, else a Sign in button):
+**File `application/views/Bookshelf/books.pug`** (the form for people signed in, else Sign in and Join):
 
 ```pug
 extends ../default/master/site
 
-//- The catalog: Route::page gives it $books (list_books: a page of books) and $authors (list_authors).
+//- The catalog: Route::page gives it $books (list_books: a page of books), $authors (list_authors) and $author_id
+//- (the author of the address, ?author_id=2, as a string; '' when there is none).
 //- The form posts to Route::form('/books', 'create_book'): a refusal comes back here with errors(), old() and flash('error').
 //- $authorized and $user (id, username, permissions) come from Route::page: who is signed in
 
@@ -442,7 +539,7 @@ block content
                             label(for='author_id') * Author
                             select#author_id.form-select(name='author_id')
                                 each $a in $authors
-                                    option(value=$a['id'], selected=$a['id'] == old('author_id'))= $a['name']
+                                    option(value=$a['id'], selected=$a['id'] == old('author_id', $author_id))= $a['name']
                             if errors('author_id')
                                 p.cq-field-error= errors('author_id')
                         .cq-field
@@ -464,6 +561,8 @@ block content
             else
                 p.cq-auth-note
                     a.btn.btn-primary(href="{$home}login") Sign in to add books
+                    |  
+                    a.btn.btn-secondary(href="{$home}join") Join the club
 
     section.cq-band.cq-band--tight
         .cq-inner.cq-inner--narrow
@@ -481,7 +580,7 @@ block content
                                     a(href="{$home}books?author_id={$b['author_id']}")= $b['author']['name']
                                     | , #{$b['published_year']}
                 //- the next and previous pages keep the author of the address (?author_id=2)
-                - $filter = isset($_GET['author_id']) ? '&author_id=' . (int) $_GET['author_id'] : '';
+                - $filter = $author_id !== '' ? '&author_id=' . (int) $author_id : '';
                 p.cq-auth-note
                     | Page #{$books['page']} of #{$books['pages']}, #{$books['total']} books
                     if $books['page'] > 1
@@ -496,7 +595,7 @@ block content
                 a(href="{$home}authors.csv") The authors as a spreadsheet (CSV)
 ```
 
-**File `application/views/Bookshelf/book.pug`** (the edit form for people signed in, Delete for administrators):
+**File `application/views/Bookshelf/book.pug`** (the edit form for people signed in, Delete for administrators, sign-in that comes back):
 
 ```pug
 extends ../default/master/site
@@ -564,7 +663,7 @@ block content
                             button.btn.btn-secondary(type='submit') Delete this book
             p.cq-auth-note
                 if !$authorized
-                    a.btn.btn-primary(href="{$home}login") Sign in to edit this book
+                    a.btn.btn-primary(href="{$home}login?return=/books/{$book['id']}") Sign in to edit this book
                     |  
                 a(href="{$home}books") All books
 ```
@@ -582,14 +681,24 @@ Expected: `... written: 20 capabilities ...` twice. In their comments, `create_b
 
 ### Step 6 - As a visitor, then as a reader
 
-1. Open http://localhost:8080/books: the list and a **Sign in to add books** button, no form. Open a book: **Sign in
-   to edit this book**, no form, no Delete.
-2. Click **Create account** (http://localhost:8080/register). Username `reader1`, password `bookshelf-2026`, twice.
-   Usernames are letters and digits; passwords 8 to 72 characters. `signInAfterRegister` signs you in at once: you land
-   on `/books` with **Sign out** in the top bar and the form.
-3. Add *The Word for World Is Forest*, Ursula K. Le Guin, 1972: it works (`"id":12` if you followed every lesson).
+1. Open http://localhost:8080/books: the list, a **Sign in to add books** button and **Join the club**, no form. Open a
+   book: **Sign in to edit this book**, no form, no Delete.
+2. Click **Join the club** (http://localhost:8080/join) and try the refusals, in this order:
+   - Click **Join** with nothing filled in: under the box, `Accept the rules of the club to join`, and under the form
+     `Some of the inputs are invalid`. The capability was not called.
+   - Tick the box, leave the rest empty, **Join**: `The Username field is required` and `The Passcode field is required`.
+     Now the capability refused. The box is still ticked.
+   - Username `reader1`, password `bookshelf-2026`, then `other-password` in the second field: `The two passwords are not
+     the same` under the second field; `reader1` is still in the Username field, the two password fields are empty.
+3. Type `bookshelf-2026` in both fields, tick the box, **Join**. Usernames are letters and digits; passwords 8 to 72
+   characters. You land on `/books` with `Welcome to the club, reader1`, **Sign out** in the top bar, and the form:
+   the form signed you in.
+4. Open http://localhost:8080/join again: you are sent to `/books`. The page is for visitors only.
+5. Add *The Word for World Is Forest*, Ursula K. Le Guin, 1972: it works (`"id":12` if you followed every lesson).
    Open it: the edit form, and no **Delete**: reader1 has permissions 0.
-4. Open http://localhost:8080/people: the **notAuthorized** page. reader1 is signed in, but below level 1.
+6. Open http://localhost:8080/people: the **notAuthorized** page. reader1 is signed in, but below level 1.
+7. Click **Sign out**. Open http://localhost:8080/books/3 and click **Sign in to edit this book**: the address is
+   `/login?return=/books/3`. Sign in as reader1: you are back on Kindred, not on the catalog.
 
 The REST API obeys the same rules. As a visitor:
 ```bash
@@ -632,8 +741,8 @@ Expected:
 "name":"search_books"
 {"error":{"code":"forbidden","message":"This needs the scope books:write"}} [403]
 ```
-The public tools (`register_user` is the sign-up, which only answers web pages), and a 403 on the write: lesson 07's
-promise kept.
+The public tools (`register_user` is the capability of the join form, which only answers web pages), and a 403 on the
+write: lesson 07's promise kept.
 
 Token #1 (`*`, lesson 02) can do everything: revoke it.
 ```bash
@@ -685,8 +794,8 @@ session: **sign in again** as reader1. Now every book has **Delete this book**, 
 `reader1`, `Administrator`. The librarian's `tools/list` now has `delete_book`: it acts for reader1.
 
 The next administrators need no SQL: `update_user`, a framework capability for administrators, changes `permissions`
-(an agent with a token of reader1 that has `users:write`, or the framework's admin pages). Nobody can give a level
-above their own, and a token without `--user` cannot manage people at all.
+(through an agent with a token of reader1 that has `users:write`). Nobody can give a level above their own, and a token
+without `--user` cannot manage people at all.
 
 ### Step 9 - Who did what
 
@@ -729,7 +838,12 @@ http://localhost:5173 too (the cookie belongs to `localhost`, and the proxy forw
 > | Signed in, but no **Sign out** and no form | The view reads another variable than `$authorized` | Compare the views with step 4 |
 > | The form still shows to visitors | `if $authorized` is missing, or its indentation is wrong (Pug nests by indentation) | Compare with step 4 |
 > | No **Delete** for the administrator | You did not sign in again after the `UPDATE` | Sign out, sign in |
-> | Sign up says the inputs are invalid | A space or a dash in the username, or a password under 8 characters | Letters and digits; 8 to 72 characters |
+> | `The Username field may only contain letters and numbers` or `The Passcode field needs to be at least 8 characters` | A space or a dash in the username, or a short password | Letters and digits; 8 to 72 characters |
+> | `The username already exists in the system` under the join form | The account exists | Sign in, or choose another username |
+> | `Accept the rules of the club to join` with the box ticked | The name of the box is not `rules`, or it has no `value` | Compare `join.pug` with step 2 |
+> | After **Join** you land on `/books` but are not signed in | `'signsIn' => 'id'` is missing | Compare with step 2 |
+> | `/register` still answers | `'register' => false` is missing | Compare with step 2 |
+> | After signing in you land on the catalog, not on the page you were on | The address had no `?return=`, or it named another site | Compare the links with step 4; `comeBack` writes it for you |
 > | 401 with a token you just created | The variable is empty or cut | `echo ${#WRITER}` prints 45; paste the whole `cq_...` value again |
 > | Claude Code answers `Unauthorized` | It uses the revoked token | Remove and add the server again (end of step 7) |
 
@@ -737,10 +851,13 @@ http://localhost:5173 too (the cookie belongs to `localhost`, and the proxy forw
 
 ## Check
 
-- [ ] `web.php`, `people.pug`, the three services and the two views are identical to the File blocks.
+- [ ] `web.php`, `people.pug`, `join.pug`, the three services and the two views are identical to the File blocks.
 - [ ] `capabilities`: the 4 reads `public`; `create_book`, `update_book`, `delete_book` show `books:write`; `DeleteBook.php`
       has `level: 1` and `destructive: true`.
-- [ ] As a visitor: no form, `/people` sends to `/login`, `POST /api/books` answers 401.
+- [ ] As a visitor: no form, `/people` sends to `/login?return=%2Fpeople`, `POST /api/books` answers 401.
+- [ ] The join form refuses an unticked box and two different passwords with the messages of step 6; a good one signs
+      you in; `/join` then sends you to `/books`; `/register` answers 404.
+- [ ] `/login?return=/books/3` comes back to Kindred.
 - [ ] As reader1 (level 0): the form, no Delete, `/people` is notAuthorized; as administrator: Delete and `/people`.
 - [ ] Token #2 sees 5 tools and gets 403 on writes; the librarian (#4) gets 403 on delete until reader1 is an
       administrator; the application token (#3) deletes.
@@ -755,25 +872,35 @@ In `claude`, in the `bookshelf` folder:
 then:
 ```text
 Turn on people and permissions in Bookshelf. In web.php: uncomment Auth::authentication('User', 'users'); replace the
-commented "Auth Routes" block with one line, Route::auth(['home' => '/books', 'signInAfterRegister' => true]) (no
-AuthController routes); add Route::page('/people', 'Bookshelf/people', ['level' => 1, 'data' => ['people' =>
+commented "Auth Routes" block with one line, Route::auth(['home' => '/books', 'register' => false]) (no AuthController
+routes); add Route::page('/people', 'Bookshelf/people', ['level' => 1, 'comeBack' => true, 'data' => ['people' =>
 'list_users']]) after the Route::download line, and its view (title band "People", one cq-row per person: username,
-"Administrator" when permissions >= 1 else "Reader", and created_at). Capabilities: remove public: true from
-create_book and update_book; delete_book gets level: 1 in its place; the reads stay public. Views: books.pug shows its
-form only if $authorized, else a "Sign in to add books" button to /login; book.pug shows the edit form only if
-$authorized and the delete form only if $user['permissions'] >= 1, else a "Sign in to edit this book" button.
+"Administrator" when permissions >= 1 else "Reader", and created_at).
+A join form, with no capability of our own: Route::page('/join', 'Bookshelf/join', ['visitorsOnly' => '/books']) and
+Route::form('/join', 'register_user', with visitorsOnly '/books'; same ['passcode_again' => ['passcode', 'The two
+passwords are not the same']]; accepted ['rules' => 'Accept the rules of the club to join']; signsIn 'id'; success
+'/books'; flash 'Welcome to the club, {username}'). Its view join.pug: main.cq-auth, =csrf(), the fields username,
+passcode, passcode_again and the checkbox rules with value 1, each with errors(), old() for the username and the box,
+flash('error') under the form, a link to /login.
+Capabilities: remove public: true from create_book and update_book; delete_book gets level: 1 in its place; the reads
+stay public. Views: books.pug shows its form only if $authorized, else a "Sign in to add books" button to /login and a
+"Join the club" button to /join; book.pug shows the edit form only if $authorized and the delete form only if
+$user['permissions'] >= 1, else a "Sign in to edit this book" button to login?return=/books/<id>.
 Regenerate public/js/capabilities.js and public/bookshelf-spa/src/capabilities.js. Do not create tokens or users.
 ```
 
 **Check** before you accept:
 - [ ] The protection is in the capabilities, not only in the views: the visitor curl of step 6 answers 401.
-- [ ] `web.php` has `Route::auth([...])` and no `AuthController` route; no new controller.
+- [ ] `web.php` has `Route::auth([...])` with `'register' => false` and no `AuthController` route; no controller; the
+      join form is `Route::page` and `Route::form` and no new capability.
+- [ ] The passwords and the box are checked by `same` and `accepted`, not by JavaScript or by a new capability.
 - [ ] The views use `$authorized` and `$user`, and no PHP block that reads the session.
 - [ ] No password, hash or token in the chat or a file.
 - [ ] Steps 6 to 8 give the same results: do them yourself, they are the proof.
 
 If Claude writes a controller that checks `guard()` and leaves `public: true` in the capabilities, the page is safe but
-REST, the agents and the SPA are not: ask it to close the capabilities instead. If it gives the librarian token no
+REST, the agents and the SPA are not: ask it to close the capabilities instead, and to declare the page. If it adds a
+capability for the join form, ask why: `register_user` already does it. If it gives the librarian token no
 `--user`, the level does not apply to it.
 
 ---
@@ -792,16 +919,17 @@ After copying a checkpoint, run step 1 again (the users table) and create your a
 
 ## Exercise
 
-1. Add a page `/mine` that only signed-in people may open, with the title "Welcome, <username>". Which option of
-   `Route::page` do you use, and where does the username come from?
+1. Add a page `/mine` that only signed-in people may open, with the title "Welcome, <username>". A visitor who opens it
+   must come back to it after signing in. Which options of `Route::page` do you use, and where does the username come
+   from?
 2. A token created with `--scopes books:read,books:write` and no `--user` deletes a book. reader1, signed in with
    permissions 0, cannot. Why?
 
 <details><summary>Show the solution</summary>
 
-1. `signedIn`, and the `$user` that every `Route::page` view gets. In `web.php`, in `// BOOKSHELF PAGES`:
+1. `signedIn` and `comeBack`, and the `$user` that every `Route::page` view gets. In `web.php`, in `// BOOKSHELF PAGES`:
    ```php
-       Route::page('/mine', 'Bookshelf/mine', ['signedIn' => true]);
+       Route::page('/mine', 'Bookshelf/mine', ['signedIn' => true, 'comeBack' => true]);
    ```
    and `application/views/Bookshelf/mine.pug`:
    ```pug
@@ -811,8 +939,8 @@ After copying a checkpoint, run step 1 again (the users table) and create your a
        section.cq-hero.cq-hero--page
            h1.cq-display Welcome, #{$user['username']}
    ```
-   A visitor who opens http://localhost:8080/mine goes to `/login`; reader1 sees `Welcome, reader1`. The page needs no
-   `data`: `$user` is there on every page. (Not in the checkpoint: delete both before you commit.)
+   A visitor who opens http://localhost:8080/mine goes to `/login?return=%2Fmine`, and after signing in reader1 sees
+   `Welcome, reader1`. The page needs no `data`: `$user` is there on every page. (Not in the checkpoint: delete both before you commit.)
 2. The level applies to people, and to tokens created with `--user`. A token without `--user` is an application token:
    only its scopes count, and it has `books:write`. reader1 is a person with permissions 0, below the `level: 1` of
    `delete_book`.

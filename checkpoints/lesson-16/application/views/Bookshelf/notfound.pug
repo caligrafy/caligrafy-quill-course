@@ -1,0 +1,13 @@
+extends ../default/master/site
+
+//- The notFound view of Route::page: $message is the message of the capability that refused (get_book)
+
+block title
+    | Not found · Bookshelf
+
+block content
+    section.cq-hero
+        h1.cq-display Not found
+        p.cq-lead= $message
+        .cq-cta
+            a.btn.btn-primary(href="{$home}books") All books

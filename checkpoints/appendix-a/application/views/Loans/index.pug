@@ -58,6 +58,7 @@ block content
                                     if $loan['overdue']
                                         strong  · late
                             .cq-row-actions
+                                a.btn.btn-secondary(href="{$home}loans/{$loan['book_id']}/renew") 14 more days
                                 form(method='POST', action="{$home}loans/{$loan['book_id']}/return")
                                     =csrf()
                                     button.btn.btn-secondary(type='submit') Returned

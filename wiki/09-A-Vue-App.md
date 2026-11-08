@@ -3,7 +3,8 @@
 **In this lesson** you build **finder**, a small Vue app served by Caligrafy at http://localhost:8080/apps/finder: you
 type a few words, the list of books changes as you type, and you open a book to read about it and its author. You
 generate the **JS client** of Bookshelf, one JavaScript function per capability, and the app calls `list_books`,
-`search_books` and `get_book` through it. No server code is written: no route, no controller, no capability.
+`search_books` and `get_book` through it. The server changes by one line of `web.php`, which declares the address of
+the client apps; no capability is written.
 
 **Before you start:** lesson 08 is done (tag `lesson-08`) and `docker compose ps` shows the 3 containers running.
 
@@ -33,11 +34,19 @@ to `<div id="app">`.
 
 **A client app.** The simplest way to use Vue: a `<script>` tag loads it, with no build step and no Node.js. In
 Caligrafy a client app is a folder `public/<name>/` with `index.php` (the HTML) and `scripts/main.js` (the Vue code);
-`php caligrafer.php app <name>` creates it. The route
-`Route::get('/apps/{appName}', 'Caligrafy\\Controllers\\ClientController');`, already in `web.php`, shows any client app
-at `/apps/<folder>`. In `index.php`, `loadEnvironment()` creates the object `env` (`env.home` is the address of the
+`php caligrafer.php app <name>` creates it. `web.php` shows every client app at `/apps/<folder>`. In `index.php`, `loadEnvironment()` creates the object `env` (`env.home` is the address of the
 application, `http://localhost:8080/`), and `loadVue({ scripts: ['main'] })` loads `scripts/main.js`. Lesson 10 builds
 the other kind of Vue app, with Vite.
+
+**A page for every client app.** The framework's view `Client/app` shows the app `public/<appName>/<app>.php`. So a
+client app is a `Route::page` like any other:
+```php
+Route::page('/apps/{appName}', 'Client/app', ['query' => ['app' => 'index']]);
+```
+`{appName}` is the folder. `'query' => ['app' => 'index']` is a query option with a **default**: the view gets `$app`,
+the value of `?app=` or else `index`. The template's `web.php` serves this address with a controller line,
+`Route::get('/apps/{appName}', 'Caligrafy\\Controllers\\ClientController');`. It works, and you replace it: this way,
+the route says what the page receives, and nothing else of the address reaches it.
 
 **The JS client.** `php caligrafer.php client` reads your capabilities and writes `public/js/capabilities.js`: one
 function per capability, named in camelCase (`list_books` becomes `listBooks`). Each function posts to
@@ -97,9 +106,120 @@ Expected:
  Project created in the public folder.
  Type cd public/finder to access it anytime
 ```
-It copied a template to `public/finder/`: `index.php` and `scripts/main.js`. Open http://localhost:8080/apps/finder:
-the template already uses the client and Caligrafy's look; under the title *My Vue app* it lists the capabilities you
-may call. You replace both files.
+It copied a template to `public/finder/`: `index.php` and `scripts/main.js`.
+
+In `application/config/routing/web.php`, replace the line of `// ROUTING TO JAVASCRIPT APPS` that names `ClientController`
+with the `Route::page` of the concepts above. The file is then:
+
+**File `application/config/routing/web.php`** (`Route::page('/apps/{appName}', ...)` in place of the controller line):
+
+```php
+<?php
+/**
+ * web.php
+ * Web Routes are defined in this file
+ * @author Dory A.Azar
+ * @copyright 2019
+ * @version 1.0
+ *
+*/
+
+use Caligrafy\Auth;
+use Caligrafy\Route;
+use Caligrafy\Errors;
+use \Exception as Exception;
+
+try {
+    
+    // API ACCESS - add comments if you don't want to allow API access on routes
+    Auth::activateAPI();
+    
+    
+    // AUTHENTICATION - Remove comment if you have an authentication implemented
+    // Auth::authentication('User', 'users');
+    
+    // ROUTE DEFINITION: get, post, put and delete
+    Route::redirect('/', '/books');   // the home of Bookshelf is its catalog
+    Route::redirect('/catalog', '/books', 301, ['keepQuery' => true]);   // the catalog's old address: the filter of its address goes along
+    Route::get('/helloworld', function() { echo "Hello World"; });
+	
+    // Auth Routes - Uncomment only if AUTHENTICATION activated above
+    // Route::get('/home', 'Caligrafy\\Controllers\\AuthController@home');
+    // Route::get('/login', 'Caligrafy\\Controllers\\AuthController');
+    // Route::get('/logout', 'Caligrafy\\Controllers\\AuthController@logout');
+	// Route::get('/notAuthorized', 'Caligrafy\\Controllers\\AuthController@notAuthorized');
+    // Route::get('/register', 'Caligrafy\\Controllers\\AuthController@registerForm');
+    // Route::post('/login', 'Caligrafy\\Controllers\\AuthController@login');
+    // Route::post('/register', 'Caligrafy\\Controllers\\AuthController@register');
+
+    // User Administration Routes - Uncomment only if AUTHENTICATION activated above
+	// Route::get('/admin', 'Caligrafy\\Controllers\\AdminController');
+	// Route::get('/users', 'Caligrafy\\Controllers\\AdminController');
+	// Route::get('/users/{id}/edit', 'Caligrafy\\Controllers\\AdminController@editUserForm');
+	// Route::put('/users/{id}/edit', 'Caligrafy\\Controllers\\AdminController@updateUser');
+	// Route::delete('/users/{id}/edit', 'Caligrafy\\Controllers\\AdminController@deleteUser');
+
+    // GPT AI controller
+    // Route::get('/ai', 'Caligrafy\\Controllers\\AIController');
+    // Route::post('/ai', 'Caligrafy\\Controllers\\AIController@query');
+
+    // ROUTING TO JAVASCRIPT APPS
+    // Make sure you create a JS app or a Vue app in Caligrafer first
+    Route::page('/apps/{appName}', 'Client/app', ['query' => ['app' => 'index']]);   // public/<appName>/index.php, or ?app=<file>
+
+    
+    // BOT PAGE ROUTES
+    Route::get('/bot/{appName}', 'Caligrafy\\Controllers\\ClientController');  // A botSkillId needs to be provided in the URL. For Example: ?botSkillId=62196ce3-0b22-4aea-b2f2-d39730c03797
+    
+    // BOT DATA ROUTES
+    // routes need to start with reserved path __bots__ 
+    Route::post('/__bots__/{appName}/communicate', 'Caligrafy\\Controllers\\WatsonController@communicate');
+    Route::post('/__bots__/{appName}/{appId}', 'Caligrafy\\Controllers\\WatsonController@connect');
+    Route::delete('/__bots__/{appName}', 'Caligrafy\\Controllers\\WatsonController@end');   
+
+    /* ML Routes
+     *
+     * If you don't specify an up, it will go to the face, body detector.
+     * Specify an app as a URI Parameter ?app=<name of app>
+     * 
+     * There are 3 possible apps: featureextractor, neuralnetwork and posedetector
+    */
+    Route::get('/ml/{appName}', 'Caligrafy\\Controllers\\ClientController'); 
+    
+
+    // BUILD ONCE: every capability, for the JS client and AI agents
+    Route::capabilities('/capabilities');   // the capabilities for the JS client of the Vue apps
+    Route::mcp('/mcp');                     // the capabilities as tools for AI agents (personal access tokens)
+    Route::notifications();                 // the pages notification emails link to (confirm, unsubscribe)
+
+    // BOOKSHELF PAGES: rendered on the server with the data of the capabilities; each form calls one capability
+    Route::page('/books', 'Bookshelf/books', ['query' => ['author_id'], 'data' => ['books' => 'list_books', 'authors' => 'list_authors']]);
+    Route::form('/books', 'create_book', ['success' => '/books/{id}', 'flash' => 'Book added']);
+    Route::page('/books/{id}', 'Bookshelf/book', ['data' => ['book' => 'get_book', 'authors' => 'list_authors'], 'notFound' => 'Bookshelf/notfound']);
+    Route::form('/books/{id}', 'update_book', ['method' => 'PUT', 'success' => '/books/{id}', 'flash' => 'Saved']);
+    Route::form('/books/{id}', 'delete_book', ['method' => 'DELETE', 'success' => '/books', 'flash' => 'Book deleted']);
+    Route::download('/authors.csv', 'list_authors', ['filename' => 'authors.csv']);   // the same capability, as a file
+
+    // BOOKSHELF API: the same capabilities, for other applications (JSON)
+    Route::capability('GET', '/api/books', 'list_books');
+    Route::capability('GET', '/api/books/{id}', 'get_book');
+    Route::capability('POST', '/api/books', 'create_book');
+    Route::capability('PUT', '/api/books/{id}', 'update_book');
+    Route::capability('DELETE', '/api/books/{id}', 'delete_book');
+    Route::capability('GET', '/api/authors', 'list_authors');
+
+    // MUST NOT BE REMOVED - Routes need to be run after being defined 
+    Route::run(); 
+}
+catch (Exception $e) {
+    
+    // Error handling: HTTP status code (404, 401, 403, 500...) with the error text, or a JSON error for API calls
+    Errors::handle($e);
+}
+```
+
+Open http://localhost:8080/apps/finder: the template already uses the client and Caligrafy's look; under the title
+*My Vue app* it lists the capabilities you may call. You replace both files.
 
 ### Step 3 - The HTML
 
@@ -267,15 +387,17 @@ See what the app sends: open the developer tools (<kbd>F12</kbd>), tab **Network
 `GET capabilities.js` (the client), `GET capabilities` once (the CSRF token), `POST list_books`, then
 `POST search_books`. Click one: it has an `X-CSRF-Token` header and no `Authorization` header.
 
-Check that no server code changed:
+Check what changed on the server:
 ```bash
 git status --short
 ```
 Expected:
 ```text
+ M application/config/routing/web.php
 ?? public/finder/
 ?? public/js/capabilities.js
 ```
+The one line of `web.php` is the only change in `application/`.
 
 > **If it doesn't work**
 >
@@ -287,15 +409,16 @@ Expected:
 > | `Something went wrong. Try again.` under the search field | The server did not answer JSON (containers stopped, a PHP error) | `docker compose ps`; call `search_books` with the curl command of lesson 08 and read the answer |
 > | The rows show `, 1979` with no name | `main.js` or `index.php` reads `book.author_name` or an older shape | Each book has `author` with `name`: `book.author.name` |
 > | Changes to `main.js` do not show | The browser kept the old file | Reload with <kbd>Shift</kbd> pressed, or tick *Disable cache* in the Network tab |
+> | `This client app does not exist. ...` on `/apps/finder` | The folder `public/finder` is missing, or `?app=` names a file that is not in it | Run step 2; open the address without `?app=` |
 > | `The project could not be created` | The folder exists, or the name is reserved (`app`, `bot`, `css`, `js`, `ml`...) | Delete the folder first, or choose another name |
 
 ---
 
 ## Check
 
-- [ ] `public/finder/index.php` and `public/finder/scripts/main.js` are identical to the File blocks.
+- [ ] `web.php`, `public/finder/index.php` and `public/finder/scripts/main.js` are identical to the File blocks.
 - [ ] `public/js/capabilities.js` was written by the `client` command (20 capabilities) and not edited.
-- [ ] `git status --short` shows only the two new paths: no change in `application/`.
+- [ ] `git status --short` shows the two new paths and `web.php`: no other change in `application/`.
 - [ ] No `apiKey`, no `axios`, no `Authorization` in `public/finder/`.
 - [ ] `time` finds Kindred; Open shows the author's bio; at 375 px the page is one column.
 
@@ -316,13 +439,15 @@ getBook({ id }) and shows, in a panel beside the list, the title, "by <author>, 
 yet.") and the author's bio. Show a CapabilityError's field messages (or its message) in p.cq-field-error. Use
 Caligrafy's look like the template: body.cq-site, nav.cq-nav, section.cq-hero.cq-hero--page "Find a book", then
 .cq-split with section.cq-split-main (the search .cq-field, ul.cq-rows, p.cq-empty-state, p.cq-auth-note "N book(s)")
-and aside.cq-split-detail. Do not add routes or server code: /apps/{appName} serves it.
+and aside.cq-split-detail. In web.php replace the Route::get('/apps/{appName}', ...ClientController) line with
+Route::page('/apps/{appName}', 'Client/app', ['query' => ['app' => 'index']]); add no other route or server code.
 ```
 
 **Check** before you accept:
 - [ ] Claude ran `php caligrafer.php client` and did not edit `public/js/capabilities.js` by hand.
 - [ ] The app calls only `listBooks`, `searchBooks` and `getBook`, through `import(env.home + 'public/js/capabilities.js')`.
-- [ ] `git status --short` shows only `public/finder/` and `public/js/capabilities.js`.
+- [ ] `git status --short` shows only `public/finder/`, `public/js/capabilities.js` and `web.php`, and `git diff
+      application` is that one line.
 - [ ] No `apiKey`, `axios` or `Authorization` header; no `cq-card`.
 - [ ] Step 5 works.
 

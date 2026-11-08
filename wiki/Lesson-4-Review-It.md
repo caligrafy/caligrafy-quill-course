@@ -92,9 +92,14 @@ person on the site creates tokens), gives the new token the app's own scopes, ne
   pages, in one line, with failed sign-ins limited;
 - `Route::page(...)`: one line per page, for example
   `Route::page('/books/{id}', 'Books/show', ['data' => ['book' => 'get_book']]);`: the page gets its data from a
-  read-only capability;
+  read-only capability. Options you may meet: `comeBack` (a visitor signs in and comes back), `visitorsOnly` (a page
+  members do not need), `query` (what the view reads from the address, never `$_GET`);
 - `Route::form(...)`, when a page sends a classic form: the form posts to a capability, and on success goes to the
-  page named by `success`, with a short message (`flash`);
+  page named by `success`, with a short message (`flash`). Options you may meet: `same` (two fields that must match),
+  `accepted` (a box that must be ticked), `signsIn` (the person is signed in by the form), `inputs` (values only the
+  server sets);
+- `Route::action(...)`, only for what a page or a form cannot say: a link that decides where to go, a payment page. Its
+  capability says `webOnly: true`, so REST and AI agents do not see it. Nothing else should be web-only;
 - `Route::download('/books.csv', ...)`: the export, from a read-only capability;
 - `Route::capability('GET', '/api/books', 'list_books');` and one line per capability: the REST API;
 - one `Route::capabilities('/capabilities');` (what the JS client calls) and one `Route::mcp('/mcp');` (AI agents);
@@ -111,9 +116,8 @@ anti-forgery token. A page that calls the JS client (`createBook(...)` in `publi
 **The tests** (`tests/<Folder>Test.php`). Each capability is called as a member, and its refusals are checked: an
 invalid input, a visitor.
 
-`application/controllers/` has nothing of Bookshelf's own: pages, forms, the export and the sign-in pages are each one
-line of `web.php`. If Claude wrote a controller, ask it why: a controller is only for something none of those lines
-covers.
+`application/controllers/` has nothing of Bookshelf's own: every request is one line of `web.php`, and since Caligrafy
+Quill 2.21 no application needs a controller. If Claude wrote one, ask it to declare that request instead.
 
 Ask Claude to explain any line you do not understand.
 
@@ -141,7 +145,7 @@ fits, a query inside a loop over rows. Ask Claude to fix what they find, then to
 - [ ] You opened one capability and understood its description, rules, scope and flags.
 - [ ] The list capabilities use the query builder (`with()`, `paginate()`), with no SQL text.
 - [ ] `web.php` has `Route::auth`, a `Route::page` per page, the REST lines, one `Route::capabilities` and one
-      `Route::mcp`; no controller of Bookshelf's own.
+      `Route::mcp`; no controller of Bookshelf's own; any `Route::action` has a capability that says `webOnly: true`.
 - [ ] `doctor`, the tests and the reviewer found nothing left to fix.
 
 When every box is ticked, you approve what Claude built, not just what it planned.
@@ -157,8 +161,9 @@ When every box is ticked, you approve what Claude built, not just what it planne
 
 **By hand:** each experience, built yourself: [06 Web pages](06-Web-Pages), [07 The REST API](07-The-REST-API),
 [08 AI agents](08-AI-Agents), [09 A Vue app](09-A-Vue-App), [10 Phones and tablets](10-Phones-and-Tablets),
-[11 People and permissions](11-People-and-Permissions), [12 Tests, review, doctor](12-Ship-It). What a controller and a
-hand-written form do, and why Claude does not need them: [A Routes and controllers](A-Routes-and-Controllers),
+[11 People and permissions](11-People-and-Permissions), [12 Tests, review, doctor](12-Ship-It),
+[16 What a page or a form cannot say](16-Every-Request-Declared). What a controller and a hand-written form did, and why
+no application needs them now: [A Routes and controllers](A-Routes-and-Controllers),
 [B Classic forms](B-Classic-Forms). The framework pages behind this lesson:
 [Queries](https://github.com/caligrafy/caligrafy-quill/wiki/Queries),
 [Declarative Routes](https://github.com/caligrafy/caligrafy-quill/wiki/Declarative-Routes),

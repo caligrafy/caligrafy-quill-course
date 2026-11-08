@@ -38,7 +38,7 @@ Then: "OK. Build it and check it here, then stop before putting it online."
 - [ ] an invalid input gives the same message everywhere, under its own field on the page;
 - [ ] the tables' scripts have no `DROP`, `DELETE` or `TRUNCATE`, and later changes are migrations;
 - [ ] the capabilities read with the query builder, and `web.php` has one line per page, form, export and REST
-      address, with no controller of the app's own unless Claude told you why;
+      address, with no controller of the app's own: what a page or a form cannot say is a `Route::action`;
 - [ ] if the app takes payments, a `Route::webhook(...)` line receives the provider's events, and Claude names the
       setting (`STRIPE_WEBHOOK_SECRET`) you set yourself online;
 - [ ] `doctor`, the tests and the `caligrafy-reviewer` agent find nothing left to fix.

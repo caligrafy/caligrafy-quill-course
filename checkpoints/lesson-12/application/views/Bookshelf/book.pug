@@ -63,6 +63,6 @@ block content
                             button.btn.btn-secondary(type='submit') Delete this book
             p.cq-auth-note
                 if !$authorized
-                    a.btn.btn-primary(href="{$home}login") Sign in to edit this book
+                    a.btn.btn-primary(href="{$home}login?return=/books/{$book['id']}") Sign in to edit this book
                     |  
                 a(href="{$home}books") All books

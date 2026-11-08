@@ -55,6 +55,10 @@ block content
                     button.btn.btn-primary(type='submit') Save changes
                 if flash('error')
                     p.cq-field-error(role='alert')= flash('error')
+                form(method='POST', action="{$home}books/{$book['id']}/borrow")
+                    =csrf()
+                    p.cq-auth-note
+                        button.btn.btn-secondary(type='submit') Borrow this book
                 if $user['permissions'] >= 1
                     form(method='POST', action="{$home}books/{$book['id']}", onsubmit="return confirm('Delete this book? This cannot be undone.')")
                         =csrf()
@@ -63,6 +67,6 @@ block content
                             button.btn.btn-secondary(type='submit') Delete this book
             p.cq-auth-note
                 if !$authorized
-                    a.btn.btn-primary(href="{$home}login") Sign in to edit this book
+                    a.btn.btn-primary(href="{$home}login?return=/books/{$book['id']}") Sign in to edit this book
                     |  
                 a(href="{$home}books") All books

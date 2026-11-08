@@ -14,16 +14,17 @@ you have the account `reader1` and the "Claude Code" token (#3, `books:read book
 
 ## New concepts
 
-There is almost nothing new: that is the point. A new feature is the same pieces every time.
+There is almost nothing new: that is the point. A new feature is the same pieces every time. The one new option,
+`inputs`, is explained below.
 
 | Piece | Loans | Lesson |
 |---|---|---|
 | A table and a model | `application/models/Loans/create_db.sql`, `Loan` | 03 |
 | Capabilities with rules and refusals | `lend_book`, `return_book`, `list_loans` | 04, 05 |
-| A page and its forms | `Route::page('/loans', ...)`, two `Route::form` | 06 |
+| A page and its forms | `Route::page('/loans', ...)`, three `Route::form` | 06 |
 | REST and agents | `Route::capability`, the `/mcp` of lesson 01 | 07, 08 |
 | The JS clients | `php caligrafer.php client` | 09, 10 |
-| Who may call | scopes `loans:read` and `loans:write`, `signedIn` | 11 |
+| Who may call | scopes `loans:read` and `loans:write`, `signedIn` with `comeBack` | 11 |
 | Checks | curl, `tools/call`, `audit`, the tests | 12 |
 
 **A new table, a first version.** `loans` is new, so it gets its own `create_db.sql` with `CREATE TABLE IF NOT
@@ -39,6 +40,13 @@ that is already lent. It answers `409`, "not now", unlike `422` (the inputs are 
 
 **A computed value.** The caller gives a number of `days` (1 to 60, 14 when empty); the capability computes the due
 date, `due_on`. The rule lives in one place: the page, a script and an agent get the same due date.
+
+**`inputs`: values only the server sets.** The loans page lets a librarian type any borrower. A member who clicks **Borrow
+this book** on a book must not be able to borrow in someone else's name, so the form sends no name at all:
+`'inputs' => function () { return ['borrower' => Auth::user()->username ?? '', 'days' => 14]; }`. What `inputs` gives
+**replaces** what the form sent, and only route variables win over it. It is an array, or a function that returns one
+(it gets the form's fields). `lend_book` does not change: it still checks its rules and who calls it. A visitor gets
+`''`, and is refused before those rules run: `lend_book` is not public.
 
 **Models and arrays.** `Loan::where(...)->first()` gives a `Loan` model: its columns are properties
 (`$open->borrower`). `with('book')` adds the related row as an array (`$loan['book']['title']` in a view).
@@ -272,7 +280,7 @@ Expected:
 
 In `application/config/routing/web.php`, add the `// LOANS` block above `// MUST NOT BE REMOVED`. The file is then:
 
-**File `application/config/routing/web.php`** (the `// LOANS` block: a page, two forms, three REST routes):
+**File `application/config/routing/web.php`** (the `// LOANS` block: a page, three forms, three REST routes):
 
 ```php
 <?php
@@ -301,10 +309,11 @@ try {
     
     // ROUTE DEFINITION: get, post, put and delete
     Route::redirect('/', '/books');   // the home of Bookshelf is its catalog
+    Route::redirect('/catalog', '/books', 301, ['keepQuery' => true]);   // the catalog's old address: the filter of its address goes along
     Route::get('/helloworld', function() { echo "Hello World"; });
 	
-    // SIGN IN, SIGN OUT, SIGN UP: /login, /logout, /register and /notAuthorized; after signing in or up, the catalog
-    Route::auth(['home' => '/books', 'signInAfterRegister' => true]);
+    // SIGN IN, SIGN OUT: /login, /logout and /notAuthorized; after signing in, /login?return=<page>, else the catalog
+    Route::auth(['home' => '/books', 'register' => false]);   // no /register: people join with the form of /join
 
     // User Administration Routes - Uncomment only if AUTHENTICATION activated above
 	// Route::get('/admin', 'Caligrafy\\Controllers\\AdminController');
@@ -319,7 +328,7 @@ try {
 
     // ROUTING TO JAVASCRIPT APPS
     // Make sure you create a JS app or a Vue app in Caligrafer first
-    Route::get('/apps/{appName}', 'Caligrafy\\Controllers\\ClientController'); // you can specify any path as long as it ends with appName
+    Route::page('/apps/{appName}', 'Client/app', ['query' => ['app' => 'index']]);   // public/<appName>/index.php, or ?app=<file>
 
     
     // BOT PAGE ROUTES
@@ -347,13 +356,24 @@ try {
     Route::notifications();                 // the pages notification emails link to (confirm, unsubscribe)
 
     // BOOKSHELF PAGES: rendered on the server with the data of the capabilities; each form calls one capability
-    Route::page('/books', 'Bookshelf/books', ['data' => ['books' => 'list_books', 'authors' => 'list_authors'], 'with' => ['install' => true]]);   // install: offer to add it to the home screen
+    Route::page('/books', 'Bookshelf/books', ['query' => ['author_id'], 'data' => ['books' => 'list_books', 'authors' => 'list_authors'], 'with' => ['install' => true]]);   // install: offer to add it to the home screen
     Route::form('/books', 'create_book', ['success' => '/books/{id}', 'flash' => 'Book added']);
     Route::page('/books/{id}', 'Bookshelf/book', ['data' => ['book' => 'get_book', 'authors' => 'list_authors'], 'notFound' => 'Bookshelf/notfound']);
     Route::form('/books/{id}', 'update_book', ['method' => 'PUT', 'success' => '/books/{id}', 'flash' => 'Saved']);
     Route::form('/books/{id}', 'delete_book', ['method' => 'DELETE', 'success' => '/books', 'flash' => 'Book deleted']);
     Route::download('/authors.csv', 'list_authors', ['filename' => 'authors.csv']);   // the same capability, as a file
-    Route::page('/people', 'Bookshelf/people', ['level' => 1, 'data' => ['people' => 'list_users']]);   // administrators only
+    Route::page('/people', 'Bookshelf/people', ['level' => 1, 'comeBack' => true, 'data' => ['people' => 'list_users']]);   // administrators only
+
+    // JOIN THE CLUB: the only way to create an account; people already signed in go to the catalog
+    Route::page('/join', 'Bookshelf/join', ['visitorsOnly' => '/books']);
+    Route::form('/join', 'register_user', [
+        'visitorsOnly' => '/books',
+        'same' => ['passcode_again' => ['passcode', 'The two passwords are not the same']],
+        'accepted' => ['rules' => 'Accept the rules of the club to join'],
+        'signsIn' => 'id',
+        'success' => '/books',
+        'flash' => 'Welcome to the club, {username}'
+    ]);
 
     // BOOKSHELF API: the same capabilities, for other applications (JSON)
     Route::capability('GET', '/api/books', 'list_books');
@@ -364,9 +384,10 @@ try {
     Route::capability('GET', '/api/authors', 'list_authors');
 
     // LOANS: one more feature, every experience: a page and its forms, REST, the JS clients and AI agents
-    Route::page('/loans', 'Loans/index', ['signedIn' => true, 'data' => ['loans' => 'list_loans', 'books' => 'list_books']]);
+    Route::page('/loans', 'Loans/index', ['signedIn' => true, 'comeBack' => true, 'data' => ['loans' => 'list_loans', 'books' => 'list_books']]);
     Route::form('/loans', 'lend_book', ['success' => '/loans', 'flash' => 'Lent to {borrower} until {due_on}']);
     Route::form('/loans/{book_id}/return', 'return_book', ['success' => '/loans', 'flash' => 'Returned by {borrower}']);
+    Route::form('/books/{book_id}/borrow', 'lend_book', ['inputs' => function () { return ['borrower' => Auth::user()->username ?? '', 'days' => 14]; }, 'success' => '/loans', 'flash' => 'It is yours until {due_on}']);   // the server says who borrows
     Route::capability('GET', '/api/loans', 'list_loans');
     Route::capability('POST', '/api/loans', 'lend_book');
     Route::capability('POST', '/api/books/{book_id}/return', 'return_book');
@@ -381,10 +402,12 @@ catch (Exception $e) {
 }
 ```
 
-- `/loans` is `signedIn`: a visitor goes to `/login`. Its data comes from `list_loans` and `list_books` (for the list of
-  books of the form).
+- `/loans` is `signedIn` and `comeBack`: a visitor goes to `/login?return=%2Floans` and comes back here. Its data comes
+  from `list_loans` and `list_books` (for the list of books of the form).
 - `Route::form('/loans', 'lend_book', ...)`: the flash message fills `{borrower}` and `{due_on}` from the answer.
 - `/loans/{book_id}/return`: the route variable `{book_id}` is the input of `return_book`, on the page as on REST.
+- `/books/{book_id}/borrow`: the route gives `book_id`, `inputs` gives the borrower and the days. The browser sends
+  nothing but its token.
 
 ### Step 5 - The page
 
@@ -457,11 +480,91 @@ block content
                 a(href="{$home}books") All books
 ```
 
+On the page of a book, add the **Borrow this book** form, under the edit form. The file is then:
+
+**File `application/views/Bookshelf/book.pug`** (one more form, for people signed in):
+
+```pug
+extends ../default/master/site
+
+//- One book: Route::page gives it $book (get_book: the book with its author) and $authors (list_authors).
+//- The edit form posts to Route::form (PUT, update_book), the delete form to Route::form (DELETE, delete_book)
+
+block title
+    = $book['title'] . ' · Bookshelf'
+
+block content
+    section.cq-hero.cq-hero--page
+        h1.cq-display= $book['title']
+        p.cq-lead
+            | by #{$book['author']['name']}, #{$book['published_year']}
+
+    section.cq-band.cq-band--tight
+        .cq-inner.cq-inner--narrow
+            if flash('success')
+                p.cq-alert(role='status')= flash('success')
+            p= $book['summary'] ?: 'No summary yet.'
+            if $book['isbn']
+                p.cq-row-meta ISBN #{$book['isbn']}
+
+            //- the edit form for people signed in, Delete for administrators (permissions 1 or more):
+            //- the capabilities refuse the others on every channel, the page only hides what they may not use
+            if $authorized
+                form(method='POST', action="{$home}books/{$book['id']}", novalidate)
+                    =csrf()
+                    =methodField('PUT')
+                    .cq-form-grid.cq-form-grid--2
+                        .cq-field
+                            label(for='title') * Title
+                            input#title.form-control(type='text', name='title', value=old('title', $book['title']), maxlength='200')
+                            if errors('title')
+                                p.cq-field-error= errors('title')
+                        .cq-field
+                            label(for='author_id') * Author
+                            select#author_id.form-select(name='author_id')
+                                each $a in $authors
+                                    option(value=$a['id'], selected=$a['id'] == old('author_id', $book['author_id']))= $a['name']
+                            if errors('author_id')
+                                p.cq-field-error= errors('author_id')
+                        .cq-field
+                            label(for='published_year') * Year
+                            input#published_year.form-control(type='number', name='published_year', value=old('published_year', $book['published_year']))
+                            if errors('published_year')
+                                p.cq-field-error= errors('published_year')
+                        .cq-field
+                            label(for='isbn') ISBN
+                            input#isbn.form-control(type='text', name='isbn', value=old('isbn', $book['isbn']), maxlength='20')
+                            if errors('isbn')
+                                p.cq-field-error= errors('isbn')
+                    .cq-field
+                        label(for='summary') Summary
+                        input#summary.form-control(type='text', name='summary', value=old('summary', $book['summary']), maxlength='2000')
+                    button.btn.btn-primary(type='submit') Save changes
+                if flash('error')
+                    p.cq-field-error(role='alert')= flash('error')
+                form(method='POST', action="{$home}books/{$book['id']}/borrow")
+                    =csrf()
+                    p.cq-auth-note
+                        button.btn.btn-secondary(type='submit') Borrow this book
+                if $user['permissions'] >= 1
+                    form(method='POST', action="{$home}books/{$book['id']}", onsubmit="return confirm('Delete this book? This cannot be undone.')")
+                        =csrf()
+                        =methodField('DELETE')
+                        p.cq-auth-note
+                            button.btn.btn-secondary(type='submit') Delete this book
+            p.cq-auth-note
+                if !$authorized
+                    a.btn.btn-primary(href="{$home}login?return=/books/{$book['id']}") Sign in to edit this book
+                    |  
+                a(href="{$home}books") All books
+```
+
 As a visitor:
 ```bash
 curl -s -o /dev/null -w "%{http_code} %{redirect_url}\n" http://localhost:8080/loans
 ```
-Expected: `302 http://localhost:8080/login`. Sign in as reader1 and open http://localhost:8080/loans:
+Expected: `302 http://localhost:8080/login?return=%2Floans`. Open that address and sign in as reader1: you are on
+http://localhost:8080/loans:
 1. **Loans**, the form, and `Every book is on the shelf.`
 2. Choose *Invisible Cities*, borrower `Sam`, days `7`, **Lend**: `Lent to Sam until 2026-11-14` (today plus 7 days:
    your date), and the row *Invisible Cities*, `Sam, due 2026-11-14`, with a **Returned** button.
@@ -469,6 +572,9 @@ Expected: `302 http://localhost:8080/login`. Sign in as reader1 and open http://
 4. Leave the borrower empty and type `90` days: `The Borrower field is required` and
    `The Days field needs to be a numeric value, equal to, or lower than 60` under the fields, and what you typed is
    still there.
+5. Open *Invisible Cities* and click **Borrow this book**: `This book is already lent to Sam`, on that page.
+6. Open *A Wizard of Earthsea* and click **Borrow this book**: you land on the loans with `It is yours until <today plus
+   14 days>`, and the row says `reader1`. Click **Returned**: `Returned by reader1`.
 
 ### Step 6 - REST, with the right scopes
 
@@ -498,7 +604,7 @@ curl -s -X POST -H "Accept: application/json" -H "Content-Type: application/json
 ```
 Expected (your dates differ):
 ```text
-{"data":{"id":2,"book_id":3,"borrower":"Ana","due_on":"2026-11-10","returned_at":null,"created_at":"2026-11-07 23:58:18","modified_at":"2026-11-07 23:58:18","book":{"id":3,"title":"Kindred","published_year":1979,...}}} [201]
+{"data":{"id":3,"book_id":3,"borrower":"Ana","due_on":"2026-11-10","returned_at":null,"created_at":"2026-11-07 23:58:18","modified_at":"2026-11-07 23:58:18","book":{"id":3,"title":"Kindred","published_year":1979,...}}} [201]
 {"error":{"code":"conflict","message":"This book is already lent to Ana"}} [409]
 ```
 The list, a return, and the same return again:
@@ -584,9 +690,12 @@ Expected: `... written: 23 capabilities ...` twice (`lendBook`, `listLoans`, `re
 
 ## Check
 
-- [ ] The two model files, the three capabilities, `web.php` and `Loans/index.pug` are identical to the File blocks.
+- [ ] The two model files, the three capabilities, `web.php`, `Loans/index.pug` and `Bookshelf/book.pug` are identical
+      to the File blocks.
 - [ ] No controller, no SQL string in a capability, no `public: true` on a loan capability.
-- [ ] `/loans` sends visitors to `/login`; reader1 lends, gets the conflict and the field messages on the page.
+- [ ] `/loans` sends visitors to `/login?return=%2Floans`; reader1 lends, gets the conflict and the field messages on
+      the page.
+- [ ] **Borrow this book** lends the book to reader1, for 14 days, and says `already lent` on a book that is out.
 - [ ] REST: 401 for a visitor, 403 for the "Claude Code" token, 201, 409, 404 for the loans desk token.
 - [ ] `tools/list` of the loans desk token has `lend_book`, `list_loans`, `return_book`; the audit log shows
       `mcp token 6 lend_book ok`.
@@ -606,18 +715,22 @@ Add Loans to Bookshelf, capabilities first, no controller.
    Loan::with('book')->find($id)), return_book (loans:write; book_id; not_found "Book #<id> is not lent"; sets
    returned_at), list_loans (loans:read, readOnly; the open loans with with('book'), soonest due first, each with
    overdue = due_on < today). Not public, no level. Query builder only.
-3. web.php, a // LOANS block: Route::page('/loans', 'Loans/index', signedIn, data loans => list_loans and books =>
-   list_books); Route::form POST /loans lend_book (success /loans, flash "Lent to {borrower} until {due_on}");
-   Route::form POST /loans/{book_id}/return return_book (flash "Returned by {borrower}"); REST GET /api/loans,
-   POST /api/loans, POST /api/books/{book_id}/return.
+3. web.php, a // LOANS block: Route::page('/loans', 'Loans/index', signedIn, comeBack, data loans => list_loans and
+   books => list_books); Route::form POST /loans lend_book (success /loans, flash "Lent to {borrower} until {due_on}");
+   Route::form POST /loans/{book_id}/return return_book (flash "Returned by {borrower}"); Route::form POST
+   /books/{book_id}/borrow lend_book with inputs, a function returning borrower = Auth::user()->username ?? '' and
+   days = 14 (success /loans, flash "It is yours until {due_on}"); REST GET /api/loans, POST /api/loans,
+   POST /api/books/{book_id}/return.
 4. Loans/index.pug like the catalog: a title band, the lend form with errors() and old(), the rows of the loans out
-   ("<borrower>, due <date>", "late" when overdue) each with a Returned form, an empty state.
+   ("<borrower>, due <date>", "late" when overdue) each with a Returned form, an empty state. In book.pug, for people
+   signed in, a "Borrow this book" form that posts to books/<id>/borrow with =csrf() and no other field.
 5. Regenerate both clients, run the tests and the smoke test. Do not create tokens.
 ```
 
 **Check** before you accept:
 - [ ] Steps 5 to 8 give the same results with Claude's files.
 - [ ] The scopes are `loans:read` and `loans:write`; nothing is `public`.
+- [ ] The Borrow form has no borrower field: the name comes from `inputs` in `web.php`.
 - [ ] No `Database::execute()` with SQL strings, no query inside a `foreach`.
 - [ ] `create_db.sql` is a new file in `application/models/Loans/`; `Bookshelf/create_db.sql` did not change.
 - [ ] Claude created no token and printed none.
@@ -640,8 +753,11 @@ After copying a checkpoint, run the `sql` command of step 1. Learn more:
 
 ## Exercise
 
-Add a read-only capability `popular_books` (scope `loans:read`): the 5 books lent most often, returned or not, with
+1. Add a read-only capability `popular_books` (scope `loans:read`): the 5 books lent most often, returned or not, with
 how many times. Use `withCount()` of the query builder, and call it from the command line.
+2. A `Route::form` can send people to another site afterwards, as a payment page does. Add a form on
+`/books/{book_id}/lookup` that lends the book to `Open Library` for 1 day, then goes to
+`https://openlibrary.org/search?q=<the title>`. Which options do you use?
 
 <details><summary>Show the solution</summary>
 
@@ -677,10 +793,19 @@ class PopularBooks extends Service
 ```bash
 docker compose exec dev-box php caligrafer.php call popular_books
 ```
-answers Kindred with `"loans_count": 2`, Invisible Cities with `1`, then three books with `0`, in title order. The
-count is not a column of the SQL, so `orderBy('loans_count')` fails (`Unknown column 'loans_count'`): sort after
+answers Kindred with `"loans_count": 2`, then A Wizard of Earthsea and Invisible Cities with `1`, then two books with
+`0`, each group in title order. The count is not a column of the SQL, so `orderBy('loans_count')` fails (`Unknown column 'loans_count'`): sort after
 `get()`. `withCount('loans')` finds the table `loans` and its column `book_id` by convention. Not in the checkpoint:
 delete the file before you commit.
+
+For the second exercise, `inputs` for the two values and a function for `success`, which gets the answer of `lend_book`,
+its book included:
+```php
+    Route::form('/books/{book_id}/lookup', 'lend_book', ['inputs' => ['borrower' => 'Open Library', 'days' => 1], 'success' => function ($loan) { return 'https://openlibrary.org/search?q=' . rawurlencode($loan['book']['title']); }]);
+```
+The form answers `302 https://openlibrary.org/search?q=The%20Left%20Hand%20of%20Darkness` for book 2. A real payment page
+comes from your provider in the capability's answer: `'success' => function ($answer) { return $answer['url']; }`, a
+function because a `{placeholder}` in `success` is encoded for a path. Not in the checkpoint either.
 </details>
 
 ---

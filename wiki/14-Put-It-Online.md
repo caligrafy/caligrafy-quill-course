@@ -74,7 +74,7 @@ lowercase letters, digits or single dashes, starting with a letter, and must be 
 docker compose exec dev-box php caligrafer.php version
 docker compose exec dev-box php caligrafer.php deploy
 ```
-Expected: `Caligrafy Quill 2.21.0`, then (the first time):
+Expected: `Caligrafy Quill 2.21.2`, then (the first time):
 ```text
  Caligrafy deploy
  caligrafy-schedule {"version":1,"jobs":[]}
@@ -214,7 +214,7 @@ agent with the dashboard of the app, never by copying one from your computer.
 
 ### Step 7 - The first administrator online
 
-Sign up on https://bookshelf-sam.caligrafy.com/register as `reader1`. Online there is no `docker compose exec mysql`:
+Join on https://bookshelf-sam.caligrafy.com/join as `reader1`. Online there is no `docker compose exec mysql`:
 data that already exists is changed by a **migration**, which the deploy step runs once. Write it:
 ```bash
 docker compose exec dev-box php caligrafer.php migrate make make_reader1_admin

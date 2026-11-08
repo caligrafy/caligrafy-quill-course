@@ -18,7 +18,7 @@ be at the end, learn how the lessons work, and install every tool the course use
 
 Caligrafy Quill is a **PHP framework**: a set of PHP files that already solve what every web application needs
 (reading the address, talking to a database, showing pages, checking forms, signing people in), so that you only
-write what is specific to your application. The course uses the release **Caligrafy Quill 2.21.0**, and every output
+write what is specific to your application. The course uses the release **Caligrafy Quill 2.21.2**, and every output
 on these pages was produced with it.
 
 ### Build once, experience everywhere
@@ -60,9 +60,12 @@ Every lesson uses one recommended way for each job, always the same one:
 | add a feature | a **capability**, which reads and writes with the **query builder** (`Book::where(...)`) | 04, 05 |
 | show a page, handle a form, offer a file | one line of `web.php` each: `Route::page`, `Route::form`, `Route::download` | 06 |
 | a REST API | `Route::capabilities` and `Route::capability` | 07 |
+| sign people in, let them join | `Route::auth`, and the options of `Route::page` and `Route::form` | 11 |
+| what a page or a form cannot say | `Route::action`, with a capability declared `webOnly: true` | 16 |
 
-Older ways (controllers, SQL scripts, hand-written form handling) still work. The appendices show them, once you know
-the recommended way.
+Every request of an application can be declared this way: since Caligrafy Quill 2.21, an application needs no
+controller. Older ways (controllers, SQL scripts, hand-written form handling) still work, and existing controllers can
+stay. The appendices show them, once you know the recommended way.
 
 ## What you will build: Bookshelf
 
@@ -73,8 +76,10 @@ the recommended way.
 - **AI agent tools**: Claude can search the catalog and add books for you;
 - a **Vue app** and a **phone and tablet app** that you can install on the home screen;
 - **sign-in with permissions**: visitors read, signed-in people add, administrators delete, each agent has its own
-  limited key;
+  limited key; a **join form** with the rules of the club to accept, and sign-in that brings you back to the page you
+  were on;
 - **loans**: who borrowed which book, until when;
+- **what a page or a form cannot say**: a book at random, an RSS feed, a link that gives a loan more days;
 - and it is **online**, deployed from your GitHub repository.
 
 | Part | Lessons | What you do |
@@ -84,7 +89,8 @@ the recommended way.
 | Experience everywhere | 06 to 10 | Web pages, the REST API, AI agents, a Vue app, phones and tablets |
 | People and trust | 11 | Sign-in, permission levels, tokens with limited scopes |
 | Ship it | 12 to 15 | Tests and review, a last feature on your own (loans), Bookshelf online, reminders |
-| Under the hood (optional) | A, B | What the one-line routes replace: controllers and classic forms |
+| Every request declared | 16 | `Route::action`, for what a page or a form cannot say: Bookshelf without a single controller |
+| Under the hood (optional) | A, B | The older ways that the one-line routes replace: controllers and classic forms |
 
 ## How the lessons work
 
@@ -236,7 +242,7 @@ and answer *Yes* to the question about trusting the folder.
 | Skill (loads by itself) | `caligrafy`: the framework documentation, a checked API reference and known pitfalls | all |
 | Command | `/caligrafy-quill:server start\|stop\|status` | 01 |
 | Command | `/caligrafy-quill:db`: runs SQL scripts and migrations, lists tables | 03, 05 |
-| Command | `/caligrafy-quill:new-capability <name> [scope] [read-only\|destructive]` | 04, 05 |
+| Command | `/caligrafy-quill:new-capability <name> [scope] [read-only\|destructive]` | 04, 05, 16 |
 | Command | `/caligrafy-quill:new-app <app\|create\|bot\|facedetect\|ml> <name>` | 09, 10 |
 | Command | `/caligrafy-quill:ship`, `/caligrafy-quill:deploy`, `/caligrafy-quill:update` | 14 |
 | Agent | `caligrafy-reviewer`: reviews your Caligrafy code | 12 |

@@ -248,6 +248,7 @@ check 403 ".env is never served"         "$BASE/.env"
 check 403 "a form without its token"     -X POST -d '_method=PUT&title=x' "$BASE/books/1"
 check 200 "the authors as a CSV file"    "$BASE/authors.csv"
 check 302 "people: visitors to sign in"  "$BASE/people"
+check 200 "join: the form for visitors"  "$BASE/join"
 # REST
 check 200 "REST: list the books"         "${JSON[@]}" "$BASE/api/books"
 check 422 "REST: a search too short"     -X POST "${JSON[@]}" -d '{"query":"a"}' "$BASE/capabilities/search_books"
@@ -266,7 +267,8 @@ echo "All checks passed."
 - `check 200 "the catalog page" "$BASE/books"` requests `/books` and expects `200`. Everything after the description
   goes to `curl`; `-o /dev/null -w '%{http_code}'` keeps only the status.
 - `a form without its token` posts the edit form of book 1 the way another website would, without the CSRF token: 403.
-- `people: visitors to sign in`: the `level` of `/people` sends a visitor to `/login` (302).
+- `people: visitors to sign in`: the `level` of `/people` sends a visitor to `/login?return=%2Fpeople` (302).
+- `join: the form for visitors`: `/join` opens for someone who is not signed in.
 - The last check needs a token that may read but not write; it runs only when `READ_TOKEN` is set.
 
 Run it on your computer (not in the container):
@@ -282,6 +284,7 @@ OK   403 .env is never served
 OK   403 a form without its token
 OK   200 the authors as a CSV file
 OK   302 people: visitors to sign in
+OK   200 join: the form for visitors
 OK   200 REST: list the books
 OK   422 REST: a search too short
 OK   401 REST: a visitor cannot write
@@ -293,7 +296,7 @@ Now with a read-only token that expires after one day, created and passed in one
 READ_TOKEN=$(docker compose exec -T dev-box php caligrafer.php token create "smoke test" --scopes books:read --expires 1 | grep -oE 'cq_[0-9]+_[A-Za-z0-9]+') bash qa/bookshelf/smoke.sh
 ```
 `$( ... )` uses what the command prints; `-T` because the output goes to `grep`, not to your screen; `grep -oE` keeps
-only the token. Expected: the same 11 lines, then `OK   403 REST: a read-only token cannot write` and
+only the token. Expected: the same 12 lines, then `OK   403 REST: a read-only token cannot write` and
 `All checks passed.` Each run creates a "smoke test" token (`token list` shows them): it stops working after a day, and
 `token revoke <id>` stops it at once.
 
@@ -313,7 +316,7 @@ docker compose exec dev-box php caligrafer.php doctor
 ```
 Expected (the key endings, the plugin name and the versions are yours):
 ```text
-Caligrafy doctor (read-only): Caligrafy Quill 2.21.0
+Caligrafy doctor (read-only): Caligrafy Quill 2.21.2
 
  Project
   OK    PHP: 8.5.12
@@ -375,7 +378,7 @@ Lesson 14 puts Bookshelf online. Go through this list first; on Caligrafy Cloud,
 `APP_DEBUG=false` and `LEGACY_API_KEY=false` are set for you.
 
 - [ ] Nothing that writes is `public: true`: `capabilities` shows `public` only on the Bookshelf reads and on the
-      framework's `register_user` (the sign-up) and `notify_email_confirm`.
+      framework's `register_user` (the join form) and `notify_email_confirm`.
 - [ ] `LEGACY_API_KEY=false` in the `.env` of the server.
 - [ ] Tokens: `token list`, then `token revoke <id>` for every token you no longer use; each program has its own token
       with the smallest scopes, and `--expires <days>` when it is temporary.

@@ -1,0 +1,88 @@
+extends ../default/master/site
+
+//- The catalog: Route::page gives it $books (list_books: a page of books), $authors (list_authors) and $author_id
+//- (the author of the address, ?author_id=2, as a string; '' when there is none).
+//- The form posts to Route::form('/books', 'create_book'): a refusal comes back here with errors(), old() and flash('error').
+//- $authorized and $user (id, username, permissions) come from Route::page: who is signed in
+
+block title
+    | Bookshelf
+
+block content
+    section.cq-hero.cq-hero--page
+        h1.cq-display Bookshelf
+        p.cq-lead The books we love. The same catalog that the REST API and AI agents use.
+
+    section.cq-band.cq-band--tight
+        .cq-inner.cq-inner--narrow
+            if flash('success')
+                p.cq-alert(role='status')= flash('success')
+
+            //- the form only for people signed in: create_book refuses visitors on every channel anyway
+            if $authorized
+                form(method='POST', action="{$home}books", novalidate)
+                    =csrf()
+                    .cq-form-grid.cq-form-grid--2
+                        .cq-field
+                            label(for='title') * Title
+                            input#title.form-control(type='text', name='title', value=old('title'), maxlength='200')
+                            if errors('title')
+                                p.cq-field-error= errors('title')
+                        .cq-field
+                            label(for='author_id') * Author
+                            select#author_id.form-select(name='author_id')
+                                each $a in $authors
+                                    option(value=$a['id'], selected=$a['id'] == old('author_id', $author_id))= $a['name']
+                            if errors('author_id')
+                                p.cq-field-error= errors('author_id')
+                        .cq-field
+                            label(for='published_year') * Year
+                            input#published_year.form-control(type='number', name='published_year', value=old('published_year'), placeholder='1969')
+                            if errors('published_year')
+                                p.cq-field-error= errors('published_year')
+                        .cq-field
+                            label(for='isbn') ISBN
+                            input#isbn.form-control(type='text', name='isbn', value=old('isbn'), placeholder='Optional', maxlength='20')
+                            if errors('isbn')
+                                p.cq-field-error= errors('isbn')
+                    .cq-field
+                        label(for='summary') Summary
+                        input#summary.form-control(type='text', name='summary', value=old('summary'), placeholder='Optional', maxlength='2000')
+                    button.btn.btn-primary(type='submit') Add book
+                if flash('error')
+                    p.cq-field-error(role='alert')= flash('error')
+            else
+                p.cq-auth-note
+                    a.btn.btn-primary(href="{$home}login") Sign in to add books
+                    |  
+                    a.btn.btn-secondary(href="{$home}join") Join the club
+
+    section.cq-band.cq-band--tight
+        .cq-inner.cq-inner--narrow
+            h2.cq-heading Books
+            if $books['total'] == 0
+                p.cq-empty-state No books here yet: add the first one above.
+            else
+                ul.cq-rows
+                    each $b in $books['data']
+                        li.cq-row
+                            .cq-row-main
+                                p.cq-row-title
+                                    a(href="{$home}books/{$b['id']}")= $b['title']
+                                p.cq-row-meta
+                                    a(href="{$home}books?author_id={$b['author_id']}")= $b['author']['name']
+                                    | , #{$b['published_year']}
+                //- the next and previous pages keep the author of the address (?author_id=2)
+                - $filter = $author_id !== '' ? '&author_id=' . (int) $author_id : '';
+                p.cq-auth-note
+                    | Page #{$books['page']} of #{$books['pages']}, #{$books['total']} books
+                    if $books['page'] > 1
+                        |  · 
+                        a(href="{$home}books?page=" . ($books['page'] - 1) . $filter) Previous
+                    if $books['page'] < $books['pages']
+                        |  · 
+                        a(href="{$home}books?page=" . ($books['page'] + 1) . $filter) Next
+            p.cq-auth-note
+                a(href="{$home}books") All books
+                |  · 
+                a(href="{$home}authors.csv") The authors as a spreadsheet (CSV)

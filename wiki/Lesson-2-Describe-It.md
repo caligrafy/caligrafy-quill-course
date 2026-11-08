@@ -38,6 +38,9 @@ Each kind of sentence becomes a part of the plan you will read in [Lesson 3](Les
 | "open a page per book" | a page |
 | "download the catalog as a CSV file" | an export address |
 | "every morning", "remind", "alert me" | a job on a timer, a notification |
+| "they must accept the rules to join" | a box on the sign-up form |
+| "after signing in, back to the page they were on" | an option of that page |
+| "a link that picks a book at random", "a link in a message that renews a loan" | one small web-only action |
 
 ---
 
