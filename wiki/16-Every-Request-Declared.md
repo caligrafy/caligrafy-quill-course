@@ -53,6 +53,10 @@ every experience must be able to use it the same way. A web-only capability is t
 and the request, sign people in with `AuthRoutes::signIn($user)`, and change data on a GET. So nothing but `Route::action`
 reaches it:
 
+When only some sign-ins may do something, say how the person signed in: `AuthRoutes::signIn($user, null, 'face')`, then
+check `AuthRoutes::signedInBy()`. `Route::auth` records `password` for you. See
+[How a session signed in](https://github.com/caligrafy/caligrafy-quill/wiki/9.1-Authentication#signedinby).
+
 | Experience | What it gets for a web-only capability |
 |---|---|
 | REST, `POST /capabilities/surprise_me` | `There is no capability 'surprise_me'` (404) |
