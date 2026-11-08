@@ -38,8 +38,9 @@ Bookshelf's REST API:
 
 **Inputs.** A capability's inputs come from three places, merged: the **body** (JSON with
 `Content-Type: application/json`, or form fields), the **query string** (`?author_id=3`), and the **route variables**
-(`{id}`), which win. The rules, the checks of `handle()` and the 404s all come from the capability, exactly as for the
-pages and the agent.
+(`{id}`). The route variables win over the two others: `/api/books/3?id=9` is book 3, so nothing in a query string can
+point an address at another row. The rules, the checks of `handle()` and the 404s all come from the capability, exactly
+as for the pages and the agent.
 
 **The answers.** Success: `{"data": ...}`. Refusal: `{"error": {"code", "message", "fields"}}` (`fields` only when
 inputs are wrong). A list is a **page**, always the same shape:
@@ -66,7 +67,8 @@ capability does not look at scopes: everyone may call it. Until lesson 11 every 
 API works without a token; lesson 11 closes the writes, and then the scopes decide.
 
 **`Accept: application/json`.** Programs send it: it tells Caligrafy that this is an API call (JSON answers, errors in
-JSON, no CSRF form token needed).
+JSON, no CSRF form token needed). That goes for the capability routes of this lesson. The addresses of `Route::action`
+(lesson 16) are for pages: a JSON call to one needs the page's token as well, in the header `X-CSRF-Token`.
 
 ---
 
@@ -223,6 +225,12 @@ Expected: `{"error":{"code":"not_found","message":"There is no book #42"}} [404]
 `get_book`, the same that the book page shows as its Not found page. And `http://localhost:8080/api/books/1` answers
 the book with its author and `[200]`.
 
+The route variable wins over the query string:
+```bash
+curl -s -H "Accept: application/json" "http://localhost:8080/api/books/3?id=5" | cut -c1-40
+```
+Expected: `{"data":{"id":3,"title":"Kindred","publi`: book 3, the one the address names.
+
 `-i` prints the headers of the answer; `head -1` keeps the status line:
 ```bash
 curl -s -i -H "Accept: application/json" http://localhost:8080/api/authors | head -1
@@ -354,6 +362,7 @@ When a partner should stop, revoke its token: `docker compose exec dev-box php c
 - [ ] `web.php` is identical to the File block: six `Route::capability` lines in a `// BOOKSHELF API` block.
 - [ ] No new file in `application/controllers/` or `application/services/`; no capability was changed.
 - [ ] Reads answer a page `{"data":{"data":[...],"total":...,"page":...,"per_page":20,"pages":...}}`; `?page=abc` is 422.
+- [ ] `/api/books/3?id=5` answers book 3.
 - [ ] The statuses: 200 for reads, PUT and DELETE; 201 for each POST that creates; 404 for book 42; 422 for the book
       without a year.
 - [ ] `list_users` answers 401 without a token and 403 with the `books:read` token.

@@ -6,7 +6,7 @@ Vue apps and tools for AI agents, with their own scopes and a token for a "loans
 course taught, on a new feature.
 
 **Before you start:** lesson 12 is done (tag `lesson-12`), `docker compose ps` shows the 3 containers running, and
-you have the account `reader1` and the "Claude Code" token (#3, `books:read books:write`) of lesson 11.
+you have the account `reader1@example.com` and the "Claude Code" token (#3, `books:read books:write`) of lesson 11.
 
 **Time:** 60 to 90 minutes.
 
@@ -48,6 +48,10 @@ this book** on a book must not be able to borrow in someone else's name, so the 
 (it gets the form's fields). `lend_book` does not change: it still checks its rules and who calls it. A visitor gets
 `''`, and is refused before those rules run: `lend_book` is not public.
 
+`Auth::user()->username` is the member's email address (lesson 11), so `borrower` has room for 254 characters, and
+everyone who is signed in sees that address on the loans page. That is fine for a book club. In an app where people
+do not know each other, keep a display name in another column and show that.
+
 **Models and arrays.** `Loan::where(...)->first()` gives a `Loan` model: its columns are properties
 (`$open->borrower`). `with('book')` adds the related row as an array (`$loan['book']['title']` in a view).
 `arrays()` keeps the rows as arrays, which a capability can add a value to (`overdue`).
@@ -72,7 +76,7 @@ Run every command from the `bookshelf` folder.
 CREATE TABLE IF NOT EXISTS loans (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     book_id INT UNSIGNED NOT NULL,
-    borrower VARCHAR(100) NOT NULL,
+    borrower VARCHAR(254) NOT NULL,
     due_on DATE NOT NULL,
     returned_at DATETIME NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -98,7 +102,7 @@ harmless):
 Field	Type	Null	Key	Default	Extra
 id	int unsigned	NO	PRI	NULL	auto_increment
 book_id	int unsigned	NO	MUL	NULL	
-borrower	varchar(100)	NO		NULL	
+borrower	varchar(254)	NO		NULL	
 due_on	date	NO		NULL	
 returned_at	datetime	YES		NULL	
 created_at	datetime	NO		CURRENT_TIMESTAMP	DEFAULT_GENERATED
@@ -158,13 +162,13 @@ class LendBook extends Service
 {
     public $rules = array(
         'book_id' => 'required|integer|exists,books.id',
-        'borrower' => 'required|max_len,100',
+        'borrower' => 'required|max_len,254',
         'days' => 'integer|min_numeric,1|max_numeric,60'
     );
     public $filters = array('borrower' => 'trim');
     public $descriptions = array(
         'book_id' => 'The id of the book (list_books, search_books)',
-        'borrower' => 'The name of the person who borrows it',
+        'borrower' => 'Who borrows it: a name, or the email address of a member',
         'days' => 'Optional: for how many days, 1 to 60, 14 by default'
     );
 
@@ -313,7 +317,7 @@ try {
     Route::get('/helloworld', function() { echo "Hello World"; });
 	
     // SIGN IN, SIGN OUT: /login, /logout and /notAuthorized; after signing in, /login?return=<page>, else the catalog
-    Route::auth(['home' => '/books', 'register' => false]);   // no /register: people join with the form of /join
+    Route::auth(['home' => '/books', 'register' => false, 'messages' => ['invalid' => 'Invalid email or password']]);   // no /register: people join with the form of /join
 
     // User Administration Routes - Uncomment only if AUTHENTICATION activated above
 	// Route::get('/admin', 'Caligrafy\\Controllers\\AdminController');
@@ -574,7 +578,7 @@ http://localhost:8080/loans:
    still there.
 5. Open *Invisible Cities* and click **Borrow this book**: `This book is already lent to Sam`, on that page.
 6. Open *A Wizard of Earthsea* and click **Borrow this book**: you land on the loans with `It is yours until <today plus
-   14 days>`, and the row says `reader1`. Click **Returned**: `Returned by reader1`.
+   14 days>`, and the row says `reader1@example.com`. Click **Returned**: `Returned by reader1@example.com`.
 
 ### Step 6 - REST, with the right scopes
 
@@ -707,10 +711,10 @@ In `claude`, in the `bookshelf` folder:
 ```text
 Add Loans to Bookshelf, capabilities first, no controller.
 1. application/models/Loans/create_db.sql: CREATE TABLE IF NOT EXISTS loans (id, book_id INT UNSIGNED FK to books
-   ON DELETE CASCADE, borrower VARCHAR(100), due_on DATE, returned_at DATETIME NULL, created_at, modified_at); run it
+   ON DELETE CASCADE, borrower VARCHAR(254), due_on DATE, returned_at DATETIME NULL, created_at, modified_at); run it
    with php caligrafer.php sql. Model Loan (no namespace) in application/models/Loans/Loan.php.
 2. With php caligrafer.php service, in application/services/Loans/: lend_book (loans:write; book_id
-   required|integer|exists,books.id, borrower required|max_len,100 trimmed, days integer 1-60, 14 by default; conflict
+   required|integer|exists,books.id, borrower required|max_len,254 trimmed, days integer 1-60, 14 by default; conflict
    "This book is already lent to <borrower>" when the book has a loan with no returned_at; returns
    Loan::with('book')->find($id)), return_book (loans:write; book_id; not_found "Book #<id> is not lent"; sets
    returned_at), list_loans (loans:read, readOnly; the open loans with with('book'), soonest due first, each with

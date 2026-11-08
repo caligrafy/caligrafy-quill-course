@@ -38,6 +38,12 @@ head, the stylesheets, the light **top bar** (the Caligrafy mark, *Sign in* and 
 button on phones) and the footer. The page fills **blocks**: `title` (the name in the browser tab) and `content`. The
 master gives each view `$home`, the address of the site (`http://localhost:8080/`): build every link from it.
 
+The top bar stays put from page to page: `layout.css` reserves the room of the scrollbar on every page
+(`html { scrollbar-gutter: stable }`), so a short page and a long one do not shift it sideways. If you add links to it and
+mark the current one, use a color or an underline (the class `is-active` gives a soft background), never a heavier
+`font-weight`: Caligrafy loads its font at 400 and 500 only, so the browser fakes anything bolder and the text visibly
+changes.
+
 **Caligrafy's look.** Classes of `public/css/layout.css` and `look.css` that every page uses, with no CSS to write
 ([page components](https://github.com/caligrafy/caligrafy-quill/wiki/7.-Views#pagecomponents)):
 
@@ -55,7 +61,8 @@ master gives each view `$home`, the address of the site (`http://localhost:8080/
 **`Route::page` with data.** `Route::page('/books/{id}', 'Bookshelf/book', ['data' => ['book' => 'get_book']])` shows
 the view `application/views/Bookshelf/book.pug` and gives it `$book`: what `get_book` returned. The capability is
 called **as the person who opens the page**, with the route variables (`{id}`) and the query string (`?page=2`) as
-inputs: the same rules and checks as REST and agents. Only read-only capabilities can feed a page: opening a page never
+inputs: the same rules and checks as REST and agents. When both give the same name, the route variable wins:
+`/books/3?id=9` is book 3. Only read-only capabilities can feed a page: opening a page never
 changes data. When the capability refuses, the page does not render: a missing book answers **404** with the view
 named in `notFound` (it gets `$message`, the capability's message). **Pages never read the models**: the data of a page
 comes from capabilities.
@@ -468,17 +475,19 @@ Open the page of The Dispossessed (`/books/7`): the title, `by Ursula K. Le Guin
 4. Open http://localhost:8080/books/99: a full-screen **Not found** with `There is no book #99` and an **All books**
    button.
 
-Check the statuses, then the session cookie, from the terminal:
+Check the statuses, the session cookie, and which book an address with `?id=` shows, from the terminal:
 ```bash
 curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8080/books/1
 curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8080/books/99
 curl -s -D - -o /dev/null http://localhost:8080/books/1 | grep -i set-cookie
+curl -s "http://localhost:8080/books/3?id=5" | grep -o '<h1[^>]*>[^<]*'
 ```
-Expected: `200`, `404`, then `Set-Cookie: PHPSESSID=...; path=/` (your id differs): the page prints a form with
-`=csrf()`, so it starts a session.
+Expected: `200`, `404`, `Set-Cookie: PHPSESSID=...; path=/` (your id differs): the page prints a form with
+`=csrf()`, so it starts a session. Then `<h1 class="cq-display">Kindred`: `{id}` of the address wins over `?id=5`.
 
 Last, the phone check. In the browser's developer tools (F12), turn on the device toolbar and choose a width of
-375 px: both pages show one column, the links of the top bar open under **Menu**, and nothing scrolls sideways.
+375 px: both pages show one column, the links of the top bar open under **Menu**, and nothing scrolls sideways. At
+desktop width, go from the long catalog to the short Not found page: the top bar does not move.
 
 > **If it doesn't work**
 >
@@ -518,7 +527,7 @@ in its order: the same capability as the form's list of authors, as one more exp
 - [ ] Adding goes to the new book's page with `Book added`; saving shows `Saved`; deleting goes to the catalog with
       `Book deleted`.
 - [ ] `/books/99` answers 404 with the Not found page; `/authors.csv` downloads the 3 authors.
-- [ ] Both pages work at 375 px.
+- [ ] Both pages work at 375 px; the top bar stays in place between a long page and a short one.
 
 ## With Claude
 

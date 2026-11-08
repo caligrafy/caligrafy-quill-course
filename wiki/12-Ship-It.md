@@ -316,7 +316,7 @@ docker compose exec dev-box php caligrafer.php doctor
 ```
 Expected (the key endings, the plugin name and the versions are yours):
 ```text
-Caligrafy doctor (read-only): Caligrafy Quill 2.21.6
+Caligrafy doctor (read-only): Caligrafy Quill 2.21.7
 
  Project
   OK    PHP: 8.5.12
@@ -330,7 +330,7 @@ Caligrafy doctor (read-only): Caligrafy Quill 2.21.6
   OK    public/uploads: writable
   OK    public/manifest.webmanifest: 4 icon(s) found
   OK    Design style: Caligrafy's own look (DESIGN_STYLE is empty)
-  OK    Templates: application/ is up to date with the framework templates
+  OK    Templates: application/ is up to date with the framework templates (4 customized)
 
  Database
   OK    Database: connected to mysql://mysql:3306/caligrafy (server 8.4.13)
@@ -359,17 +359,22 @@ Expected:
  Templates: framework/settings/application (45 files) compared with application/ - manifest .caligrafy-manifest.json found
 
   routes      application/config/routing/web.php: your routes: never replaced
-  identical  44 file(s)
+  customized  application/models/Auth/create_db.sql: kept, new version will be written to application/models/Auth/create_db.sql.caligrafy-new (replace it with --force application/models/Auth/create_db.sql)
+  customized  application/services/Users/CaligrafyRegisterUser.php: kept, new version will be written to application/services/Users/CaligrafyRegisterUser.php.caligrafy-new (replace it with --force application/services/Users/CaligrafyRegisterUser.php)
+  customized  application/services/Users/CaligrafyUpdateUser.php: kept, new version will be written to application/services/Users/CaligrafyUpdateUser.php.caligrafy-new (replace it with --force application/services/Users/CaligrafyUpdateUser.php)
+  customized  application/views/Auth/login.pug: kept, new version will be written to application/views/Auth/login.pug.caligrafy-new (replace it with --force application/views/Auth/login.pug)
+  identical  40 file(s)
 
  Client apps (report only, never modified; compare them with framework/plugins/<type> by hand):
   public/finder (app): 2 file(s) differ from framework/plugins/app: index.php, scripts/main.js
 
  Nothing was changed.
 ```
-Every template is `identical`; `web.php` is yours and never replaced; the finder differs from its template because you
+The four `customized` files are the ones lesson 11 changed so that people sign in with an email: your versions are
+kept. The other templates are `identical`; `web.php` is yours and never replaced; the finder differs from its template because you
 rewrote it in lesson 09 (the Vite SPA is not compared). When a later release comes out, `upgrade` without `--local`
 shows the plan, and `upgrade --apply` applies it: untouched files are updated (backups in `backups/`), files you
-changed get the new version beside them as `<file>.caligrafy-new`. Run the tests, the smoke test and `doctor`
+changed, like those four, get the new version beside them as `<file>.caligrafy-new`, for you to compare. Run the tests, the smoke test and `doctor`
 afterwards.
 
 ### Step 6 - Before going live

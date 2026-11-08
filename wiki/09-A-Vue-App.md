@@ -38,6 +38,20 @@ Caligrafy a client app is a folder `public/<name>/` with `index.php` (the HTML) 
 application, `http://localhost:8080/`), and `loadVue({ scripts: ['main'] })` loads `scripts/main.js`. Lesson 10 builds
 the other kind of Vue app, with Vite.
 
+**Why `app.js` and your scripts carry a version.** A browser keeps the scripts it downloaded (its **cache**), so a visitor
+could go on running last week's code after you deploy a new version. A client app therefore adds a number to the address
+of each script, `?v=<number>`. When the number changes, the browser sees a new address and downloads the file.
+
+| Where | What it versions | Where the number comes from |
+|---|---|---|
+| the `app.js` line of `index.php`: `APP_SERVICE_ROOT.'app.js?v='.@filemtime(PUBLIC_PATH.'js/services/app.js')` | `app.js` itself | the time the file `public/js/services/app.js` was last written |
+| `loadVue({ scripts: ['main'] })` in `app.js` | your `scripts/main.js`, as `main.js?v=...` | `env.scripts_version`: the same time, which the view `Client/app` puts in `env` |
+
+The first line is what makes the second one work: `loadVue()` lives in `app.js`, so a browser holding an old `app.js` would
+never add a version to your scripts. A deploy starts from a fresh copy of your repository (lesson 14), so the time, and
+the number, change at each deploy. On your computer the number changes only when `app.js` does: after you edit `main.js`,
+reload with <kbd>Shift</kbd> pressed.
+
 **A page for every client app.** The framework's view `Client/app` shows the app `public/<appName>/<app>.php`. So a
 client app is a `Route::page` like any other:
 ```php
@@ -307,6 +321,10 @@ Open http://localhost:8080/apps/finder: the template already uses the client and
 ```
 
 What to notice:
+- `nav.cq-nav` is the same top bar as the Pug pages. It stays put while the list grows and shrinks as you type: `layout.css`
+  reserves the room of the scrollbar.
+- The `app.js` line and `loadVue(...)` near the end are the template's: keep them as they are. They are the two versions
+  of the concepts above.
 - The `<link>` tags load the same CSS as the Pug pages: `theme.css`, `tokens.css` (the design tokens: colors, spacing,
   fonts as CSS variables), `layout.css` (the page components: `cq-nav`, `cq-hero`, `cq-rows`, `cq-split`...) and
   `look.css`. The app looks like the catalog.
@@ -385,7 +403,16 @@ Open http://localhost:8080/apps/finder (reload it if it was open).
 
 See what the app sends: open the developer tools (<kbd>F12</kbd>), tab **Network**, reload, type `magic`. In order:
 `GET capabilities.js` (the client), `GET capabilities` once (the CSRF token), `POST list_books`, then
-`POST search_books`. Click one: it has an `X-CSRF-Token` header and no `Authorization` header.
+`POST search_books`. Click one: it has an `X-CSRF-Token` header and no `Authorization` header. The first lines of the
+list show `app.js?v=...` and `main.js?v=...`. From the terminal, the number the page uses:
+```bash
+curl -s http://localhost:8080/apps/finder | grep -oE 'app\.js\?v=[0-9]+|"scripts_version":[0-9]+'
+```
+Expected: the same number twice (yours differs):
+```text
+app.js?v=1794163411
+"scripts_version":1794163411
+```
 
 Check what changed on the server:
 ```bash
@@ -408,7 +435,8 @@ The one line of `web.php` is the only change in `application/`.
 > | Console: `this.api.searchBooks is not a function` | The client was generated before `search_books` existed | Run the `client` command again |
 > | `Something went wrong. Try again.` under the search field | The server did not answer JSON (containers stopped, a PHP error) | `docker compose ps`; call `search_books` with the curl command of lesson 08 and read the answer |
 > | The rows show `, 1979` with no name | `main.js` or `index.php` reads `book.author_name` or an older shape | Each book has `author` with `name`: `book.author.name` |
-> | Changes to `main.js` do not show | The browser kept the old file | Reload with <kbd>Shift</kbd> pressed, or tick *Disable cache* in the Network tab |
+> | Changes to `main.js` do not show | The browser kept the old file: the version only changes with `app.js` and at each deploy | Reload with <kbd>Shift</kbd> pressed, or tick *Disable cache* in the Network tab |
+> | After a deploy, some visitors still run the old `main.js` | The `app.js` line of `index.php` has no `?v=` | Compare with step 3 |
 > | `This client app does not exist. ...` on `/apps/finder` | The folder `public/finder` is missing, or `?app=` names a file that is not in it | Run step 2; open the address without `?app=` |
 > | `The project could not be created` | The folder exists, or the name is reserved (`app`, `bot`, `css`, `js`, `ml`...) | Delete the folder first, or choose another name |
 
@@ -420,6 +448,7 @@ The one line of `web.php` is the only change in `application/`.
 - [ ] `public/js/capabilities.js` was written by the `client` command (20 capabilities) and not edited.
 - [ ] `git status --short` shows the two new paths and `web.php`: no other change in `application/`.
 - [ ] No `apiKey`, no `axios`, no `Authorization` in `public/finder/`.
+- [ ] `index.php` loads `app.js?v=...`, and the Network tab shows `main.js?v=...` with the same number.
 - [ ] `time` finds Kindred; Open shows the author's bio; at 375 px the page is one column.
 
 ## With Claude
@@ -439,7 +468,7 @@ getBook({ id }) and shows, in a panel beside the list, the title, "by <author>, 
 yet.") and the author's bio. Show a CapabilityError's field messages (or its message) in p.cq-field-error. Use
 Caligrafy's look like the template: body.cq-site, nav.cq-nav, section.cq-hero.cq-hero--page "Find a book", then
 .cq-split with section.cq-split-main (the search .cq-field, ul.cq-rows, p.cq-empty-state, p.cq-auth-note "N book(s)")
-and aside.cq-split-detail. In web.php replace the Route::get('/apps/{appName}', ...ClientController) line with
+and aside.cq-split-detail. Keep the script lines of the template as they are: app.js with its ?v= and loadVue. In web.php replace the Route::get('/apps/{appName}', ...ClientController) line with
 Route::page('/apps/{appName}', 'Client/app', ['query' => ['app' => 'index']]); add no other route or server code.
 ```
 
@@ -449,6 +478,7 @@ Route::page('/apps/{appName}', 'Client/app', ['query' => ['app' => 'index']]); a
 - [ ] `git status --short` shows only `public/finder/`, `public/js/capabilities.js` and `web.php`, and `git diff
       application` is that one line.
 - [ ] No `apiKey`, `axios` or `Authorization` header; no `cq-card`.
+- [ ] `index.php` still has `app.js?v=` and `loadVue({ scripts: ['main'] })`.
 - [ ] Step 5 works.
 
 If Claude writes `import { searchBooks } from ...` at the top of `main.js`, the app does not start (a classic script

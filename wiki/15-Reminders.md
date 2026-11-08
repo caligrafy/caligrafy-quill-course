@@ -222,7 +222,7 @@ try {
     Route::get('/helloworld', function() { echo "Hello World"; });
 	
     // SIGN IN, SIGN OUT: /login, /logout and /notAuthorized; after signing in, /login?return=<page>, else the catalog
-    Route::auth(['home' => '/books', 'register' => false]);   // no /register: people join with the form of /join
+    Route::auth(['home' => '/books', 'register' => false, 'messages' => ['invalid' => 'Invalid email or password']]);   // no /register: people join with the form of /join
 
     // User Administration Routes - Uncomment only if AUTHENTICATION activated above
 	// Route::get('/admin', 'Caligrafy\\Controllers\\AdminController');
@@ -471,7 +471,8 @@ The history lists each run of a job with its outcome. The audit log (your times 
 from the bottom: the morning job (`schedule`, its name), the `call` of the command line, and job 1 of the queue.
 
 Email works too once `MAIL_*` is set in `.env` and reader1 confirmed an address: `Notify.email('you@example.com')` in
-the browser's console on a Bookshelf page sends the confirmation link.
+the browser's console on a Bookshelf page sends the confirmation link. The address someone signs in with (lesson 11) does
+not count: a notification goes only to an address that was confirmed through this link.
 
 ### Step 6 - Every minute, on its own
 

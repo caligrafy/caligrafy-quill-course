@@ -15,13 +15,13 @@ class LendBook extends Service
 {
     public $rules = array(
         'book_id' => 'required|integer|exists,books.id',
-        'borrower' => 'required|max_len,100',
+        'borrower' => 'required|max_len,254',
         'days' => 'integer|min_numeric,1|max_numeric,60'
     );
     public $filters = array('borrower' => 'trim');
     public $descriptions = array(
         'book_id' => 'The id of the book (list_books, search_books)',
-        'borrower' => 'The name of the person who borrows it',
+        'borrower' => 'Who borrows it: a name, or the email address of a member',
         'days' => 'Optional: for how many days, 1 to 60, 14 by default'
     );
 

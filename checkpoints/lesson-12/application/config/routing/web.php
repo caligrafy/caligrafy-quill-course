@@ -28,7 +28,7 @@ try {
     Route::get('/helloworld', function() { echo "Hello World"; });
 	
     // SIGN IN, SIGN OUT: /login, /logout and /notAuthorized; after signing in, /login?return=<page>, else the catalog
-    Route::auth(['home' => '/books', 'register' => false]);   // no /register: people join with the form of /join
+    Route::auth(['home' => '/books', 'register' => false, 'messages' => ['invalid' => 'Invalid email or password']]);   // no /register: people join with the form of /join
 
     // User Administration Routes - Uncomment only if AUTHENTICATION activated above
 	// Route::get('/admin', 'Caligrafy\\Controllers\\AdminController');

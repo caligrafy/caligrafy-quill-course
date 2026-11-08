@@ -18,7 +18,7 @@ be at the end, learn how the lessons work, and install every tool the course use
 
 Caligrafy Quill is a **PHP framework**: a set of PHP files that already solve what every web application needs
 (reading the address, talking to a database, showing pages, checking forms, signing people in), so that you only
-write what is specific to your application. The course uses the release **Caligrafy Quill 2.21.6**, and every output
+write what is specific to your application. The course uses the release **Caligrafy Quill 2.21.7**, and every output
 on these pages was produced with it.
 
 ### Build once, experience everywhere
@@ -75,9 +75,9 @@ stay. The appendices show them, once you know the recommended way.
 - a **REST API** (`/api/books`, `/api/authors`) for other programs, and the authors as a **CSV file**;
 - **AI agent tools**: Claude can search the catalog and add books for you;
 - a **Vue app** and a **phone and tablet app** that you can install on the home screen;
-- **sign-in with permissions**: visitors read, signed-in people add, administrators delete, each agent has its own
-  limited key; a **join form** with the rules of the club to accept, and sign-in that brings you back to the page you
-  were on;
+- **sign-in with an email address, and permissions**: visitors read, signed-in people add, administrators delete, each
+  agent has its own limited key; a **join form** with the rules of the club to accept, and sign-in that brings you back
+  to the page you were on;
 - **loans**: who borrowed which book, until when;
 - **what a page or a form cannot say**: a book at random, an RSS feed, a link that gives a loan more days;
 - and it is **online**, deployed from your GitHub repository.
@@ -130,7 +130,9 @@ git clone https://github.com/caligrafy/caligrafy-quill-course.git
   ```
   A checkpoint holds code, not data, and it cannot delete files: if you catch up past lesson 02, also remove the Tasks
   example (lesson 02, step 7). The `sql` command creates the tables and the sample books (lesson 03), `migrate` runs the
-  changes of the later lessons that your database does not have yet (lesson 05 on). Both are safe to run again.
+  changes of the later lessons that your database does not have yet (lesson 05 on). Both are safe to run again. From
+  lesson 11 on, run the `sql` command for `application/models/Auth/create_db.sql` too, and from lesson 13 on for
+  `application/models/Loans/create_db.sql`.
 
 ### Conventions used on every page
 

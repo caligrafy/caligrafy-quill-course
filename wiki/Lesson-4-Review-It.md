@@ -10,8 +10,8 @@ for in it, and have it reviewed, before you ship it. **Time:** 45 minutes to an 
 Claude built each feature **once**, as a capability, and every experience calls it. Try them; they should agree.
 
 **The web page.** Open `http://localhost:8080/books` (or the port Claude gave you). As a visitor you can browse,
-filter by author and open a book's page. Sign up (a username of letters and digits, a password of at least 8
-characters), then sign in: signing up does not sign you in. Add an author and a book, edit it, delete it. Leave the
+filter by author and open a book's page. Sign up with your email address and a password of at least 8 characters, then
+sign in: signing up does not sign you in. A text with no `@` is refused. Add an author and a book, edit it, delete it. Leave the
 title empty and add it: the message shows under the title field, and the address in your browser does not change to
 one with a `?`.
 
@@ -72,8 +72,8 @@ next ones:
 `INSERT IGNORE` with fixed ids. Nothing says `DROP`, `DELETE` or `TRUNCATE`: the script runs again at every deploy,
 and those words would erase your data online.
 
-**The models** (`Book.php`, `Author.php`). One property per column, and the link between them: in `Book`, a method
-`author()` that returns `$this->hasOne('Author', 'authors')`. No query of their own: the capabilities do the reading.
+**The models** (`Book.php`, `Author.php`). One property per column. No query of their own, and no method for the link:
+the capabilities do the reading, and `with('author')` follows the column `author_id`.
 
 **The capabilities.** Open the one that creates a book. Above the class, `#[Capability(...)]` gives its `name`, its
 `description` (what an AI agent reads to choose it: it must be clear), its `scope` (`books:write`), and flags:
@@ -83,6 +83,11 @@ with `ServiceError` (`invalid`, `notFound`, `forbidden`, `conflict`). Then open 
 with the **query builder**, in one chain and with no SQL text, for example
 `Book::query()->latest()->with('author')->paginate(20, $input['page'] ?? 1)`. `with('author')` loads every author in
 one query, instead of one query per book; `paginate()` returns one page, with the total.
+
+**Signing in with an email.** `application/models/Auth/create_db.sql` has `username varchar(254)` (or a migration
+changes it). `application/services/Users/CaligrafyRegisterUser.php` has the rule `valid_email|max_len,254` and the filter
+`trim|lower_case`. The forms say Email, and the field is still named `username`: no separate `email` column is needed. The
+message of a failed sign-in says email, not username (`messages` of `Route::auth`).
 
 **The token card's capability** (`CreateMyToken`). It refuses to run when it is called with a token (only a signed-in
 person on the site creates tokens), gives the new token the app's own scopes, never `*`, and an end date (90 days).
@@ -109,9 +114,12 @@ A `Route::webhook(...)` line appears only in apps that take payments or receive 
 has none.
 
 **The pages** (`.pug`). They start with `extends ../default/master/site` and use Caligrafy's classes (`cq-hero`,
-`cq-field`, `cq-rows`, `cq-empty-state`...), with no `style` block. Every `form` has `method='POST'`. Each field has its
+`cq-field`, `cq-rows`, `cq-empty-state`...), with no `style` block. The top bar does not move from page to page; if a link
+is marked as the current page, it has a color or an underline, not a heavier weight. Every `form` has `method='POST'`. Each field has its
 message right under it (`p.cq-field-error`). A form that posts through `Route::form` carries `=csrf()`, a hidden
-anti-forgery token. A page that calls the JS client (`createBook(...)` in `public/js/<things>.js`) never holds a key.
+anti-forgery token. A page that calls the JS client (`createBook(...)` in `public/js/<things>.js`) never holds a key. A
+client app (`public/<app>/index.php`) loads `app.js?v=...` and its scripts through `loadVue()`: the number makes browsers
+fetch the new scripts after a deploy.
 
 **The tests** (`tests/<Folder>Test.php`). Each capability is called as a member, and its refusals are checked: an
 invalid input, a visitor.
@@ -140,6 +148,7 @@ fits, a query inside a loop over rows. Ask Claude to fix what they find, then to
 - [ ] The page, the REST API and the AI agent show the same books.
 - [ ] A visitor is refused a change everywhere: on the page, over REST and through an agent without a token.
 - [ ] An invalid input gives the same message on the page, over REST and to the agent, under its own field on the page.
+- [ ] You signed up with your email: the address is in `username`, in lower case, and a text with no `@` is refused.
 - [ ] The export downloads for a member and sends a visitor to sign in.
 - [ ] `create_db.sql` has no `DROP`, `DELETE` or `TRUNCATE`, and its sample rows use `INSERT IGNORE`.
 - [ ] You opened one capability and understood its description, rules, scope and flags.

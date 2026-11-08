@@ -26,6 +26,7 @@ claude
 - [ ] every fact of your description has a column, and the tables are linked where they should be;
 - [ ] every action is a capability, and nothing you did not ask for is;
 - [ ] reads are read-only, deletes are destructive, and changes are only for the people you said;
+- [ ] if people sign in with their email, the plan says so; otherwise usernames are letters and digits;
 - [ ] the sample data contains nothing personal and no password;
 - [ ] if your idea has slow work (an AI call, an email to many), it runs in the background; if it has "every
       morning", "remind" or "alert me", the plan names each job on a timer and each notification.

@@ -15,17 +15,17 @@ version is to what you want. A good description answers five questions:
 | **Who** uses it? | a book club: visitors and members |
 | **What** do they do with it? | browse the books, filter them by author, open a page per book; members add, edit and delete books and authors, and download the catalog as a spreadsheet file |
 | **What** does it remember? | books (title, year, a short summary) and their authors (a name) |
-| **Who may** do what? | anyone reads; only members who signed up change anything |
+| **Who may** do what? | anyone reads; only members who signed up, with their email, change anything |
 | **What is not** in this version? | no loans yet (that is [Lesson 6](Lesson-6-Change-It)) |
 
 Compare:
 
 | Too vague | Good |
 |---|---|
-| "An app for books." | "Bookshelf: a catalog of books and their authors for a book club. Anyone can browse the books, filter them by author and open a page per book. Members who signed up add, edit and delete books and authors, and can download the catalog as a CSV file. A book has a title, an author, a year and a short summary; an author has a name. No loans yet." |
+| "An app for books." | "Bookshelf: a catalog of books and their authors for a book club. Anyone can browse the books, filter them by author and open a page per book. Members sign up with their email address; they add, edit and delete books and authors, and can download the catalog as a CSV file. A book has a title, an author, a year and a short summary; an author has a name. No loans yet." |
 
 The vague one leaves Claude to guess who uses it, what a book is and who may change it. The good one is still only
-five sentences: it describes what people do, not how to build it. You do not say "a table", "a route" or "an API":
+six sentences: it describes what people do, not how to build it. You do not say "a table", "a route" or "an API":
 Claude turns each sentence into those parts, and shows you which in the plan.
 
 Each kind of sentence becomes a part of the plan you will read in [Lesson 3](Lesson-3-Approve-The-Plan):
@@ -38,6 +38,7 @@ Each kind of sentence becomes a part of the plan you will read in [Lesson 3](Les
 | "open a page per book" | a page |
 | "download the catalog as a CSV file" | an export address |
 | "every morning", "remind", "alert me" | a job on a timer, a notification |
+| "members sign up with their email" | the sign-up and sign-in pages ask for an address, kept in the `username` column, in lower case. Without this sentence, usernames are letters and digits |
 | "they must accept the rules to join" | a box on the sign-up form |
 | "after signing in, back to the page they were on" | an option of that page |
 | "a link that picks a book at random", "a link in a message that renews a loan" | one small web-only action |

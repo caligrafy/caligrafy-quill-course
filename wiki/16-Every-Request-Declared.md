@@ -26,7 +26,8 @@ with a redirect. Some requests are neither:
 
 **`Route::action`.** `Route::action('/surprise', 'surprise_me')` answers `GET /surprise` with the capability
 `surprise_me`, called as the person who sent the request, with the query string, the form fields and the route variables
-as inputs. Its rules, its permissions and the audit log work as for any capability.
+as inputs. When two of them give the same name, the route variable wins: `/loans/5/renew?book_id=3` is book 5, so a query
+string cannot point a link at another row. Its rules, its permissions and the audit log work as for any capability.
 
 | Option | Default | What it does |
 |---|---|---|
@@ -53,10 +54,6 @@ every experience must be able to use it the same way. A web-only capability is t
 and the request, sign people in with `AuthRoutes::signIn($user)`, and change data on a GET. So nothing but `Route::action`
 reaches it:
 
-When only some sign-ins may do something, say how the person signed in: `AuthRoutes::signIn($user, null, 'face')`, then
-check `AuthRoutes::signedInBy()`. `Route::auth` records `password` for you. See
-[How a session signed in](https://github.com/caligrafy/caligrafy-quill/wiki/9.1-Authentication#signedinby).
-
 | Experience | What it gets for a web-only capability |
 |---|---|
 | REST, `POST /capabilities/surprise_me` | `There is no capability 'surprise_me'` (404) |
@@ -75,6 +72,24 @@ today, however often it is opened. For anything else, use `'method' => 'POST'` w
 **A JSON call to `Route::action`** (`Accept: application/json`) needs the page's `X-CSRF-Token` header, or a token with
 the scope `*`: a token with narrower scopes is refused, as on a controller route. Without one it answers 401,
 `[ERROR 1004]`, signed in or not. In a page, `apiHeaders()` of `public/js/services/app.js` sends the header.
+
+**How a session signed in.** A permission level says what a person may do. `AuthRoutes::signedInBy()` says how sure you
+are that this is that person, because it answers how the session was opened:
+
+| The session was opened by | `AuthRoutes::signedInBy()` |
+|---|---|
+| the sign-in page of `Route::auth`, with a password | `password` |
+| a passkey, through `Route::auth` | `passkey` |
+| your own web-only capability, with `AuthRoutes::signIn($user, null, 'guest-card')` | `guest-card`, the word you gave |
+| a page that signed in with `Auth::authorize()`, then called `AuthRoutes::rememberSignIn('guest-card')` | that word |
+| the `signsIn` of `Route::form` (the join form of lesson 11) | `password`, or what `signsInWith` says |
+| `AuthRoutes::signIn($user)`, without saying how | `null`: nobody recorded how |
+| nobody is signed in, or the person signed out | `null` |
+
+It matters for whatever changes how an account signs in. A sign-in that proves less (a shared card, a face that a good
+photo can pass) must not be able to change the password or add a passkey, or it could keep the account for good. Read
+it in a web-only capability (a plain capability has no session), and treat `null` as *not allowed*. The exercise builds it. See
+[How a session signed in](https://github.com/caligrafy/caligrafy-quill/wiki/9.1-Authentication#signedinby).
 
 ---
 
@@ -256,7 +271,7 @@ try {
     Route::redirect('/catalog', '/books', 301, ['keepQuery' => true]);   // the catalog's old address: the filter of its address goes along
 
     // SIGN IN, SIGN OUT: /login, /logout and /notAuthorized; after signing in, /login?return=<page>, else the catalog
-    Route::auth(['home' => '/books', 'register' => false]);   // no /register: people join with the form of /join
+    Route::auth(['home' => '/books', 'register' => false, 'messages' => ['invalid' => 'Invalid email or password']]);   // no /register: people join with the form of /join
 
     // ROUTING TO JAVASCRIPT APPS
     Route::page('/apps/{appName}', 'Client/app', ['query' => ['app' => 'index']]);   // public/<appName>/index.php, or ?app=<file>
@@ -459,6 +474,8 @@ Expected: `302 http://localhost:8080/login?return=%2Floans%2F5%2Frenew`. In your
    and you land on the loans with `Sam can keep it until <today plus 14 days>` (5 is Invisible Cities).
 2. On the loans page, click **14 more days** on a row: the same message.
 3. Open http://localhost:8080/loans/99/renew: a full-screen **Not found**, `Book #99 is not lent`, status 404.
+4. Open http://localhost:8080/loans/5/renew?book_id=3: again `Sam can keep it until ...`. The route variable won: the
+   query string cannot turn this link into the renewal of Kindred.
 
 Nothing else reaches them. Through REST, the command line and MCP (`$DESK` is the loans desk token of lesson 13):
 ```bash
@@ -641,7 +658,7 @@ OK   401 a JSON call without its token
 - [ ] `grep -c Controller application/config/routing/web.php` prints `0`.
 - [ ] `/surprise` redirects to a book; `/feed` is `application/rss+xml`.
 - [ ] `/loans/5/renew` sends a visitor to sign in and comes back; it says `Sam can keep it until ...`; a book that is not
-      lent shows the Not found page.
+      lent shows the Not found page; `?book_id=3` does not change which book it renews.
 - [ ] REST, `call` and MCP answer that the capability does not exist; `capabilities` and the JS client do not list it.
 - [ ] A JSON call without a token answers 401; the tests say `OK (11 tests, 24 assertions)`.
 
@@ -688,6 +705,171 @@ git push origin main --tags
 ```
 Reference: [`checkpoints/lesson-16`](https://github.com/caligrafy/caligrafy-quill-course/tree/main/checkpoints/lesson-16).
 Learn more: [Declarative routes, Route::action](https://github.com/caligrafy/caligrafy-quill/wiki/Declarative-Routes#action).
+
+## Exercise
+
+On club evenings, everyone shares one account, `guest@example.com`, opened by a button with no password. Whoever uses that
+button must not be able to change the password of the guest account, or the next person is locked out. Add a page
+`/account` that says how the session signed in and has a form to change the password, and refuse that form to a session
+that did not sign in with a password.
+
+With Claude, ask: *"Add a guest card: a button on /join that signs in as guest@example.com with
+AuthRoutes::signIn($user, null, 'guest-card'), and a page /account, with web-only capabilities and Route::action, whose
+form changes the password only when AuthRoutes::signedInBy() is password or passkey. Refuse null too."*
+
+<details><summary>Show the solution</summary>
+
+The account, once:
+```bash
+docker compose exec dev-box php caligrafer.php call register_user username=guest@example.com passcode=guest-evening-2026
+```
+
+`application/services/Bookshelf/GuestCard.php`:
+```php
+<?php
+
+use Caligrafy\AuthRoutes;
+use Caligrafy\Capability;
+use Caligrafy\Context;
+use Caligrafy\Service;
+use Caligrafy\ServiceError;
+use Caligrafy\Web;
+
+// guest_card: the shared account of a club evening, opened with no password. It records how this session signed in
+#[Capability(
+    name: 'guest_card',
+    description: 'Signs the visitor in as the shared guest account of a club evening.',
+    scope: 'users:write',
+    public: true,
+    webOnly: true
+)]
+class GuestCard extends Service
+{
+    public function handle(array $input, Context $context)
+    {
+        $guest = User::where('username', 'guest@example.com')->first();
+        if (!$guest) {
+            throw ServiceError::notFound('There is no guest account');
+        }
+        AuthRoutes::signIn($guest, null, 'guest-card');   // a new session id, a new CSRF token, and how it signed in
+        return Web::redirect('/account');
+    }
+}
+```
+`application/services/Bookshelf/MyAccount.php`:
+```php
+<?php
+
+use Caligrafy\AuthRoutes;
+use Caligrafy\Capability;
+use Caligrafy\Context;
+use Caligrafy\Service;
+use Caligrafy\Web;
+
+// my_account: the page that says how this session signed in
+#[Capability(
+    name: 'my_account',
+    description: 'Shows how this session signed in, and the form to change the password.',
+    scope: 'users:read',
+    readOnly: true,
+    webOnly: true
+)]
+class MyAccount extends Service
+{
+    public function handle(array $input, Context $context)
+    {
+        return Web::view('Bookshelf/account', array('how' => AuthRoutes::signedInBy()));
+    }
+}
+```
+`application/services/Bookshelf/ChangePasscode.php`:
+```php
+<?php
+
+use Caligrafy\Auth;
+use Caligrafy\AuthRoutes;
+use Caligrafy\Capability;
+use Caligrafy\Context;
+use Caligrafy\Flash;
+use Caligrafy\Service;
+use Caligrafy\ServiceError;
+use Caligrafy\Web;
+
+// change_passcode: only a session that proved who it is may change how the account signs in
+#[Capability(
+    name: 'change_passcode',
+    description: 'Changes the password of the person signed in.',
+    scope: 'users:write',
+    webOnly: true
+)]
+class ChangePasscode extends Service
+{
+    public $rules = array('passcode' => 'required|min_len,8|max_len,72');
+
+    public function handle(array $input, Context $context)
+    {
+        // null means nobody recorded how: it is refused too
+        if (!in_array(AuthRoutes::signedInBy(), array('password', 'passkey'), true)) {
+            throw ServiceError::invalid(array('passcode' => 'Sign in with your password to change it'));
+        }
+        User::where('id', Auth::user()->id)->update(array('passcode' => User::hashPassword($input['passcode'])));
+        Flash::message('success', 'Your password is changed: sign in with it');   // a change to a user's row ends the session
+        return Web::redirect('/login');
+    }
+}
+```
+`application/views/Bookshelf/account.pug`:
+```pug
+extends ../default/master/site
+
+//- Your account: Route::action('/account', 'my_account') gives it $how, what AuthRoutes::signedInBy() answered
+
+block title
+    | Your account · Bookshelf
+
+block content
+    main.cq-auth
+        h1 Your account
+        p.cq-auth-note How this session signed in: #{$how ?: 'not recorded'}
+
+        form(method='POST', action="{$home}account", novalidate)
+            =csrf()
+            .cq-field
+                label(for='passcode') A new password
+                input#passcode.form-control(type='password', name='passcode', maxlength='72', autocomplete='new-password')
+                if errors('passcode')
+                    p.cq-field-error= errors('passcode')
+            button.btn.btn-primary(type='submit') Change my password
+```
+In `application/views/Bookshelf/join.pug`, at the end of `main.cq-auth`:
+```pug
+
+        form(method='POST', action="{$home}guest-card")
+            =csrf()
+            button.btn.btn-secondary(type='submit') Use the guest card
+```
+In `web.php`, above `// MUST NOT BE REMOVED`:
+```php
+    // EXERCISE: how a session signed in
+    Route::action('/guest-card', 'guest_card', ['method' => 'POST']);
+    Route::action('/account', 'my_account', ['signedIn' => true, 'comeBack' => true]);
+    Route::action('/account', 'change_passcode', ['method' => 'POST', 'signedIn' => true]);
+```
+Then try each way in:
+
+| You come in by | `/account` says | **Change my password** |
+|---|---|---|
+| **Use the guest card** on `/join` (signed out) | `How this session signed in: guest-card` | refused: `Sign in with your password to change it` |
+| the join form, with a new address | `How this session signed in: password` | changed: you are on `/login` with `Your password is changed: sign in with it` |
+| `/login`, with your password | `How this session signed in: password` | changed: you are on `/login` with `Your password is changed: sign in with it` |
+
+A password that is too short is refused by `$rules` first. After the change the person signs in again, because a change
+to a user's row ends the session (lesson 11).
+
+A door with no password must never go online, so this is not in the checkpoint. Undo it:
+`git checkout application && git clean -fd application`, then remove the account with
+`docker compose exec dev-box php caligrafer.php call delete_user id=<its id>`.
+</details>
 
 ## Quiz
 

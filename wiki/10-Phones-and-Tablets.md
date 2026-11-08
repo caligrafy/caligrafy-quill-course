@@ -308,7 +308,8 @@ export default defineConfig({
 
 Keep the template's `src/main.js`: it imports Caligrafy's CSS (`tokens.css`, `layout.css`, `look.css`) and adds
 `cq-site` to the `<body>`, so the screens get the look of the pages. Keep `src/components/global/ShowNavigation.vue`
-too: it is the top bar. (`main.js` also prepares axios, Pinia and `apiHeaders()` for calling JSON addresses with
+too: it is the top bar. If you add links to it, Vue Router gives the link of the current screen the class
+`router-link-active`: style it with a color or an underline, never a heavier `font-weight` (lesson 06). (`main.js` also prepares axios, Pinia and `apiHeaders()` for calling JSON addresses with
 the session; this SPA uses the generated client instead.)
 
 ### Step 6 - The screens
@@ -571,6 +572,7 @@ dist/assets/index-C_ig7SGR.js   151.08 kB │ gzip: 57.17 kB
 
 ✓ built in 111ms
 ```
+These names change when the content changes, so a browser never keeps an old build: the SPA needs no `?v=` (lesson 09).
 Go back with `cd ../..`. Caligrafy serves the built app: open
 http://localhost:8080/public/bookshelf-spa/dist/index.html#/books/3: Kindred, and no Node.js runs now. `dist/` is
 committed: the production image of lesson 14 runs no npm, it serves these files. `node_modules/` is not (the SPA's

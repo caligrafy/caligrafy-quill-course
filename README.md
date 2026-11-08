@@ -42,7 +42,7 @@ the [`wiki/`](wiki) folder of this repository).
 
 Everything Claude does is plain Caligrafy you can write yourself. The **By hand** track builds Bookshelf again, every
 file typed by you, so that you understand every line Claude writes. Take it after the main lessons, or whenever a
-lesson's **By hand** link makes you curious. It uses Caligrafy Quill 2.21.6, and needs a little HTML, CSS, JavaScript,
+lesson's **By hand** link makes you curious. It uses Caligrafy Quill 2.21.7, and needs a little HTML, CSS, JavaScript,
 PHP and SQL.
 
 **Start:** [00 Your tools](https://github.com/caligrafy/caligrafy-quill-course/wiki/00-Introduction-and-Tools) · [01 Your project in one command](https://github.com/caligrafy/caligrafy-quill-course/wiki/01-Your-Project-in-One-Command) · [02 Build once, seen three ways](https://github.com/caligrafy/caligrafy-quill-course/wiki/02-Build-Once-Seen-Three-Ways)  
@@ -75,8 +75,9 @@ checkpoints, the data you added is not. After catching up, create the tables and
 php caligrafer.php sql application/models/Bookshelf/create_db.sql
 php caligrafer.php migrate
 ```
-(with the Docker dev server, put `docker compose exec dev-box` before each command). From lesson 10 on, also run
-`npm install` in `public/bookshelf-spa`.
+(with the Docker dev server, put `docker compose exec dev-box` before each command). From lesson 11 on, run the `sql`
+command for `application/models/Auth/create_db.sql` too, and from lesson 13 on for
+`application/models/Loans/create_db.sql`. From lesson 10 on, also run `npm install` in `public/bookshelf-spa`.
 
 `tools/check-pages.py` checks that every file shown in a by-hand lesson page is identical to its checkpoint.
 

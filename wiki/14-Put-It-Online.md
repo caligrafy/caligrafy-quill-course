@@ -29,6 +29,7 @@ project with what it needs and nothing more.
 | The tables | `php caligrafer.php sql` and `migrate`, by hand | `php caligrafer.php deploy`, at every start |
 | `.env` | yours, `APP_ENV=local` | the server's, `APP_ENV=production`, `APP_DEBUG=false`, its own database and keys |
 | A change | save a file | commit, push, deploy again |
+| Browsers | you reload | a deploy starts from a fresh copy of your repository, so `app.js?v=` and `main.js?v=` get a new number and browsers fetch the new scripts (lesson 09) |
 
 **The production image** (`Dockerfile`): PHP 8.5 with Apache, the libraries of `composer.lock` without the
 development ones, and your project. `Dockerfile.dockerignore` keeps out what must never be in it: `.env` and every
@@ -74,7 +75,7 @@ lowercase letters, digits or single dashes, starting with a letter, and must be 
 docker compose exec dev-box php caligrafer.php version
 docker compose exec dev-box php caligrafer.php deploy
 ```
-Expected: `Caligrafy Quill 2.21.6`, then (the first time):
+Expected: `Caligrafy Quill 2.21.7`, then (the first time):
 ```text
  Caligrafy deploy
  caligrafy-schedule {"version":1,"jobs":[]}
@@ -214,7 +215,8 @@ agent with the dashboard of the app, never by copying one from your computer.
 
 ### Step 7 - The first administrator online
 
-Join on https://bookshelf-sam.caligrafy.com/join as `reader1`. Online there is no `docker compose exec mysql`:
+Join on https://bookshelf-sam.caligrafy.com/join with the address `reader1@example.com` (in your own app, your own
+address, in the migration too). Online there is no `docker compose exec mysql`:
 data that already exists is changed by a **migration**, which the deploy step runs once. Write it:
 ```bash
 docker compose exec dev-box php caligrafer.php migrate make make_reader1_admin
@@ -231,7 +233,7 @@ Expected: ` application/migrations/20261108000056_make_reader1_admin.sql written
 
 -- The first administrator of Bookshelf online. The account must exist first (create it on the site), then commit,
 -- push and deploy. It only gives a level: it never creates an account and never holds a password.
-UPDATE users SET permissions = 1 WHERE username = 'reader1';
+UPDATE users SET permissions = 1 WHERE username = 'reader1@example.com';
 ```
 
 Run it on your computer first (reader1 is already an administrator there: nothing changes), then deploy:
@@ -284,7 +286,8 @@ approve in the browser and say yes before credits are spent. For your own server
 
 For the first administrator, ask:
 ```text
-Write a migration that makes reader1 an administrator (UPDATE users SET permissions = 1 WHERE username = 'reader1'),
+Write a migration that makes reader1@example.com an administrator (UPDATE users SET permissions = 1 WHERE username =
+'reader1@example.com'),
 run it locally, commit, push and redeploy bookshelf-sam.
 ```
 and check that it is a new file of `application/migrations/`, not an edit of a `create_db.sql`.

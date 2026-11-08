@@ -91,7 +91,7 @@ what to look for at each step, so that your OK means something.
 > | The browser page did not open | Claude prints its address: open it, approve, Claude goes on |
 > | Caligrafy Cloud says **Confirm your email first** | open the link of the email from Caligrafy (look in spam), then sign in again |
 > | You forgot your Caligrafy password | **Forgot your password?** on the sign-in page emails you a 6-digit code |
-> | The sign-up page refuses your username | letters and digits only: no email address, dot or dash |
+> | The sign-up page refuses your username | letters and digits only: no email address, dot or dash, unless your description said people sign in with their email ([Lesson 2](Lesson-2-Describe-It)) |
 
 **By hand:** [01 Your project in one command](01-Your-Project-in-One-Command) sets up the same project yourself, and
 [02 Build once, seen three ways](02-Build-Once-Seen-Three-Ways) shows one capability on a page, over REST and to an AI

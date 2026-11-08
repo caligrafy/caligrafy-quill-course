@@ -30,7 +30,7 @@ The plan is the one moment where you decide: your OK covers everything after it.
 | **Tables** | does every fact of my description have a home? | `authors` (`name`) and `books` (`title`, `year`, `summary`, and `author_id`, the link to its author: a *foreign key*) |
 | **Capabilities** | can people do everything I described, and nothing else? | for each table `list_`, `get_`, `create_`, `update_`, `delete_`; a way to filter books by author (an input of `list_books`); one that reads every book for the export |
 | **Flags** | is each one honest about what it does? | the reads marked read-only, the deletes marked destructive; scopes such as `books:read` and `books:write` |
-| **Who may do what** | is the right person allowed? | anyone reads, members change. If the plan says *everything public*, anyone online could delete your data: that is for a demo only |
+| **Who may do what** | is the right person allowed? | anyone reads, members change, and they sign in with their email (the plan says so; if it says usernames, ask for email). If the plan says *everything public*, anyone online could delete your data: that is for a demo only |
 | **Pages** | can people reach it all? | `/books` with the form, the list, the filter and a message when it is empty; a page per book; `/` opens `/books`; sign-in and sign-up; a page for members brings a visitor back after signing in |
 | **Export** | is the file the one I asked for? | `/books.csv`, for members |
 | **Sample data** | is the app useful from the start, with nothing personal? | 3 to 6 real-looking books, no real people's data, no password |
