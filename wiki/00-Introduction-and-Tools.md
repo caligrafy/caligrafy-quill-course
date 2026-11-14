@@ -18,7 +18,7 @@ be at the end, learn how the lessons work, and install every tool the course use
 
 Caligrafy Quill is a **PHP framework**: a set of PHP files that already solve what every web application needs
 (reading the address, talking to a database, showing pages, checking forms, signing people in), so that you only
-write what is specific to your application. The course uses the release **Caligrafy Quill 2.22.0**, and every output
+write what is specific to your application. The course uses the release **Caligrafy Quill 2.22.1**, and every output
 on these pages was produced with it.
 
 ### Build once, experience everywhere
