@@ -42,7 +42,7 @@ the [`wiki/`](wiki) folder of this repository).
 
 Everything Claude does is plain Caligrafy you can write yourself. The **By hand** track builds Bookshelf again, every
 file typed by you, so that you understand every line Claude writes. Take it after the main lessons, or whenever a
-lesson's **By hand** link makes you curious. It uses Caligrafy Quill 2.22.1, and needs a little HTML, CSS, JavaScript,
+lesson's **By hand** link makes you curious. It uses Caligrafy Quill 2.23.0, and needs a little HTML, CSS, JavaScript,
 PHP and SQL.
 
 **Start:** [00 Your tools](https://github.com/caligrafy/caligrafy-quill-course/wiki/00-Introduction-and-Tools) · [01 Your project in one command](https://github.com/caligrafy/caligrafy-quill-course/wiki/01-Your-Project-in-One-Command) · [02 Build once, seen three ways](https://github.com/caligrafy/caligrafy-quill-course/wiki/02-Build-Once-Seen-Three-Ways)  
@@ -51,13 +51,14 @@ PHP and SQL.
 **People and trust:** [11 People and permissions](https://github.com/caligrafy/caligrafy-quill-course/wiki/11-People-and-Permissions)  
 **Ship it:** [12 Tests, review, doctor](https://github.com/caligrafy/caligrafy-quill-course/wiki/12-Ship-It) · [13 Capstone: Loans](https://github.com/caligrafy/caligrafy-quill-course/wiki/13-Capstone-Loans) · [14 Put it online](https://github.com/caligrafy/caligrafy-quill-course/wiki/14-Put-It-Online) · [15 Reminders: a job and notifications](https://github.com/caligrafy/caligrafy-quill-course/wiki/15-Reminders)  
 **Every request declared:** [16 What a page or a form cannot say](https://github.com/caligrafy/caligrafy-quill-course/wiki/16-Every-Request-Declared)  
+**The assistant:** [17 Every capability as a card](https://github.com/caligrafy/caligrafy-quill-course/wiki/17-The-Assistant)  
 **Under the hood (the older ways):** [A Routes and controllers](https://github.com/caligrafy/caligrafy-quill-course/wiki/A-Routes-and-Controllers) · [B Classic forms](https://github.com/caligrafy/caligrafy-quill-course/wiki/B-Classic-Forms)
 
 ## Checkpoint code (By hand)
 
 The [`checkpoints/`](checkpoints) folder holds the finished code of every by-hand lesson, as an **overlay**: only the
 files you write or change in your project, at their real paths. Each folder contains everything up to that lesson
-(`lesson-02` to `lesson-16`, `appendix-a`, `appendix-b`). Lesson 01 writes no code, and lesson 02 removes the
+(`lesson-02` to `lesson-17`, `appendix-a`, `appendix-b`). Lesson 01 writes no code, and lesson 02 removes the
 Tasks example: its files are not in any checkpoint.
 
 Compare your project with a checkpoint (run from the folder that contains both `bookshelf` and this repository):

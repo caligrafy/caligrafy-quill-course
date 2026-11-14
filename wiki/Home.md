@@ -41,7 +41,7 @@ Every lesson ends with a **Check** list: go through it before you accept what Cl
 
 Everything Claude does is plain Caligrafy you can write yourself. The **By hand** track builds Bookshelf again, every
 file typed by you, so that you understand every line Claude writes. Take it after the main lessons, or whenever a
-lesson's **By hand** link makes you curious. It uses Caligrafy Quill 2.22.1, and needs a little HTML, CSS, JavaScript,
+lesson's **By hand** link makes you curious. It uses Caligrafy Quill 2.23.0, and needs a little HTML, CSS, JavaScript,
 PHP and SQL.
 
 **Start:** [00 Your tools](00-Introduction-and-Tools) · [01 Your project in one command](01-Your-Project-in-One-Command) · [02 Build once, seen three ways](02-Build-Once-Seen-Three-Ways)  
@@ -50,4 +50,5 @@ PHP and SQL.
 **People and trust:** [11 People and permissions](11-People-and-Permissions)  
 **Ship it:** [12 Tests, review, doctor](12-Ship-It) · [13 Capstone: Loans](13-Capstone-Loans) · [14 Put it online](14-Put-It-Online) · [15 Reminders: a job and notifications](15-Reminders)  
 **Every request declared:** [16 What a page or a form cannot say](16-Every-Request-Declared)  
+**The assistant:** [17 Every capability as a card](17-The-Assistant)  
 **Under the hood (the older ways):** [A Routes and controllers](A-Routes-and-Controllers) · [B Classic forms](B-Classic-Forms)

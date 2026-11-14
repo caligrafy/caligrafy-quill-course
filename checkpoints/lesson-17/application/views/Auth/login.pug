@@ -1,0 +1,33 @@
+extends ../default/master/site
+
+block title
+  | Sign in · Caligrafy
+
+block content
+  if $authorized
+    section.cq-hero
+      h1.cq-display You are signed in
+      p.cq-lead Welcome to Caligrafy.
+      .cq-cta
+        a.btn.btn-primary(href="{$home}") Continue
+        a.btn.btn-secondary(href="{$home}logout") Sign out
+  else
+    main.cq-auth
+      h1 Sign in
+      include ../default/modules/notice
+      form#login_form(method='POST', enctype="multipart/form-data", action="{$home}login")
+        =csrf()
+        //- Bookshelf: people sign in with their email address, which the username column holds: the field keeps its name
+        .cq-field
+          label(for='username') Email
+          //- after a failed sign-in, what the person typed is kept (Route::auth gives it in $user, 2.19.3)
+          input#username.form-control(type='email', name='username', value=isset($user) && is_object($user) ? ($user->username ?? '') : '', required, autocomplete='email', autocapitalize='none', maxlength='254')
+        .cq-field
+          label(for='passcode') Password
+          input#passcode.form-control(type='password', name='passcode', required, autocomplete='current-password', maxlength='72')
+        button.btn.btn-primary(type='submit') Sign in
+      //- no sign-up in Route::auth (register => false): no link to it (2.19.6)
+      - $canSignUp = isset($signUp) ? $signUp : \Caligrafy\AuthRoutes::signUpOpen()
+      if $canSignUp
+        .cq-or Or
+        a.btn.btn-secondary.cq-btn-block(href="{$home}register") Create account

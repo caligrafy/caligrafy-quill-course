@@ -891,4 +891,4 @@ A door with no password must never go online, so this is not in the checkpoint. 
 </details>
 
 ---
-Previous: [Lesson 15 - Reminders](15-Reminders) · Next: [Appendix A - Routes and controllers](A-Routes-and-Controllers)
+Previous: [Lesson 15 - Reminders](15-Reminders) · Next: [Lesson 17 - The assistant](17-The-Assistant)

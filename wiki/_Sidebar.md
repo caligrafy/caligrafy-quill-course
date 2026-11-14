@@ -26,6 +26,7 @@
 - [11 People and permissions](11-People-and-Permissions)
 - [12 Tests](12-Ship-It) · [13 Loans](13-Capstone-Loans) · [14 Online](14-Put-It-Online) · [15 Reminders](15-Reminders)
 - [16 Beyond pages and forms](16-Every-Request-Declared)
+- [17 The assistant](17-The-Assistant)
 - [A Routes](A-Routes-and-Controllers) · [B Forms](B-Classic-Forms)
 
 [Course repository](https://github.com/caligrafy/caligrafy-quill-course) · [Framework docs](https://github.com/caligrafy/caligrafy-quill/wiki)

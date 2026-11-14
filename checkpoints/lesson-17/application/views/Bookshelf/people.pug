@@ -1,0 +1,24 @@
+extends ../default/master/site
+
+//- The people who can sign in: Route::page('/people', ..., ['level' => 1]) opens it to administrators only, and gives
+//- it $people (list_users, a framework capability: id, username, permissions; never a password)
+
+block title
+    | People · Bookshelf
+
+block content
+    section.cq-hero.cq-hero--page
+        h1.cq-display People
+        p.cq-lead Who can sign in to Bookshelf. Permissions 1 or more: an administrator.
+
+    section.cq-band.cq-band--tight
+        .cq-inner.cq-inner--narrow
+            ul.cq-rows
+                each $p in $people
+                    li.cq-row
+                        .cq-row-main
+                            p.cq-row-title= $p['username']
+                            p.cq-row-meta
+                                | #{$p['permissions'] >= 1 ? 'Administrator' : 'Reader'} · since #{$p['created_at']}
+            p.cq-auth-note
+                a(href="{$home}books") All books

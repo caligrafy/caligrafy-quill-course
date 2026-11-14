@@ -1,0 +1,62 @@
+<?php
+
+use Caligrafy\Capability;
+use Caligrafy\Context;
+use Caligrafy\Service;
+use Caligrafy\ServiceError;
+
+#[Capability(
+    name: 'update_user',
+    description: 'Changes the username, the password or the permissions of a person who can sign in (0 for everyone, 1 or more for administrators). Only the inputs given change. Returns the user, never the password.',
+    scope: 'users:write',
+    level: CaligrafyUsers::ADMIN_LEVEL
+)]
+class CaligrafyUpdateUser extends Service
+{
+    public $rules = array('id' => 'required|integer', 'username' => 'valid_email|max_len,254', 'passcode' => 'min_len,8|max_len,72',
+        'permissions' => 'integer|min_numeric,0|max_numeric,255');
+    public $filters = array('username' => 'trim|lower_case');   // Bookshelf: the same rule as register_user: an email address, in lower case
+    public $descriptions = array('id' => 'The id of the user', 'username' => 'A new email address',
+        'passcode' => 'A new password: 8 to 72 characters', 'permissions' => '0 for everyone, 1 or more for administrators');
+
+    public function handle(array $input, Context $context)
+    {
+        CaligrafyUsers::requireAdmin($context);
+        $user = User::find($input['id']);
+        if (!$user) {
+            throw ServiceError::notFound("No user #{$input['id']}");
+        }
+        if (!CaligrafyUsers::mayManage($context, $user->permissions ?? 0)) {
+            throw ServiceError::forbidden('You cannot manage someone above your own level');
+        }
+        $changes = array();
+        if (isset($input['username']) && $input['username'] !== '' && $input['username'] !== $user->username) {
+            if (User::where('username', $input['username'])->where('id', '!=', $user->id)->exists()) {
+                throw ServiceError::invalid(array('username' => 'An account already uses this email'));
+            }
+            $changes['username'] = $input['username'];
+        }
+        if (isset($input['passcode']) && $input['passcode'] !== '') {
+            $changes['passcode'] = User::hashPassword($input['passcode']);
+        }
+        if (isset($input['permissions']) && $input['permissions'] !== '') {
+            if (!CaligrafyUsers::mayManage($context, $input['permissions'])) {
+                throw ServiceError::invalid(array('permissions' => 'You cannot give more than your own level'));
+            }
+            $changes['permissions'] = (int) $input['permissions'];
+        }
+        if (!$changes) {
+            return CaligrafyUsers::profile($user);
+        }
+        $changes['modified_at'] = date('Y-m-d H:i:s');
+        try {
+            User::where('id', $user->id)->update($changes);
+            return CaligrafyUsers::profile(User::find($user->id));
+        } catch (\Throwable $e) {
+            if (CaligrafyUsers::isDuplicate($e)) {
+                throw ServiceError::invalid(array('username' => 'An account already uses this email'));
+            }
+            throw $e;
+        }
+    }
+}

@@ -176,7 +176,7 @@ docker compose exec dev-box php caligrafer.php notify keys --subject mailto:you@
 ```
 Expected:
 ```text
- Framework tables ready: caligrafy_tokens, caligrafy_audit, caligrafy_job_runs, the notifications tables, caligrafy_jobs, caligrafy_cache and caligrafy_migrations
+ Framework tables ready: caligrafy_tokens, caligrafy_audit, caligrafy_job_runs, the notifications tables, caligrafy_jobs, caligrafy_cache, caligrafy_migrations and Snap's tables
 
  Web push keys written to .env (VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT=mailto:you@example.com). Keep them: new keys cut off every subscribed browser
 ```

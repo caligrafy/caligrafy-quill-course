@@ -466,4 +466,4 @@ Learn more: [2. Routing](https://github.com/caligrafy/caligrafy-quill/wiki/2.-Ro
 </details>
 
 ---
-Previous: [Lesson 16 - What a page or a form cannot say](16-Every-Request-Declared) · Next: [Appendix B - Classic forms](B-Classic-Forms)
+Previous: [Lesson 17 - The assistant](17-The-Assistant) · Next: [Appendix B - Classic forms](B-Classic-Forms)
