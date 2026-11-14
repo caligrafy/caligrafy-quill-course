@@ -1,6 +1,6 @@
 # Lesson 01 - Your project in one command
 
-**In this lesson** you create the Bookshelf project from the release Caligrafy Quill 2.21.9 with one command,
+**In this lesson** you create the Bookshelf project from the release Caligrafy Quill 2.22.0 with one command,
 `quickstart`, which starts the Docker dev server, sets up the database and adds a ready example feature (Tasks). You
 open it in the browser, check everything with `doctor`, take a tour of the folders and make the project your own git
 repository.
@@ -19,7 +19,7 @@ your connection. Later starts take seconds.
 framework into a new folder, and that folder becomes your project. Your code goes in `application/` and `public/`; the
 framework stays in `framework/`.
 
-**A release.** `--branch v2.21.9` gets exactly the version 2.21.9 of the framework, the one this course was written and
+**A release.** `--branch v2.22.0` gets exactly the version 2.22.0 of the framework, the one this course was written and
 run with, even after newer versions come out.
 
 **Caligrafer.** The command line tool of Caligrafy. It has two doors:
@@ -61,13 +61,13 @@ Choose the folder where you keep your projects (here `~/code`) and clone the rel
 ```bash
 mkdir -p ~/code
 cd ~/code
-git clone --branch v2.21.9 https://github.com/caligrafy/caligrafy-quill.git bookshelf
+git clone --branch v2.22.0 https://github.com/caligrafy/caligrafy-quill.git bookshelf
 cd bookshelf
 ```
 Expected: `Cloning into 'bookshelf'...`, then
 ```text
-warning: refs/tags/v2.21.9 b8292785e23135486ce78b2d6728c97433a89f7e is not a commit!
-Note: switching to '1de0256c04cf0ebae0fe24a6694e5a6e8e82ccf4'.
+warning: refs/tags/v2.22.0 51b19d5da85d5e18f0013b867d558692dbe80937 is not a commit!
+Note: switching to 'f91c399bd94b1ae6d97f78d045882026cf70c775'.
 
 You are in 'detached HEAD' state. You can look around, make experimental
 ...
@@ -148,7 +148,7 @@ Expected: `{"data":[]}` (or your tasks, if you left some on the page).
 ```bash
 docker compose exec dev-box php caligrafer.php doctor
 ```
-Expected: the first line `Caligrafy doctor (read-only): Caligrafy Quill 2.21.9`, one line per check (among them
+Expected: the first line `Caligrafy doctor (read-only): Caligrafy Quill 2.22.0`, one line per check (among them
 `OK    PHP: 8.5.12` and `OK    Database: connected to mysql://mysql:3306/caligrafy (server 8.4.13)`; your patch
 versions may differ), and the last line:
 ```text

@@ -99,7 +99,9 @@ every POST, PUT or DELETE; a visit that only reads gets no cookie.
 
 **`Route::download`.** `Route::download('/authors.csv', 'list_authors', ['filename' => 'authors.csv'])` turns a
 read-only capability into a file: a CSV (comma-separated values, which every spreadsheet opens), one line per row, with
-a first line of column names.
+a first line of column names. With `'as' => 'json'` the file is JSON. With `'as' => 'zip'` a capability that lists
+files (paths under a folder such as `public/uploads`) sends them all as one ZIP archive: that is how a gallery offers
+*Download all*.
 
 **`Route::redirect`.** `Route::redirect('/', '/books')` sends the visitors of `/` to the catalog. An address that moved
 for good answers 301, and its query string goes along with `keepQuery`:
