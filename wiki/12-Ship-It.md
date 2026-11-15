@@ -316,7 +316,7 @@ docker compose exec dev-box php caligrafer.php doctor
 ```
 Expected (the key endings, the plugin name and the versions are yours):
 ```text
-Caligrafy doctor (read-only): Caligrafy Quill 2.25.0
+Caligrafy doctor (read-only): Caligrafy Quill 2.26.0
 
  Project
   OK    PHP: 8.5.12
@@ -327,8 +327,10 @@ Caligrafy doctor (read-only): Caligrafy Quill 2.25.0
   OK    API_KEY: set …xxxx (112 chars)
   OK    Legacy API key: allowed (every generated key is the same key: full access, no revocation); set LEGACY_API_KEY=false once clients use tokens
   OK    Claude Code plugin: caligrafy-quill@caligrafy-77be (not registered yet: php caligrafer.php plugin, or start claude here)
+  OK    Token scopes: every write capability declares its scope
   OK    public/uploads: writable
   OK    public/manifest.webmanifest: 4 icon(s) found
+  OK    PHP processes: PHP_PROCESSES not set: the production image runs 2 per CPU, at least 4 (no AI key is set)
   OK    Design style: Caligrafy's own look (DESIGN_STYLE is empty)
   OK    Templates: application/ is up to date with the framework templates (4 customized)
 
@@ -336,9 +338,10 @@ Caligrafy doctor (read-only): Caligrafy Quill 2.25.0
   OK    Database: connected to mysql://mysql:3306/caligrafy (server 8.4.13)
   OK    Framework tables: tokens, audit log, job runs, jobs, cache and migrations installed
   OK    Migrations: 1 ran, none pending
+  OK    Connections: persistent, one per PHP process (the database allows 151)
 ```
 then one `SKIP` per optional service you did not configure (OpenAI, Groq, Stripe, Coinbase, Watson, Mail: normal),
-and `16 OK, 0 WARN, 0 FAIL, 6 SKIP`.
+and `19 OK, 0 WARN, 0 FAIL, 6 SKIP`.
 
 Open `.env` in your editor, find `LEGACY_API_KEY=true` and change it to:
 ```text

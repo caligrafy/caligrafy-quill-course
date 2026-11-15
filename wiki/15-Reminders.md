@@ -169,8 +169,10 @@ Expected:
 ### Step 3 - Notifications
 
 The tables of the framework (the notification tables are among them; it never deletes anything), then the web push
-keys, **once** (new keys would cut off every device that turned push on):
+keys, **once** (new keys would cut off every device that turned push on). Web push needs its library, added once
+(since 2.26.0 it is not in every project; commit `composer.json` and `composer.lock` with the rest):
 ```bash
+docker compose exec dev-box php caligrafer.php add push
 docker compose exec dev-box php caligrafer.php platform install
 docker compose exec dev-box php caligrafer.php notify keys --subject mailto:you@example.com
 ```

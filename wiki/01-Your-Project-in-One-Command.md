@@ -1,6 +1,6 @@
 # Lesson 01 - Your project in one command
 
-**In this lesson** you create the Bookshelf project from the release Caligrafy Quill 2.25.0 with one command,
+**In this lesson** you create the Bookshelf project from the release Caligrafy Quill 2.26.0 with one command,
 `quickstart`, which starts the Docker dev server, sets up the database and adds a ready example feature (Tasks). You
 open it in the browser, check everything with `doctor`, take a tour of the folders and make the project your own git
 repository.
@@ -19,7 +19,7 @@ your connection. Later starts take seconds.
 framework into a new folder, and that folder becomes your project. Your code goes in `application/` and `public/`; the
 framework stays in `framework/`.
 
-**A release.** `--branch v2.25.0` gets exactly the version 2.25.0 of the framework, the one this course was written and
+**A release.** `--branch v2.26.0` gets exactly the version 2.26.0 of the framework, the one this course was written and
 run with, even after newer versions come out.
 
 **Caligrafer.** The command line tool of Caligrafy. It has two doors:
@@ -61,12 +61,12 @@ Choose the folder where you keep your projects (here `~/code`) and clone the rel
 ```bash
 mkdir -p ~/code
 cd ~/code
-git clone --branch v2.25.0 https://github.com/caligrafy/caligrafy-quill.git bookshelf
+git clone --branch v2.26.0 https://github.com/caligrafy/caligrafy-quill.git bookshelf
 cd bookshelf
 ```
 Expected: `Cloning into 'bookshelf'...`, then
 ```text
-warning: refs/tags/v2.25.0 2b6a94b2863c27a49057a5a1a30f1a4347bdd9af is not a commit!
+warning: refs/tags/v2.26.0 1c3efa30a5a8ba073c01fa8012b39be01ba05209 is not a commit!
 Note: switching to 'c69c5aa304579e9f58a9c9149586515d520c070d'.
 
 You are in 'detached HEAD' state. You can look around, make experimental
@@ -148,11 +148,11 @@ Expected: `{"data":[]}` (or your tasks, if you left some on the page).
 ```bash
 docker compose exec dev-box php caligrafer.php doctor
 ```
-Expected: the first line `Caligrafy doctor (read-only): Caligrafy Quill 2.25.0`, one line per check (among them
+Expected: the first line `Caligrafy doctor (read-only): Caligrafy Quill 2.26.0`, one line per check (among them
 `OK    PHP: 8.5.12` and `OK    Database: connected to mysql://mysql:3306/caligrafy (server 8.4.13)`; your patch
 versions may differ), and the last line:
 ```text
- 15 OK, 0 WARN, 0 FAIL, 6 SKIP
+ 18 OK, 0 WARN, 0 FAIL, 6 SKIP
 ```
 `SKIP` means "not configured": the 6 SKIP lines are optional services this course does not use (OpenAI, Groq, Stripe,
 Coinbase, Watson, Mail). What matters is `0 FAIL`. `doctor` never prints your secrets: it shows only the end of each

@@ -7,8 +7,8 @@ make the reading report run in the background, and, if you want, you let Claude 
 
 **Before you start:** lesson 16 is done (tag `lesson-16`), `docker compose ps` shows the containers running, you can
 sign in as `reader1` (an administrator since lesson 11), and Kindred and Invisible Cities are lent (lesson 13).
-`docker compose exec dev-box php caligrafer.php version` prints `Caligrafy Quill 2.25.0` or later: if it prints an older
-version, run `docker compose exec dev-box php caligrafer.php update 2.25.0` first.
+`docker compose exec dev-box php caligrafer.php version` prints `Caligrafy Quill 2.26.0` or later: if it prints an older
+version, run `docker compose exec dev-box php caligrafer.php update 2.26.0` first.
 
 **Time:** 60 minutes.
 
@@ -111,7 +111,7 @@ Expected:
 > |---|---|---|
 > | `Snap is almost ready` | The tables are missing | `docker compose exec dev-box php caligrafer.php snap install` |
 > | `404` on `/assistant` | `Route::snap();` is not in `web.php`, or is below `// MUST NOT BE REMOVED` | Put it with the other routes |
-> | `Unknown command: snap` | The project is older than 2.23.0 | `docker compose exec dev-box php caligrafer.php update 2.25.0` |
+> | `Unknown command: snap` | The project is older than 2.23.0 | `docker compose exec dev-box php caligrafer.php update 2.26.0` |
 
 ### Step 2 - Use it
 
@@ -294,8 +294,10 @@ Then, in `application/config/schedule.php`, add the job that runs the routines p
 Without a model, the assistant answers the names of your cards (`the catalog`, `lend a book`), your shortcuts, `What can
 I do?`, and short follow-ups on what is on screen (`delete it`). With one, it understands anything.
 
-1. Make a key at **console.anthropic.com**, *API keys*, *Create key*. It is a secret: it costs money when used.
-2. Open `.env` in your editor, find the line `ANTHROPIC_API_KEY=` and paste the key right after the `=`. Save. Never
+1. Add the Claude library to the project, once (since 2.26.0 it is not in every project; commit `composer.json` and
+   `composer.lock`): `docker compose exec dev-box php caligrafer.php add snap`.
+2. Make a key at **console.anthropic.com**, *API keys*, *Create key*. It is a secret: it costs money when used.
+3. Open `.env` in your editor, find the line `ANTHROPIC_API_KEY=` and paste the key right after the `=`. Save. Never
    print it in a terminal and never commit it (`.env` is in `.gitignore`).
 
 Now ask, one after the other, in the same conversation:
