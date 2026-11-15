@@ -1,0 +1,9 @@
+//- snap card of list_books, from Bookshelf/books.pug 9b3c7ec6
+//- The catalog as a card: the rows of /books, each book opening its own card; the form to add a book stays on the page
+ul.cq-rows
+    each $b in $rows
+        li.cq-row
+            .cq-row-main
+                p.cq-row-title
+                    a(href="{$home}books/{$b['id']}", data-snap-open='get_book', data-snap-input=json_encode(array('id' => $b['id'])))= $b['title']
+                p.cq-row-meta= $b['author']['name'] . ', ' . $b['published_year']

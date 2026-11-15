@@ -7,8 +7,8 @@ make the reading report run in the background, and, if you want, you let Claude 
 
 **Before you start:** lesson 16 is done (tag `lesson-16`), `docker compose ps` shows the containers running, you can
 sign in as `reader1` (an administrator since lesson 11), and Kindred and Invisible Cities are lent (lesson 13).
-`docker compose exec dev-box php caligrafer.php version` prints `Caligrafy Quill 2.24.1` or later: if it prints an older
-version, run `docker compose exec dev-box php caligrafer.php update 2.24.1` first.
+`docker compose exec dev-box php caligrafer.php version` prints `Caligrafy Quill 2.25.0` or later: if it prints an older
+version, run `docker compose exec dev-box php caligrafer.php update 2.25.0` first.
 
 **Time:** 60 minutes.
 
@@ -18,9 +18,9 @@ version, run `docker compose exec dev-box php caligrafer.php update 2.24.1` firs
 
 **A Snap Card** is a capability as a person uses it: the form of its inputs, the confirmation of a change, the list or
 the record it answers. Nothing is designed by hand: each card is built from what the capability already declares (its
-`$rules`, its `$descriptions`, `readOnly`, `destructive`), and shows its data the way your app does: the catalog card
-shows your `/books` page, the card of a book your `/books/{id}` page. A capability no page shows (the authors) gets a
-card designed for its data in your design system. Cards come in five families and nine types. You always name a
+`$rules`, its `$descriptions`, `readOnly`, `destructive`), and its data is shown in your design system. A **card view**
+(`application/views/snap/<capability>.pug`) makes a card look exactly like your app: your page's own markup, at the
+size of a card. Cards come in five families and nine types. You always name a
 card by its family and its type: an **Ask card: Confirm**, a **Show card: List**.
 
 | Family | Type | What it does | Bookshelf |
@@ -111,7 +111,7 @@ Expected:
 > |---|---|---|
 > | `Snap is almost ready` | The tables are missing | `docker compose exec dev-box php caligrafer.php snap install` |
 > | `404` on `/assistant` | `Route::snap();` is not in `web.php`, or is below `// MUST NOT BE REMOVED` | Put it with the other routes |
-> | `Unknown command: snap` | The project is older than 2.23.0 | `docker compose exec dev-box php caligrafer.php update 2.24.1` |
+> | `Unknown command: snap` | The project is older than 2.23.0 | `docker compose exec dev-box php caligrafer.php update 2.25.0` |
 
 ### Step 2 - Use it
 
@@ -136,20 +136,48 @@ Each click gets a line from the assistant, and the suggestions always say what y
       shows `create_book` then `delete_book`, by reader1.
 - [ ] A book's card offers **Lend a book** or **Record a return**: both, for now. Step 3 fixes that.
 
-**How a card looks.** Type `the catalog`: its card is your `/books` page, your design, without the top bar and
-without the form that adds a book (a card that only reads leaves out the forms that change things; they are the card's
-own actions). Type `authors`: no page shows them on their own, so their card is designed from their data: each name,
-its bio under it. Now show only the list in the catalog card: mark it in the view.
+**How a card looks.** Type `the catalog`: its rows are designed from the data, in Caligrafy's look, and every card
+works this way without anything to write. Make the catalog look exactly like your `/books` list with a **card view**:
+a small Pug view made for the card, in your page's own markup.
 
-In `application/views/Bookshelf/books.pug`, add `(data-snap='list_books')` to the band of the list:
+**File `application/views/snap/list_books.pug`**
 
 ```pug
-    section.cq-band.cq-band--tight(data-snap='list_books')
-        .cq-inner.cq-inner--narrow
-            h2.cq-heading Books
+//- snap card of list_books, from Bookshelf/books.pug 9b3c7ec6
+//- The catalog as a card: the rows of /books, each book opening its own card; the form to add a book stays on the page
+ul.cq-rows
+    each $b in $rows
+        li.cq-row
+            .cq-row-main
+                p.cq-row-title
+                    a(href="{$home}books/{$b['id']}", data-snap-open='get_book', data-snap-input=json_encode(array('id' => $b['id'])))= $b['title']
+                p.cq-row-meta= $b['author']['name'] . ', ' . $b['published_year']
 ```
 
-- [ ] `the catalog` shows the list of books alone, with its pages; `/books` itself has not changed.
+It is the list of `books.pug`, nothing else: no title band, no form (a card that changes things has its own actions).
+`$rows` are the books the capability returned; `data-snap-open` opens a book's card in the conversation. The first line
+names the page it comes from and that page's fingerprint: `9b3c7ec6` for the `books.pug` of this course. If you
+changed the page, print yours:
+
+```bash
+docker compose exec dev-box sh -c "shasum application/views/Bookshelf/books.pug | cut -c1-8"
+```
+
+Then check it:
+
+```bash
+docker compose exec dev-box php caligrafer.php snap views
+```
+
+```text
+  [ok] list_books                 from Bookshelf/books.pug
+  [--] get_book                   no card view: a card designed from its data
+```
+
+`/caligrafy-quill:assistant` writes card views for every main list and record the same way; when `books.pug` changes,
+`snap views` shows `[!!]`: write the card view again.
+
+- [ ] `the catalog` shows your rows, sized as a card; clicking a book opens its card; `/books` itself has not changed.
 
 ### Step 3 - Hints: one file, better cards
 
