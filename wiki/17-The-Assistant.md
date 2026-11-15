@@ -7,8 +7,8 @@ make the reading report run in the background, and, if you want, you let Claude 
 
 **Before you start:** lesson 16 is done (tag `lesson-16`), `docker compose ps` shows the containers running, you can
 sign in as `reader1` (an administrator since lesson 11), and Kindred and Invisible Cities are lent (lesson 13).
-`docker compose exec dev-box php caligrafer.php version` prints `Caligrafy Quill 2.23.0` or later: if it prints an older
-version, run `docker compose exec dev-box php caligrafer.php update 2.23.0` first.
+`docker compose exec dev-box php caligrafer.php version` prints `Caligrafy Quill 2.24.1` or later: if it prints an older
+version, run `docker compose exec dev-box php caligrafer.php update 2.24.1` first.
 
 **Time:** 60 minutes.
 
@@ -18,7 +18,9 @@ version, run `docker compose exec dev-box php caligrafer.php update 2.23.0` firs
 
 **A Snap Card** is a capability as a person uses it: the form of its inputs, the confirmation of a change, the list or
 the record it answers. Nothing is designed by hand: each card is built from what the capability already declares (its
-`$rules`, its `$descriptions`, `readOnly`, `destructive`). Cards come in five families and nine types. You always name a
+`$rules`, its `$descriptions`, `readOnly`, `destructive`), and shows its data the way your app does: the catalog card
+shows your `/books` page, the card of a book your `/books/{id}` page. A capability no page shows (the authors) gets a
+card designed for its data in your design system. Cards come in five families and nine types. You always name a
 card by its family and its type: an **Ask card: Confirm**, a **Show card: List**.
 
 | Family | Type | What it does | Bookshelf |
@@ -109,7 +111,7 @@ Expected:
 > |---|---|---|
 > | `Snap is almost ready` | The tables are missing | `docker compose exec dev-box php caligrafer.php snap install` |
 > | `404` on `/assistant` | `Route::snap();` is not in `web.php`, or is below `// MUST NOT BE REMOVED` | Put it with the other routes |
-> | `Unknown command: snap` | The project is older than 2.23.0 | `docker compose exec dev-box php caligrafer.php update 2.23.0` |
+> | `Unknown command: snap` | The project is older than 2.23.0 | `docker compose exec dev-box php caligrafer.php update 2.24.1` |
 
 ### Step 2 - Use it
 
@@ -133,6 +135,21 @@ Each click gets a line from the assistant, and the suggestions always say what y
 - [ ] Nothing changed before **Yes, add the book**; `docker compose exec dev-box php caligrafer.php audit --limit 3`
       shows `create_book` then `delete_book`, by reader1.
 - [ ] A book's card offers **Lend a book** or **Record a return**: both, for now. Step 3 fixes that.
+
+**How a card looks.** Type `the catalog`: its card is your `/books` page, your design, without the top bar and
+without the form that adds a book (a card that only reads leaves out the forms that change things; they are the card's
+own actions). Type `authors`: no page shows them on their own, so their card is designed from their data: each name,
+its bio under it. Now show only the list in the catalog card: mark it in the view.
+
+In `application/views/Bookshelf/books.pug`, add `(data-snap='list_books')` to the band of the list:
+
+```pug
+    section.cq-band.cq-band--tight(data-snap='list_books')
+        .cq-inner.cq-inner--narrow
+            h2.cq-heading Books
+```
+
+- [ ] `the catalog` shows the list of books alone, with its pages; `/books` itself has not changed.
 
 ### Step 3 - Hints: one file, better cards
 
