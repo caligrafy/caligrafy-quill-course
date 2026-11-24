@@ -99,7 +99,7 @@ docker compose exec dev-box php caligrafer.php client
 ```
 Expected:
 ```text
- public/js/capabilities.js written: 20 capabilities, calls /capabilities (Route::capabilities('/capabilities') in web.php)
+ public/js/capabilities.js written: 22 capabilities, calls /capabilities (Route::capabilities('/capabilities') in web.php)
  import { createBook, CapabilityError } from './capabilities.js'
 ```
 20: your 7 and 13 of the framework (the accounts, the notifications and the queue: a function for each, which a visitor
@@ -450,7 +450,7 @@ The one line of `web.php` is the only change in `application/`.
 ## Check
 
 - [ ] `web.php`, `public/finder/index.php` and `public/finder/scripts/main.js` are identical to the File blocks.
-- [ ] `public/js/capabilities.js` was written by the `client` command (20 capabilities) and not edited.
+- [ ] `public/js/capabilities.js` was written by the `client` command (22 capabilities) and not edited.
 - [ ] `git status --short` shows the two new paths and `web.php`: no other change in `application/`.
 - [ ] No `apiKey`, no `axios`, no `Authorization` in `public/finder/`.
 - [ ] `index.php` loads `app.js?v=...`, and the Network tab shows `main.js?v=...` with the same number.

@@ -201,7 +201,7 @@ class ListAuthors extends Service
 ```bash
 docker compose exec dev-box php caligrafer.php capabilities
 ```
-Expected: 16 lines (name, who may call it, what kind, description), sorted by name: the 13 capabilities of the
+Expected: 18 lines (name, who may call it, what kind, description), sorted by name: the 15 capabilities of the
 framework and, among them, your three:
 ```text
  get_book                     public         read      Returns one book of the catalog with its author (id, name, bio), by the id of the book.
@@ -360,7 +360,7 @@ In **Claude Code** (connected to `bookshelf` in lesson 02), start a new session 
 ## Check
 
 - [ ] The three files are identical to the File blocks, in `application/services/Bookshelf/`, with no `namespace` line.
-- [ ] `capabilities` lists 16 capabilities, your three `public` and `read`.
+- [ ] `capabilities` lists 18 capabilities, your three `public` and `read`.
 - [ ] `call list_books author_id=2` returns a page with Kindred and Parable of the Sower, each with its `author`.
 - [ ] The `curl` calls of step 4 answer 200, 404 and 422 as the table shows.
 - [ ] `tools/list` over MCP shows `get_book`, `list_authors` and `list_books`.

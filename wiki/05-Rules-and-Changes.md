@@ -353,7 +353,7 @@ Check:
 ```bash
 docker compose exec dev-box php caligrafer.php capabilities
 ```
-Expected: 19 lines; among them your six (the third column is the kind: `read`, `writes` or `destroys`):
+Expected: 21 lines; among them your six (the third column is the kind: `read`, `writes` or `destroys`):
 ```text
  create_book                  public         writes    Adds a book to the Bookshelf catalog and returns it with its id and its author. The author must already exist: use list_authors to find author_id. The ISBN is optional and unique.
  delete_book                  public         destroys  Deletes a book of the catalog, by its id. This cannot be undone.
@@ -461,7 +461,7 @@ they are refused.
 
 - [ ] `migrate status` shows `ran` for `20261105000100_add_books_isbn.sql`, and `get_book` answers with `"isbn"`.
 - [ ] The four files of steps 2 to 4 are identical to the File blocks.
-- [ ] `capabilities` lists 19 capabilities: `create_book` and `update_book` are `writes`, `delete_book` is `destroys`.
+- [ ] `capabilities` lists 21 capabilities: `create_book` and `update_book` are `writes`, `delete_book` is `destroys`.
 - [ ] The calls of steps 5 and 6 give the answers of the tables (use your ids).
 - [ ] The agent's wrong book gets the same three messages as `curl`.
 

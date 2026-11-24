@@ -900,7 +900,7 @@ block content
 docker compose exec dev-box php caligrafer.php client
 docker compose exec dev-box php caligrafer.php client public/bookshelf-spa/src/capabilities.js
 ```
-Expected: `... written: 20 capabilities ...` twice. In their comments, `create_book (writes, public)` became
+Expected: `... written: 22 capabilities ...` twice. In their comments, `create_book (writes, public)` became
 `create_book (writes, books:write)`. Rebuild the SPA: `cd public/bookshelf-spa && npm run build && cd ../..`.
 
 ### Step 6 - As a visitor, then as a reader

@@ -227,7 +227,7 @@ Check that the list of capabilities does not show them, and that the clients do 
 docker compose exec dev-box php caligrafer.php capabilities | grep -c "surprise_me\|books_feed\|renew_loan"
 docker compose exec dev-box php caligrafer.php client
 ```
-Expected: `0`, then ` public/js/capabilities.js written: 25 capabilities, ...`: the same 25 as in lesson 15.
+Expected: `0`, then ` public/js/capabilities.js written: 27 capabilities, ...`: the same 27 as in lesson 15.
 
 ### Step 2 - The routes, and the last lines that name a controller
 

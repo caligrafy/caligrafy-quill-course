@@ -673,7 +673,7 @@ docker compose exec dev-box php caligrafer.php client public/bookshelf-spa/src/c
 docker compose exec dev-box php caligrafer.php test
 bash qa/bookshelf/smoke.sh
 ```
-Expected: `... written: 23 capabilities ...` twice (`lendBook`, `listLoans`, `returnBook` are new), then
+Expected: `... written: 25 capabilities ...` twice (`lendBook`, `listLoans`, `returnBook` are new), then
 `OK (7 tests, 16 assertions)` and `All checks passed.` Rebuild the SPA so that its `dist/` has the new client:
 `cd public/bookshelf-spa && npm run build && cd ../..`.
 
@@ -703,7 +703,7 @@ Expected: `... written: 23 capabilities ...` twice (`lendBook`, `listLoans`, `re
 - [ ] REST: 401 for a visitor, 403 for the "Claude Code" token, 201, 409, 404 for the loans desk token.
 - [ ] `tools/list` of the loans desk token has `lend_book`, `list_loans`, `return_book`; the audit log shows
       `mcp token 6 lend_book ok`.
-- [ ] Both clients have 23 capabilities; the tests and the smoke test pass.
+- [ ] Both clients have 25 capabilities; the tests and the smoke test pass.
 
 ## With Claude
 

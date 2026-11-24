@@ -418,7 +418,7 @@ block additional_scripts
             })();
 ```
 
-Regenerate both clients (25 capabilities: `remindLoans` and `sendReminders` are new):
+Regenerate both clients (27 capabilities: `remindLoans` and `sendReminders` are new):
 ```bash
 docker compose exec dev-box php caligrafer.php client
 docker compose exec dev-box php caligrafer.php client public/bookshelf-spa/src/capabilities.js

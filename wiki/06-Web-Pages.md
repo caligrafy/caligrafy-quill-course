@@ -6,7 +6,7 @@ of `web.php`: **`Route::page`** shows a view with the data of a capability, **`R
 capability, **`Route::download`** offers its result as a file, **`Route::redirect`** moves an address. You write the
 views. Nothing else answers these requests.
 
-**Before you start:** lesson 05 is done (tag `lesson-05`): `capabilities` lists 19 capabilities, and
+**Before you start:** lesson 05 is done (tag `lesson-05`): `capabilities` lists 21 capabilities, and
 `docker compose ps` shows the 3 containers running.
 
 **Time:** 60 to 75 minutes.

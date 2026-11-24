@@ -527,7 +527,7 @@ docker compose exec dev-box php caligrafer.php client public/bookshelf-spa/src/c
 ```
 Expected:
 ```text
- public/bookshelf-spa/src/capabilities.js written: 20 capabilities, calls /capabilities (Route::capabilities('/capabilities') in web.php)
+ public/bookshelf-spa/src/capabilities.js written: 22 capabilities, calls /capabilities (Route::capabilities('/capabilities') in web.php)
  import { createBook, CapabilityError } from './capabilities.js'
 ```
 
@@ -667,6 +667,9 @@ Reference: [`checkpoints/lesson-10`](https://github.com/caligrafy/caligrafy-quil
 checkpoint, run `npm install` in `public/bookshelf-spa` again.
 Learn more: [7. Views, install](https://github.com/caligrafy/caligrafy-quill/wiki/7.-Views#install) and
 [9.8.1 Setting up the Vue application](https://github.com/caligrafy/caligrafy-quill/wiki/9.8.1---Setting-up-the-Vue-application).
+Going further: an app in the App Store and Google Play, signed in with the same accounts and reached by the same
+notifications, is one command since Caligrafy Quill 2.27.0: see
+[Phone and tablet apps](https://github.com/caligrafy/caligrafy-quill/wiki/9.9.7-Phone-and-Tablet-Apps).
 
 ## Quiz
 

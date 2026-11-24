@@ -341,7 +341,7 @@ Check that the page is gone and only the framework's capabilities are left:
 curl -s -w ' [%{http_code}]\n' http://localhost:8080/tasks
 docker compose exec dev-box php caligrafer.php capabilities
 ```
-Expected: `[ERROR 1005] Page Not Found [404]`, then 13 lines, the framework's own capabilities, there in every
+Expected: `[ERROR 1005] Page Not Found [404]`, then 15 lines, the framework's own capabilities, there in every
 project: the user accounts (`delete_user`, `get_user`, `list_users`, `register_user`, `update_user`), the
 notifications (`notify_*`) and the background jobs (`queue_work`). None of them is about tasks.
 
@@ -362,7 +362,7 @@ notifications (`notify_*`) and the background jobs (`queue_work`). None of them 
 - [ ] `web.php` still has `Route::capabilities('/capabilities');`, `Route::mcp('/mcp');`, `Route::notifications();`
       and `Route::run();`, and no line that mentions tasks.
 - [ ] `application/services/` holds only `Users`, and `public/js/` has no `tasks.js` and no `capabilities.js`.
-- [ ] `capabilities` lists 13 capabilities, and `/tasks` answers 404.
+- [ ] `capabilities` lists 15 capabilities, and `/tasks` answers 404.
 
 ## With Claude
 
