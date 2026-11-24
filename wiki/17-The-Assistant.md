@@ -7,8 +7,8 @@ make the reading report run in the background, and, if you want, you let Claude 
 
 **Before you start:** lesson 16 is done (tag `lesson-16`), `docker compose ps` shows the containers running, you can
 sign in as `reader1` (an administrator since lesson 11), and Kindred and Invisible Cities are lent (lesson 13).
-`docker compose exec dev-box php caligrafer.php version` prints `Caligrafy Quill 2.27.0` or later: if it prints an older
-version, run `docker compose exec dev-box php caligrafer.php update 2.27.0` first.
+`docker compose exec dev-box php caligrafer.php version` prints `Caligrafy Quill 2.27.1` or later: if it prints an older
+version, run `docker compose exec dev-box php caligrafer.php update 2.27.1` first.
 
 **Time:** 60 minutes.
 
@@ -111,7 +111,7 @@ Expected:
 > |---|---|---|
 > | `Snap is almost ready` | The tables are missing | `docker compose exec dev-box php caligrafer.php snap install` |
 > | `404` on `/assistant` | `Route::snap();` is not in `web.php`, or is below `// MUST NOT BE REMOVED` | Put it with the other routes |
-> | `Unknown command: snap` | The project is older than 2.23.0 | `docker compose exec dev-box php caligrafer.php update 2.27.0` |
+> | `Unknown command: snap` | The project is older than 2.23.0 | `docker compose exec dev-box php caligrafer.php update 2.27.1` |
 
 ### Step 2 - Use it
 
