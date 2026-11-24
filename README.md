@@ -52,6 +52,7 @@ PHP and SQL.
 **Ship it:** [12 Tests, review, doctor](https://github.com/caligrafy/caligrafy-quill-course/wiki/12-Ship-It) · [13 Capstone: Loans](https://github.com/caligrafy/caligrafy-quill-course/wiki/13-Capstone-Loans) · [14 Put it online](https://github.com/caligrafy/caligrafy-quill-course/wiki/14-Put-It-Online) · [15 Reminders: a job and notifications](https://github.com/caligrafy/caligrafy-quill-course/wiki/15-Reminders)  
 **Every request declared:** [16 What a page or a form cannot say](https://github.com/caligrafy/caligrafy-quill-course/wiki/16-Every-Request-Declared)  
 **The assistant:** [17 Every capability as a card](https://github.com/caligrafy/caligrafy-quill-course/wiki/17-The-Assistant)  
+**Phones:** [18 Bookshelf in the stores: an iOS and Android app](https://github.com/caligrafy/caligrafy-quill-course/wiki/18-Bookshelf-in-the-Stores)  
 **Under the hood (the older ways):** [A Routes and controllers](https://github.com/caligrafy/caligrafy-quill-course/wiki/A-Routes-and-Controllers) · [B Classic forms](https://github.com/caligrafy/caligrafy-quill-course/wiki/B-Classic-Forms)
 
 ## Checkpoint code (By hand)

@@ -461,4 +461,4 @@ checks the offer and the routine.
 </details>
 
 ---
-Previous: [Lesson 16 - What a page or a form cannot say](16-Every-Request-Declared) · Next: [Appendix A - Routes and controllers](A-Routes-and-Controllers)
+Previous: [Lesson 16 - What a page or a form cannot say](16-Every-Request-Declared) · Next: [Lesson 18 - Bookshelf in the stores](18-Bookshelf-in-the-Stores)

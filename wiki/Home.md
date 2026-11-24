@@ -51,4 +51,5 @@ PHP and SQL.
 **Ship it:** [12 Tests, review, doctor](12-Ship-It) · [13 Capstone: Loans](13-Capstone-Loans) · [14 Put it online](14-Put-It-Online) · [15 Reminders: a job and notifications](15-Reminders)  
 **Every request declared:** [16 What a page or a form cannot say](16-Every-Request-Declared)  
 **The assistant:** [17 Every capability as a card](17-The-Assistant)  
+**Phones:** [18 Bookshelf in the stores: an iOS and Android app](18-Bookshelf-in-the-Stores)  
 **Under the hood (the older ways):** [A Routes and controllers](A-Routes-and-Controllers) · [B Classic forms](B-Classic-Forms)
