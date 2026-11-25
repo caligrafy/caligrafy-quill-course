@@ -7,7 +7,7 @@ simulator and on an Android emulator. No capability, model or rule is written: t
 
 **Before you start:** lesson 17 is done (tag `lesson-17`), `docker compose ps` shows the containers running, you can
 sign in as `reader1@example.com` (an administrator), and `docker compose exec dev-box php caligrafer.php version` prints
-`Caligrafy Quill 2.28.0` or later (else `docker compose exec dev-box php caligrafer.php update 2.28.0` first).
+`Caligrafy Quill 2.28.1` or later (else `docker compose exec dev-box php caligrafer.php update 2.28.1` first).
 On your computer: Node.js 22.12 or newer (`node --version`). For the iPhone simulator: a Mac with Xcode; for the
 Android emulator: Android Studio. Either one is enough to follow the lesson; the browser part needs neither.
 
